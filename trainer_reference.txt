@@ -1,0 +1,1486 @@
+Project Structure:
+├── .gitignore (Size: 0.25kb; Lines: 25)
+├── App.tsx (Size: 0.34kb; Lines: 14)
+├── README.md (Size: 0.54kb; Lines: 21)
+├── components/
+│   ├── Canvas.tsx (Size: 12.11kb; Lines: 343)
+│   ├── FormComponents.tsx (Size: 2.12kb; Lines: 66)
+│   ├── GeminiAssistant.tsx (Size: 2.32kb; Lines: 60)
+│   ├── Island.tsx (Size: 9.36kb; Lines: 247)
+│   ├── islandRegistry.ts (Size: 1.12kb; Lines: 42)
+│   └── islands/
+│       ├── DataIsland.tsx (Size: 1.47kb; Lines: 42)
+│       ├── ModelIsland.tsx (Size: 0.94kb; Lines: 31)
+│       ├── OptimizerIsland.tsx (Size: 2.82kb; Lines: 76)
+│       └── TrainingIsland.tsx (Size: 1.89kb; Lines: 54)
+├── index.html (Size: 1.41kb; Lines: 36)
+├── index.tsx (Size: 0.34kb; Lines: 15)
+├── metadata.json (Size: 0.16kb; Lines: 5)
+├── package.json (Size: 0.51kb; Lines: 26)
+├── services/
+│   └── geminiService.ts (Size: 1.66kb; Lines: 55)
+├── store.ts (Size: 3.22kb; Lines: 102)
+├── tsconfig.json (Size: 0.53kb; Lines: 29)
+├── types.ts (Size: 1.51kb; Lines: 77)
+└── vite.config.ts (Size: 0.57kb; Lines: 24)
+
+---
+components/islands/DataIsland.tsx
+---
+import React from 'react';
+import { useStore } from '../../store';
+import { Input } from '../FormComponents';
+import { FolderOpen } from 'lucide-react';
+
+export const DataIsland: React.FC = () => {
+  const { config, updateConfig } = useStore();
+
+  return (
+    <div className="space-y-2">
+      <div className="relative group cursor-pointer">
+        <Input 
+          label="Image Directory" 
+          name="image_directory" 
+          value={config.imageDir}
+          onChange={(e) => updateConfig({ imageDir: e.target.value })}
+        />
+        <FolderOpen className="absolute right-3 top-8 w-4 h-4 text-[#484463] group-hover:text-violet-400 transition-colors" />
+      </div>
+      
+      <div className="relative group cursor-pointer">
+        <Input 
+          label="Regularization Dir" 
+          name="reg_directory" 
+          value={config.regDir}
+          onChange={(e) => updateConfig({ regDir: e.target.value })}
+        />
+        <FolderOpen className="absolute right-3 top-8 w-4 h-4 text-[#484463] group-hover:text-violet-400 transition-colors" />
+      </div>
+
+      <div className="relative group cursor-pointer">
+        <Input 
+          label="Output Directory" 
+          name="output_directory" 
+          value={config.outputDir}
+          onChange={(e) => updateConfig({ outputDir: e.target.value })}
+        />
+        <FolderOpen className="absolute right-3 top-8 w-4 h-4 text-[#484463] group-hover:text-violet-400 transition-colors" />
+      </div>
+    </div>
+  );
+};
+
+---
+components/islands/ModelIsland.tsx
+---
+import React from 'react';
+import { useStore } from '../../store';
+import { Input, Select } from '../FormComponents';
+
+export const ModelIsland: React.FC = () => {
+  const { config, updateConfig } = useStore();
+
+  return (
+    <div className="space-y-2">
+      <Input 
+        label="Pretrained Model Path" 
+        name="pretrained_model_name_or_path" 
+        value={config.pretrainedModelPath}
+        onChange={(e) => updateConfig({ pretrainedModelPath: e.target.value })}
+        placeholder="e.g., run/sd-v1-5.ckpt"
+      />
+      
+      <Select 
+        label="Model Architecture" 
+        name="model_architecture" 
+        value={config.modelType}
+        onChange={(e) => updateConfig({ modelType: e.target.value as any })}
+        options={[
+          { value: 'sd15', label: 'SD 1.5 / Realistic Vision' },
+          { value: 'sdxl', label: 'SDXL 1.0 / Pony' },
+          { value: 'sd2', label: 'SD 2.0 / 2.1' },
+        ]}
+      />
+    </div>
+  );
+};
+
+---
+components/islands/OptimizerIsland.tsx
+---
+import React from 'react';
+import { useStore } from '../../store';
+import { Input, Select } from '../FormComponents';
+
+export const OptimizerIsland: React.FC = () => {
+  const { config, updateConfig } = useStore();
+
+  return (
+    <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+             <Select 
+                label="Optimizer" 
+                name="optimizer_type" 
+                value={config.optimizerType}
+                onChange={(e) => updateConfig({ optimizerType: e.target.value as any })}
+                options={[
+                    { value: 'AdamW8bit', label: 'AdamW 8-bit' },
+                    { value: 'Adafactor', label: 'Adafactor' },
+                    { value: 'Prodigy', label: 'Prodigy' },
+                ]}
+            />
+             <Select 
+                label="LR Scheduler" 
+                name="lr_scheduler" 
+                value={config.lrScheduler}
+                onChange={(e) => updateConfig({ lrScheduler: e.target.value as any })}
+                options={[
+                    { value: 'cosine', label: 'Cosine' },
+                    { value: 'constant', label: 'Constant' },
+                    { value: 'constant_with_warmup', label: 'Constant + Warmup' },
+                ]}
+            />
+        </div>
+
+        <div className="space-y-2 pt-2 border-t border-[#3E3B5E]">
+            <Input 
+                label="Learning Rate" 
+                name="learning_rate" 
+                value={config.learningRate}
+                onChange={(e) => updateConfig({ learningRate: parseFloat(e.target.value) })}
+            />
+            <div className="grid grid-cols-2 gap-3">
+                <Input 
+                    label="UNet LR" 
+                    name="unet_lr" 
+                    value={config.unetLr}
+                    onChange={(e) => updateConfig({ unetLr: parseFloat(e.target.value) })}
+                />
+                <Input 
+                    label="Text Enc LR" 
+                    name="text_encoder_lr" 
+                    value={config.textEncoderLr}
+                    onChange={(e) => updateConfig({ textEncoderLr: parseFloat(e.target.value) })}
+                />
+            </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#3E3B5E]">
+             <Input 
+                label="Network Dim (Rank)" 
+                name="network_dim" 
+                type="number"
+                value={config.networkDim}
+                onChange={(e) => updateConfig({ networkDim: parseInt(e.target.value) })}
+            />
+             <Input 
+                label="Network Alpha" 
+                name="network_alpha" 
+                type="number"
+                value={config.networkAlpha}
+                onChange={(e) => updateConfig({ networkAlpha: parseInt(e.target.value) })}
+            />
+        </div>
+    </div>
+  );
+};
+
+---
+components/islands/TrainingIsland.tsx
+---
+import React from 'react';
+import { useStore } from '../../store';
+import { Input, Select } from '../FormComponents';
+
+export const TrainingIsland: React.FC = () => {
+  const { config, updateConfig } = useStore();
+
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <Input 
+        label="Resolution" 
+        name="resolution" 
+        type="number"
+        value={config.resolution}
+        onChange={(e) => updateConfig({ resolution: parseInt(e.target.value) })}
+      />
+      <Input 
+        label="Batch Size" 
+        name="train_batch_size" 
+        type="number"
+        value={config.batchSize}
+        onChange={(e) => updateConfig({ batchSize: parseInt(e.target.value) })}
+      />
+      <Input 
+        label="Max Epochs" 
+        name="max_train_epochs" 
+        type="number"
+        value={config.maxTrainEpochs}
+        onChange={(e) => updateConfig({ maxTrainEpochs: parseInt(e.target.value) })}
+      />
+      <Select 
+        label="Mixed Precision" 
+        name="mixed_precision" 
+        value={config.mixedPrecision}
+        onChange={(e) => updateConfig({ mixedPrecision: e.target.value as any })}
+        options={[
+            { value: 'no', label: 'No (FP32)' },
+            { value: 'fp16', label: 'FP16' },
+            { value: 'bf16', label: 'BF16' },
+        ]}
+      />
+      <div className="col-span-2 flex items-center gap-3 p-2.5 bg-[#181625] rounded-sm border border-[#3E3B5E]">
+        <input 
+            type="checkbox" 
+            id="grad_chk"
+            checked={config.gradientCheckpointing}
+            onChange={(e) => updateConfig({ gradientCheckpointing: e.target.checked })}
+            className="w-4 h-4 rounded-sm border-[#3E3B5E] text-violet-600 focus:ring-violet-500 bg-[#181625]"
+        />
+        <label htmlFor="grad_chk" className="text-sm text-[#948FB2] select-none cursor-pointer font-mono">Enable Gradient Checkpointing</label>
+      </div>
+    </div>
+  );
+};
+
+---
+components/Canvas.tsx
+---
+import React, { useRef, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useStore } from '../store';
+import { IslandId } from '../types';
+import { Island, LOD_WIDTH, LOD_HEIGHT } from './Island';
+import { ISLAND_REGISTRY, GRAPH_EDGES } from './islandRegistry';
+import { Save, MousePointer2, ZoomIn, ZoomOut, Activity, LayoutGrid } from 'lucide-react';
+
+// Base limit for panning. This will be scaled dynamically.
+const BASE_PAN_LIMIT = 5000;
+
+// Approximate geometric center of the initial layout (MinX: 100, MaxX: 1800, MinY: 100, MaxY: 800)
+const CONTENT_CENTER_X = 950;
+const CONTENT_CENTER_Y = 450;
+
+// Connection line component (Animated)
+const Connection: React.FC<{x1: number, y1: number, x2: number, y2: number}> = React.memo(({x1, y1, x2, y2}) => {
+    const isIslandDragging = useStore(state => state.isIslandDragging);
+    const scale = useStore(state => state.scale);
+    
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    
+    // Visibility check for very zoomed out view
+    const opacity = scale < 0.55 ? 0.15 : 0.4;
+
+    // Synced transition to match Island movement/resizing
+    const transition = {
+        duration: isIslandDragging ? 0 : 0.3,
+        type: "tween" as const,
+        ease: "circOut" as const
+    };
+
+    return (
+        <motion.div 
+            className="absolute h-[1px] bg-violet-500 pointer-events-none origin-left shadow-[0_0_8px_rgba(139,92,246,0.4)]"
+            animate={{
+                top: y1,
+                left: x1,
+                width: length,
+                rotate: angle,
+                opacity: opacity
+            }}
+            transition={{
+                top: transition,
+                left: transition,
+                width: transition,
+                rotate: transition,
+                opacity: { duration: 0.5 }
+            }}
+        >
+             <div className="absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-[#181625] border border-violet-500/30 text-[10px] text-violet-400 px-1.5 py-0.5 rounded-full font-mono tracking-widest" style={{ transform: `rotate(${-angle}deg)` }}>
+                LINK
+            </div>
+        </motion.div>
+    )
+});
+
+const FPSCounter: React.FC = () => {
+  const [fps, setFps] = useState(0);
+  
+  useEffect(() => {
+    let frameCount = 0;
+    let lastTime = performance.now();
+    let rafId: number;
+
+    const loop = () => {
+      const now = performance.now();
+      frameCount++;
+      
+      if (now - lastTime >= 1000) {
+        setFps(Math.round((frameCount * 1000) / (now - lastTime)));
+        frameCount = 0;
+        lastTime = now;
+      }
+      
+      rafId = requestAnimationFrame(loop);
+    };
+
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
+  return (
+    <div className="absolute top-6 right-6 z-50 pointer-events-none select-none">
+      <div className="bg-[#232034]/80 backdrop-blur-sm border border-[#3E3B5E] text-[#948FB2] font-mono text-[10px] px-3 py-1 rounded-full flex items-center gap-2">
+        <Activity size={10} className={fps < 30 ? "text-red-500" : "text-emerald-500"} />
+        <span className={fps < 30 ? "text-red-400" : "text-[#948FB2]"}>{fps} FPS</span>
+      </div>
+    </div>
+  );
+};
+
+export const Canvas: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { translation, scale, setTranslation, setTransform, setActiveIsland, islandPositions, islandDimensions, resetLayout } = useStore();
+  const [isDragging, setIsDragging] = useState(false);
+  const isZoomedOut = scale < 0.55;
+  
+  // Interaction state for dynamic optimization
+  const [isInteracting, setIsInteracting] = useState(false);
+  const interactionTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerInteraction = () => {
+      setIsInteracting(true);
+      if (interactionTimeout.current) clearTimeout(interactionTimeout.current);
+      interactionTimeout.current = setTimeout(() => {
+          setIsInteracting(false);
+      }, 150);
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setActiveIsland(null);
+    
+    setIsDragging(true);
+    triggerInteraction();
+    e.preventDefault();
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startTransX = translation.x;
+    const startTransY = translation.y;
+    
+    // Capture scale at the start of the drag to ensure consistency
+    const currentScale = scale; 
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        triggerInteraction();
+        
+        // Calculate new position
+        const newX = startTransX + dx;
+        const newY = startTransY + dy;
+        
+        // Dynamic Clamping
+        const dynamicRadius = BASE_PAN_LIMIT * currentScale;
+        const centerOffsetX = CONTENT_CENTER_X * (1 - currentScale);
+        const centerOffsetY = CONTENT_CENTER_Y * (1 - currentScale);
+
+        const minX = centerOffsetX - dynamicRadius;
+        const maxX = centerOffsetX + dynamicRadius;
+        const minY = centerOffsetY - dynamicRadius;
+        const maxY = centerOffsetY + dynamicRadius;
+
+        const clampedX = Math.max(minX, Math.min(maxX, newX));
+        const clampedY = Math.max(minY, Math.min(maxY, newY));
+
+        setTranslation(clampedX, clampedY);
+    };
+
+    const handlePointerUp = () => {
+        setIsDragging(false);
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+      triggerInteraction();
+      
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      const direction = e.deltaY > 0 ? -1 : 1;
+      const factor = direction > 0 ? 1.1 : 0.9;
+      
+      let newScale = scale * factor;
+      newScale = Math.min(Math.max(newScale, 0.1), 5);
+
+      const worldX = (mx - translation.x) / scale;
+      const worldY = (my - translation.y) / scale;
+      
+      const newTx = mx - worldX * newScale;
+      const newTy = my - worldY * newScale;
+
+      setTransform(newTx, newTy, newScale);
+  };
+
+  const manualZoom = (direction: 1 | -1) => {
+      triggerInteraction();
+      
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const mx = rect.width / 2;
+      const my = rect.height / 2;
+
+      const factor = direction > 0 ? 1.2 : 1 / 1.2;
+      let newScale = scale * factor;
+      newScale = Math.min(Math.max(newScale, 0.1), 5);
+      
+      const worldX = (mx - translation.x) / scale;
+      const worldY = (my - translation.y) / scale;
+      
+      const newTx = mx - worldX * newScale;
+      const newTy = my - worldY * newScale;
+
+      setTransform(newTx, newTy, newScale);
+  };
+  
+  // Helper to get connection handles (Left and Right edges)
+  const getOutputHandle = (id: IslandId) => {
+      const pos = islandPositions[id];
+      const dim = islandDimensions[id] || { width: 300, height: 200 };
+      
+      let effectiveX = pos.x;
+      let effectiveY = pos.y;
+      let effectiveWidth = dim.width;
+      let effectiveHeight = dim.height;
+
+      if (isZoomedOut) {
+          effectiveWidth = LOD_WIDTH;
+          effectiveHeight = LOD_HEIGHT;
+          effectiveX += (dim.width - LOD_WIDTH) / 2;
+          effectiveY += (dim.height - LOD_HEIGHT) / 2;
+      }
+
+      return { x: effectiveX + effectiveWidth, y: effectiveY + effectiveHeight / 2 };
+  };
+
+  const getInputHandle = (id: IslandId) => {
+      const pos = islandPositions[id];
+      const dim = islandDimensions[id] || { width: 300, height: 200 };
+
+      let effectiveX = pos.x;
+      let effectiveY = pos.y;
+      // let effectiveWidth = dim.width; 
+      let effectiveHeight = dim.height;
+
+      if (isZoomedOut) {
+          // effectiveWidth = LOD_WIDTH;
+          effectiveHeight = LOD_HEIGHT;
+          effectiveX += (dim.width - LOD_WIDTH) / 2;
+          effectiveY += (dim.height - LOD_HEIGHT) / 2;
+      }
+
+      return { x: effectiveX, y: effectiveY + effectiveHeight / 2 };
+  };
+
+  return (
+    <div 
+        ref={containerRef}
+        className={`w-full h-full overflow-hidden bg-[#181625] relative select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        onPointerDown={handlePointerDown}
+        onWheel={handleWheel}
+    >
+      {/* Infinite Grid Background */}
+      <div 
+        className="absolute inset-0 opacity-20 pointer-events-none"
+        style={{
+            backgroundImage: `
+                linear-gradient(#45415E 1px, transparent 1px), 
+                linear-gradient(90deg, #45415E 1px, transparent 1px)
+            `,
+            backgroundPosition: `${translation.x}px ${translation.y}px`,
+            backgroundSize: `${40 * scale}px ${40 * scale}px`,
+            willChange: isInteracting ? 'background-position, background-size' : 'auto'
+        }}
+      />
+      
+      {/* World Container */}
+      <motion.div
+        className="absolute top-0 left-0 w-full h-full origin-top-left"
+        style={{ willChange: isInteracting ? 'transform' : 'auto' }}
+        animate={{
+            x: translation.x,
+            y: translation.y,
+            scale: scale
+        }}
+        transition={{
+            type: "tween",
+            duration: 0 
+        }}
+      >
+        {/* Connections (Dynamically Generated) */}
+        {GRAPH_EDGES.map((edge) => {
+             const p1 = getOutputHandle(edge.source);
+             const p2 = getInputHandle(edge.target);
+             return <Connection key={`${edge.source}-${edge.target}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} />;
+        })}
+
+        {/* Islands (Dynamically Generated) */}
+        {Object.values(ISLAND_REGISTRY).map((config) => (
+            <Island key={config.id} id={config.id} title={config.title} icon={config.icon}>
+                <config.component />
+            </Island>
+        ))}
+      </motion.div>
+
+      {/* HUD / Overlay UI */}
+      <div className="absolute top-6 left-6 pointer-events-none select-none">
+         <h1 className="text-4xl font-bold text-[#E2E0EC] tracking-tighter drop-shadow-xl">
+            KURO
+         </h1>
+         <p className="text-[#948FB2] text-xs font-mono uppercase tracking-[0.2em] mt-1">Void Configurator</p>
+      </div>
+
+      <FPSCounter />
+      
+      {/* Controls */}
+      <div className="absolute bottom-6 left-6 flex flex-col gap-2 pointer-events-auto">
+         <div className="flex items-center gap-2 bg-[#232034]/80 backdrop-blur-md border border-[#3E3B5E] p-1 rounded-lg shadow-2xl">
+            <button 
+                onClick={resetLayout}
+                className="p-2 hover:bg-[#3E3B5E] rounded text-[#948FB2] hover:text-white transition border-r border-[#3E3B5E]"
+                title="Reset Layout"
+            >
+                <LayoutGrid size={18} />
+            </button>
+            <button onClick={() => manualZoom(1)} className="p-2 hover:bg-[#3E3B5E] rounded text-[#948FB2] hover:text-white transition">
+                <ZoomIn size={18} />
+            </button>
+            <button onClick={() => manualZoom(-1)} className="p-2 hover:bg-[#3E3B5E] rounded text-[#948FB2] hover:text-white transition">
+                <ZoomOut size={18} />
+            </button>
+         </div>
+         
+         <div className="bg-[#232034]/80 backdrop-blur-md text-[#948FB2] text-[10px] uppercase tracking-wider px-3 py-2 rounded-lg border border-[#3E3B5E] flex items-center gap-2 shadow-xl">
+            <MousePointer2 size={10} />
+            <span>Nav: Drag & Scroll</span>
+         </div>
+      </div>
+
+      <div className="absolute bottom-6 right-6 pointer-events-auto">
+         <button className="group bg-[#E2E0EC] hover:bg-white text-[#181625] font-bold py-3 px-6 rounded-sm shadow-[0_0_20px_rgba(139,92,246,0.2)] flex items-center gap-3 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+            <Save className="w-4 h-4 group-hover:text-violet-600 transition-colors" />
+            <span className="tracking-tight">EXPORT CONFIG</span>
+         </button>
+      </div>
+    </div>
+  );
+};
+
+---
+components/FormComponents.tsx
+---
+import React from 'react';
+import { HelpCircle } from 'lucide-react';
+import { useStore } from '../store';
+
+interface FieldProps {
+  label: string;
+  id: string; // acts as context for AI
+  children: React.ReactNode;
+}
+
+export const FieldWrapper: React.FC<FieldProps> = ({ label, id, children }) => {
+  const openGemini = useStore((state) => state.openGemini);
+
+  return (
+    <div className="flex flex-col gap-2 mb-5">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-bold text-[#5B5680] uppercase tracking-widest font-mono">{label}</label>
+        <button 
+          onClick={(e) => { e.stopPropagation(); openGemini(id); }}
+          className="text-[#5B5680] hover:text-violet-400 transition-colors"
+          title="Query Intelligence"
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+};
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+  name: string;
+}
+
+export const Input: React.FC<InputProps> = ({ label, name, className = '', ...props }) => {
+  return (
+    <FieldWrapper label={label} id={name}>
+      <input 
+        className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all font-mono ${className}`}
+        {...props}
+      />
+    </FieldWrapper>
+  );
+};
+
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label: string;
+  name: string;
+  options: { value: string; label: string }[];
+}
+
+export const Select: React.FC<SelectProps> = ({ label, name, options, ...props }) => {
+  return (
+    <FieldWrapper label={label} id={name}>
+      <select 
+        className="bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all appearance-none font-mono"
+        {...props}
+      >
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </FieldWrapper>
+  );
+};
+
+---
+components/GeminiAssistant.tsx
+---
+import React, { useEffect, useState } from 'react';
+import { useStore } from '../store';
+import { explainParameter } from '../services/geminiService';
+import { Sparkles, X, Bot, Loader2, Terminal } from 'lucide-react';
+
+export const GeminiAssistant: React.FC = () => {
+  const { isGeminiOpen, geminiContext, closeGemini } = useStore();
+  const [response, setResponse] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isGeminiOpen && geminiContext) {
+      const fetchExplanation = async () => {
+        setLoading(true);
+        setResponse('');
+        const text = await explainParameter(geminiContext, "LoRA Training / sd-scripts");
+        setResponse(text);
+        setLoading(false);
+      };
+      fetchExplanation();
+    }
+  }, [isGeminiOpen, geminiContext]);
+
+  if (!isGeminiOpen) return null;
+
+  return (
+    <div className="fixed bottom-8 right-8 w-80 bg-[#232034]/95 backdrop-blur-xl border border-[#3E3B5E] rounded-sm shadow-2xl z-50 overflow-hidden text-[#E2E0EC] animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="bg-[#181625] p-3 flex items-center justify-between border-b border-[#3E3B5E]">
+        <div className="flex items-center gap-2">
+          <Terminal className="w-4 h-4 text-violet-500" />
+          <h3 className="font-bold text-[#E2E0EC] text-xs uppercase tracking-widest">Kuro Intelligence</h3>
+        </div>
+        <button onClick={closeGemini} className="hover:text-white text-[#5B5680] transition">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      
+      <div className="p-5">
+        <div className="mb-3 text-[10px] font-bold text-violet-500 uppercase tracking-widest">
+          Analyzing: {geminiContext}
+        </div>
+        
+        <div className="min-h-[100px] text-xs leading-relaxed text-[#948FB2] font-mono">
+          {loading ? (
+            <div className="flex items-center justify-center h-20 gap-2 text-[#5B5680]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Processing...</span>
+            </div>
+          ) : (
+            response
+          )}
+        </div>
+      </div>
+      
+      <div className="bg-[#0f0e14] p-2 border-t border-[#3E3B5E] text-[9px] text-[#5B5680] text-center uppercase tracking-wider">
+        Powered by Gemini 2.5 Flash
+      </div>
+    </div>
+  );
+};
+
+---
+components/Island.tsx
+---
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useStore } from '../store';
+import { IslandId } from '../types';
+import { LucideIcon } from 'lucide-react';
+
+interface IslandProps {
+  id: IslandId;
+  title: string;
+  icon: LucideIcon;
+  children: React.ReactNode;
+}
+
+// Exporting constants so Canvas can match calculations
+export const LOD_WIDTH = 200;
+export const LOD_HEIGHT = 128; 
+
+export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon, children }) => {
+  // Optimize Selectors
+  const position = useStore((state) => state.islandPositions[id]);
+  const dimensions = useStore((state) => state.islandDimensions[id]);
+  const isActive = useStore((state) => state.activeIsland === id);
+  const anyActive = useStore((state) => !!state.activeIsland);
+  const isZoomedOut = useStore((state) => state.scale < 0.55); 
+  const moveIsland = useStore((state) => state.moveIsland);
+  const resizeIsland = useStore((state) => state.resizeIsland);
+  const setActiveIsland = useStore((state) => state.setActiveIsland);
+  const setIsIslandDragging = useStore((state) => state.setIsIslandDragging);
+  
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  
+  // Use stored dimensions or fallback if not yet initialized
+  const currentWidth = dimensions?.width || 300;
+  const currentHeight = dimensions?.height || 300;
+
+  // Calculate offset to center the LOD card relative to the full island size
+  const xOffset = isZoomedOut ? (currentWidth - LOD_WIDTH) / 2 : 0;
+  const yOffset = isZoomedOut ? (currentHeight - LOD_HEIGHT) / 2 : 0;
+  
+  const opacity = (isActive || isDragging || isResizing || !anyActive) ? 1 : 0.4;
+  const zIndex = isActive || isDragging || isResizing ? 50 : 10;
+
+  // --- DRAG LOGIC (Moves the Island) ---
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation(); 
+    
+    const startMouseX = e.clientX;
+    const startMouseY = e.clientY;
+    const startIslandX = position.x;
+    const startIslandY = position.y;
+    
+    const currentScale = useStore.getState().scale;
+
+    setIsDragging(true);
+    setIsIslandDragging(true);
+    
+    let hasMoved = false;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      moveEvent.preventDefault();
+      const rawDx = moveEvent.clientX - startMouseX;
+      const rawDy = moveEvent.clientY - startMouseY;
+
+      if (!hasMoved && (Math.abs(rawDx) > 5 || Math.abs(rawDy) > 5)) {
+        hasMoved = true;
+      }
+      
+      if (hasMoved) {
+          const dx = rawDx / currentScale;
+          const dy = rawDy / currentScale;
+          moveIsland(id, startIslandX + dx, startIslandY + dy);
+      }
+    };
+
+    const handlePointerUp = () => {
+      setIsDragging(false);
+      setIsIslandDragging(false);
+      
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+
+      if (!hasMoved) {
+          setActiveIsland(id);
+      }
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
+  // --- RESIZE LOGIC (Scales the Island) ---
+  const handleResizeDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const startMouseX = e.clientX;
+    const startMouseY = e.clientY;
+    const startWidth = currentWidth;
+    const startHeight = currentHeight;
+    const currentScale = useStore.getState().scale;
+
+    setIsResizing(true);
+
+    const handleResizeMove = (moveEvent: PointerEvent) => {
+        moveEvent.preventDefault();
+        const rawDx = moveEvent.clientX - startMouseX;
+        const rawDy = moveEvent.clientY - startMouseY;
+        
+        const newWidth = Math.max(250, startWidth + (rawDx / currentScale));
+        const newHeight = Math.max(200, startHeight + (rawDy / currentScale));
+
+        resizeIsland(id, newWidth, newHeight);
+    };
+
+    const handleResizeUp = () => {
+        setIsResizing(false);
+        window.removeEventListener('pointermove', handleResizeMove);
+        window.removeEventListener('pointerup', handleResizeUp);
+    };
+
+    window.addEventListener('pointermove', handleResizeMove);
+    window.addEventListener('pointerup', handleResizeUp);
+  };
+
+  const geometryTransition = { 
+      type: "tween" as const, 
+      duration: (isDragging || isResizing) ? 0 : 0.3, 
+      ease: "circOut" as const
+  };
+
+  return (
+    <motion.div
+      className="absolute" 
+      animate={{ 
+          x: position.x + xOffset, 
+          y: position.y + yOffset, 
+          width: isZoomedOut ? LOD_WIDTH : currentWidth,
+          height: isZoomedOut ? LOD_HEIGHT : currentHeight,
+          opacity, 
+          zIndex, 
+          scale: isActive || isDragging ? 1.02 : 1 
+      }}
+      transition={{ 
+          x: geometryTransition,
+          y: geometryTransition,
+          width: geometryTransition,
+          height: geometryTransition,
+          opacity: { duration: 0.2 },
+          scale: { duration: 0.2 }
+      }}
+    >
+        {/* Connection Knobs - Always visible, position managed by motion container scaling */}
+        <div>
+            {/* Left Knob (Input) */}
+            <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-[#181625] border border-violet-500/50 rounded-[2px] z-0 shadow-[0_0_8px_rgba(139,92,246,0.4)] flex items-center justify-center">
+                <div className="w-1 h-1 bg-violet-500 rounded-[1px] opacity-80" />
+            </div>
+            {/* Right Knob (Output) */}
+            <div className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-3 bg-[#181625] border border-violet-500/50 rounded-[2px] z-0 shadow-[0_0_8px_rgba(139,92,246,0.4)] flex items-center justify-center">
+                <div className="w-1 h-1 bg-violet-500 rounded-[1px] opacity-80" />
+            </div>
+        </div>
+
+      <div 
+        onPointerDown={(e) => {
+            e.stopPropagation(); 
+        }}
+        className={`
+            relative overflow-hidden h-full w-full
+            rounded-sm backdrop-blur-2xl 
+            border transition-colors duration-500
+            ${isActive 
+                ? 'bg-[#232034]/95 border-violet-500/50 shadow-[0_0_50px_rgba(139,92,246,0.1)]' 
+                : isZoomedOut 
+                    ? 'bg-[#232034]/60 border-[#3E3B5E] hover:bg-[#232034]/80 hover:border-[#565275]' 
+                    : 'bg-[#232034]/90 border-[#3E3B5E] hover:border-[#565275]'
+            }
+        `}
+      >
+        <AnimatePresence mode="popLayout">
+            {isZoomedOut ? (
+                /* LOD View */
+                 <motion.div 
+                    key="lod"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
+                    onPointerDown={handlePointerDown}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 cursor-grab active:cursor-grabbing select-none p-4"
+                 >
+                    <Icon size={32} className="text-violet-500" />
+                    <h2 className="text-lg font-bold text-[#E2E0EC] tracking-widest uppercase text-center leading-none font-mono">
+                        {title}
+                    </h2>
+                 </motion.div>
+            ) : (
+                /* Detailed View */
+                <motion.div 
+                    key="detail"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="h-full flex flex-col"
+                >
+                    {/* Header */}
+                    <div 
+                        onPointerDown={handlePointerDown}
+                        className={`
+                            flex items-center gap-3 p-3 border-b select-none touch-none shrink-0
+                            ${isActive ? 'border-violet-500/20 bg-violet-500/5' : 'border-[#3E3B5E] bg-[#3E3B5E]/10'}
+                            cursor-grab active:cursor-grabbing
+                        `}
+                    >
+                        <div className={`p-1.5 rounded-sm ${isActive ? 'bg-violet-600 text-white' : 'bg-[#3E3B5E] text-[#948FB2]'}`}>
+                            <Icon size={16} />
+                        </div>
+                        <h2 className={`text-sm font-bold tracking-widest uppercase font-mono ${isActive ? 'text-white' : 'text-[#948FB2]'}`}>
+                            {title}
+                        </h2>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4 cursor-default flex-grow overflow-y-auto custom-scrollbar">
+                        {children}
+                    </div>
+
+                    {/* Resize Handle */}
+                    <div 
+                        className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize flex items-center justify-center text-[#5B5680] hover:text-violet-500 transition-colors"
+                        onPointerDown={handleResizeDown}
+                    >
+                        <svg width="6" height="6" viewBox="0 0 6 6" fill="currentColor">
+                            <path d="M6 6L6 0L0 6H6Z" />
+                        </svg>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+});
+
+---
+components/islandRegistry.ts
+---
+import { IslandId, IslandConfig, GraphEdge } from '../types';
+import { Database, Box, Settings, Cpu } from 'lucide-react';
+
+import { DataIsland } from './islands/DataIsland';
+import { ModelIsland } from './islands/ModelIsland';
+import { TrainingIsland } from './islands/TrainingIsland';
+import { OptimizerIsland } from './islands/OptimizerIsland';
+
+export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
+  [IslandId.DATA]: { 
+    id: IslandId.DATA, 
+    title: 'Dataset', 
+    icon: Database, 
+    component: DataIsland 
+  },
+  [IslandId.MODEL]: { 
+    id: IslandId.MODEL, 
+    title: 'Model', 
+    icon: Box, 
+    component: ModelIsland 
+  },
+  [IslandId.TRAINING]: { 
+    id: IslandId.TRAINING, 
+    title: 'Training', 
+    icon: Settings, 
+    component: TrainingIsland 
+  },
+  [IslandId.OPTIMIZER]: { 
+    id: IslandId.OPTIMIZER, 
+    title: 'Optimizer', 
+    icon: Cpu, 
+    component: OptimizerIsland 
+  },
+};
+
+export const GRAPH_EDGES: GraphEdge[] = [
+  { source: IslandId.DATA, target: IslandId.MODEL },
+  { source: IslandId.MODEL, target: IslandId.TRAINING },
+  { source: IslandId.TRAINING, target: IslandId.OPTIMIZER },
+];
+
+---
+services/geminiService.ts
+---
+import { GoogleGenAI } from "@google/genai";
+
+const API_KEY = process.env.API_KEY || '';
+
+let ai: GoogleGenAI | null = null;
+
+if (API_KEY) {
+  ai = new GoogleGenAI({ apiKey: API_KEY });
+}
+
+export const explainParameter = async (paramName: string, context: string): Promise<string> => {
+  if (!ai) return "API Key not configured. Unable to fetch explanation.";
+
+  const prompt = `
+    You are an expert in Stable Diffusion training, specifically using kohya_ss / sd-scripts.
+    
+    Explain the parameter "${paramName}" in the context of "${context}".
+    
+    Keep the explanation concise (under 80 words), friendly, and focused on how it affects the training result (quality, speed, VRAM usage).
+    If it is a technical term like "Gradient Checkpointing", explain the trade-off.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    return response.text || "No explanation available.";
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    return "Error retrieving explanation.";
+  }
+};
+
+export const suggestOptimization = async (configJSON: string): Promise<string> => {
+  if (!ai) return "API Key not configured.";
+
+  const prompt = `
+    Analyze this partial SD-Scripts training configuration:
+    ${configJSON}
+    
+    Suggest 3 key improvements or checks for a LoRA training workflow. 
+    Format as a bulleted Markdown list.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    return response.text || "No suggestions available.";
+  } catch (error) {
+    return "Error generating suggestions.";
+  }
+};
+
+---
+.gitignore
+---
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+---
+App.tsx
+---
+import React from 'react';
+import { Canvas } from './components/Canvas';
+import { GeminiAssistant } from './components/GeminiAssistant';
+
+const App: React.FC = () => {
+  return (
+    <div className="w-screen h-screen bg-[#181625] text-[#E2E0EC] overflow-hidden">
+      <Canvas />
+      <GeminiAssistant />
+    </div>
+  );
+};
+
+export default App;
+
+---
+index.html
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KURO | Void Trainer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #181625; }
+      /* Custom scrollbar for internal panels */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #3E3B5E; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #5B5680; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "zustand": "https://aistudiocdn.com/zustand@^5.0.8",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
+
+---
+index.tsx
+---
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+---
+metadata.json
+---
+{
+  "name": "Kuro",
+  "description": "A void-themed spatial node interface for configuring Stable Diffusion training scripts.",
+  "requestFramePermissions": []
+}
+
+---
+package.json
+---
+{
+  "name": "kuro",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "@google/genai": "^1.30.0",
+    "lucide-react": "^0.554.0",
+    "zustand": "^5.0.8",
+    "framer-motion": "^12.23.24"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
+
+---
+README.md
+---
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
+
+# Run and deploy your AI Studio app
+
+This contains everything you need to run your app locally.
+
+View your app in AI Studio: https://ai.studio/apps/drive/1dBh_bE3Xaan6bz5ENmOw5O1oc7mjzTEz
+
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
+
+---
+store.ts
+---
+import { create } from 'zustand';
+import { TrainingConfig, UIState, IslandId } from './types';
+
+interface Store extends UIState {
+  config: TrainingConfig;
+  isIslandDragging: boolean;
+  
+  // Actions
+  setTranslation: (x: number, y: number) => void;
+  setScale: (s: number) => void;
+  setTransform: (x: number, y: number, scale: number) => void;
+  moveIsland: (id: IslandId, x: number, y: number) => void;
+  resizeIsland: (id: IslandId, width: number, height: number) => void;
+  setActiveIsland: (id: IslandId | null) => void;
+  setIsIslandDragging: (isDragging: boolean) => void;
+  updateConfig: (partial: Partial<TrainingConfig>) => void;
+  openGemini: (context: string) => void;
+  closeGemini: () => void;
+  resetLayout: () => void;
+}
+
+const DEFAULT_POSITIONS = {
+    [IslandId.DATA]: { x: 100, y: 300 },
+    [IslandId.MODEL]: { x: 600, y: 100 },
+    [IslandId.TRAINING]: { x: 1050, y: 500 },
+    [IslandId.OPTIMIZER]: { x: 1500, y: 200 },
+    [IslandId.OUTPUT]: { x: 1900, y: 300 }, // Placeholder for future
+};
+
+const DEFAULT_DIMENSIONS = {
+    [IslandId.DATA]: { width: 350, height: 250 },
+    [IslandId.MODEL]: { width: 350, height: 200 },
+    [IslandId.TRAINING]: { width: 400, height: 300 },
+    [IslandId.OPTIMIZER]: { width: 380, height: 350 },
+    [IslandId.OUTPUT]: { width: 300, height: 200 },
+};
+
+export const useStore = create<Store>((set) => ({
+  // Initial UI State
+  scale: 1,
+  translation: { x: 0, y: 0 },
+  activeIsland: null,
+  geminiContext: null,
+  isGeminiOpen: false,
+  isIslandDragging: false,
+  
+  // Initial Positions
+  islandPositions: { ...DEFAULT_POSITIONS },
+  islandDimensions: { ...DEFAULT_DIMENSIONS },
+
+  // Initial Config State (Defaults for a standard LoRA run)
+  config: {
+    pretrainedModelPath: 'runwayml/stable-diffusion-v1-5',
+    modelType: 'sd15',
+    v_parameterization: false,
+    imageDir: '/content/train/images',
+    regDir: '/content/train/reg',
+    outputDir: '/content/output',
+    resolution: 512,
+    batchSize: 1,
+    maxTrainEpochs: 10,
+    saveEveryNEpochs: 2,
+    mixedPrecision: 'fp16',
+    gradientCheckpointing: true,
+    learningRate: 0.0001,
+    unetLr: 0.0001,
+    textEncoderLr: 0.00005,
+    optimizerType: 'AdamW8bit',
+    lrScheduler: 'cosine',
+    networkDim: 32,
+    networkAlpha: 16,
+  },
+
+  setTranslation: (x, y) => set({ translation: { x, y } }),
+  setScale: (s) => set({ scale: s }),
+  setTransform: (x, y, scale) => set({ translation: { x, y }, scale }),
+  moveIsland: (id, x, y) => set((state) => ({
+    islandPositions: {
+        ...state.islandPositions,
+        [id]: { x, y }
+    }
+  })),
+  resizeIsland: (id, width, height) => set((state) => ({
+    islandDimensions: {
+        ...state.islandDimensions,
+        [id]: { width, height }
+    }
+  })),
+  setActiveIsland: (id) => set({ activeIsland: id }),
+  setIsIslandDragging: (isDragging) => set({ isIslandDragging: isDragging }),
+  updateConfig: (partial) => set((state) => ({ config: { ...state.config, ...partial } })),
+  openGemini: (context) => set({ geminiContext: context, isGeminiOpen: true }),
+  closeGemini: () => set({ isGeminiOpen: false, geminiContext: null }),
+  resetLayout: () => set({ 
+      islandPositions: { ...DEFAULT_POSITIONS },
+      islandDimensions: { ...DEFAULT_DIMENSIONS },
+      translation: { x: 0, y: 0 },
+      scale: 1
+  }),
+}));
+
+---
+tsconfig.json
+---
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ],
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
+}
+
+---
+types.ts
+---
+import { LucideIcon } from 'lucide-react';
+
+export enum IslandId {
+  DATA = 'data',
+  MODEL = 'model',
+  TRAINING = 'training',
+  OPTIMIZER = 'optimizer',
+  OUTPUT = 'output'
+}
+
+export interface Coordinates {
+  x: number;
+  y: number;
+}
+
+export interface IslandPosition {
+  x: number;
+  y: number;
+}
+
+export interface IslandDimensions {
+  width: number;
+  height: number;
+}
+
+export interface TrainingConfig {
+  // Model
+  pretrainedModelPath: string;
+  modelType: 'sd15' | 'sdxl' | 'sd2';
+  v_parameterization: boolean;
+  
+  // Data
+  imageDir: string;
+  regDir: string;
+  outputDir: string;
+  
+  // Training
+  resolution: number;
+  batchSize: number;
+  maxTrainEpochs: number;
+  saveEveryNEpochs: number;
+  mixedPrecision: 'no' | 'fp16' | 'bf16';
+  gradientCheckpointing: boolean;
+  
+  // Optimizer
+  learningRate: number;
+  unetLr: number;
+  textEncoderLr: number;
+  optimizerType: 'AdamW8bit' | 'Adafactor' | 'Prodigy';
+  lrScheduler: 'cosine' | 'constant' | 'constant_with_warmup';
+  networkDim: number; // LoRA Rank
+  networkAlpha: number;
+}
+
+export interface UIState {
+  scale: number;
+  translation: Coordinates;
+  islandPositions: Record<IslandId, IslandPosition>;
+  islandDimensions: Record<IslandId, IslandDimensions>;
+  activeIsland: IslandId | null;
+  geminiContext: string | null; // The parameter user wants help with
+  isGeminiOpen: boolean;
+}
+
+export interface IslandConfig {
+  id: IslandId;
+  title: string;
+  icon: LucideIcon;
+  component: React.FC;
+}
+
+export interface GraphEdge {
+  source: IslandId;
+  target: IslandId;
+}
+
+---
+vite.config.ts
+---
+import path from 'path';
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, '.', '');
+    return {
+      server: {
+        port: 3000,
+        host: '0.0.0.0',
+      },
+      plugins: [react()],
+      define: {
+        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      },
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, '.'),
+        }
+      }
+    };
+});
