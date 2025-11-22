@@ -1,9 +1,10 @@
 import React from 'react';
 import { useStore } from '../../lib/store';
 import { Input, Select, Toggle, TextArea, FieldWrapper } from '../FormComponents';
+import { HelpCircle } from 'lucide-react';
 
 export const GeneralArgsIsland: React.FC = () => {
-    const { config, updateConfig } = useStore();
+    const { config, updateConfig, openGemini } = useStore();
 
     return (
         <div className="space-y-5">
@@ -24,35 +25,6 @@ export const GeneralArgsIsland: React.FC = () => {
                     onChange={(e) => updateConfig({ vaePath: e.target.value })}
                     placeholder="Vae to train with"
                 />
-
-                {/* Model Flags */}
-                <div className="grid grid-cols-3 gap-x-2 gap-y-2 px-1">
-                    <Toggle
-                        label="SDXL"
-                        name="sdxl_enable"
-                        checked={config.modelType === 'sdxl'}
-                        onChange={(e) => updateConfig({ modelType: e.target.checked ? 'sdxl' : 'sd15' })}
-                    />
-                    <Toggle
-                        label="SD2.X"
-                        name="v2_enable"
-                        checked={config.modelType === 'sd2'}
-                        onChange={(e) => updateConfig({ modelType: e.target.checked ? 'sd2' : 'sd15' })}
-                    />
-                    <Toggle label="V-Prediction" name="v_pred" checked={config.v_parameterization} onChange={(e) => updateConfig({ v_parameterization: e.target.checked })} />
-
-                    <Toggle label="No Half VAE" name="no_half_vae" checked={config.noHalfVae} onChange={(e) => updateConfig({ noHalfVae: e.target.checked })} />
-                    <Toggle label="Low RAM" name="low_ram" checked={config.lowRam} onChange={(e) => updateConfig({ lowRam: e.target.checked })} />
-                    <Toggle label="High VRAM" name="high_vram" checked={config.highVram} onChange={(e) => updateConfig({ highVram: e.target.checked })} />
-
-                    <Toggle label="Full FP16" name="full_fp16" checked={config.fullFp16} onChange={(e) => updateConfig({ fullFp16: e.target.checked })} />
-                    <Toggle label="Full BF16" name="full_bf16" checked={config.fullBf16} onChange={(e) => updateConfig({ fullBf16: e.target.checked })} />
-                    <Toggle label="FP8 Base" name="fp8_base" checked={config.fp8Base} onChange={(e) => updateConfig({ fp8Base: e.target.checked })} />
-
-                    <Toggle label="Scale V Loss" name="scale_v_pred_loss" checked={config.scaleVPredLoss} onChange={(e) => updateConfig({ scaleVPredLoss: e.target.checked })} />
-                    <Toggle label="Debiased Estimation" name="debiased_estimation" checked={config.debiasedEstimationLoss} onChange={(e) => updateConfig({ debiasedEstimationLoss: e.target.checked })} />
-                </div>
-
                 <Select
                     label="VAE Padding Mode"
                     name="vae_padding_mode"
@@ -65,6 +37,179 @@ export const GeneralArgsIsland: React.FC = () => {
                         { value: 'circular', label: 'circular' },
                     ]}
                 />
+
+                {/* Flags */}
+                <h4 className="text-xs font-semibold text-[#7B77A0] uppercase tracking-wide pt-2">Flags</h4>
+
+                {/* Model */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 px-1">
+                        <h5 className="text-[10px] font-medium text-[#5B5680] uppercase tracking-wider">Model</h5>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); openGemini('flags_model'); }}
+                            className="text-[#5B5680] hover:text-violet-400 transition-colors"
+                            title="Query Intelligence"
+                        >
+                            <HelpCircle className="w-3 h-3" />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-x-2 gap-y-2 px-1">
+                        <Toggle
+                            label="SDXL"
+                            name="sdxl_enable"
+                            checked={config.modelType === 'sdxl'}
+                            onChange={(e) => updateConfig({ modelType: e.target.checked ? 'sdxl' : 'sd15' })}
+                        />
+                        <Toggle
+                            label="SD2.X"
+                            name="v2_enable"
+                            checked={config.modelType === 'sd2'}
+                            onChange={(e) => updateConfig({ modelType: e.target.checked ? 'sd2' : 'sd15' })}
+                        />
+                    </div>
+                </div>
+
+                {/* Precision */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 px-1">
+                        <h5 className="text-[10px] font-medium text-[#5B5680] uppercase tracking-wider">Precision</h5>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); openGemini('flags_precision'); }}
+                            className="text-[#5B5680] hover:text-violet-400 transition-colors"
+                            title="Query Intelligence"
+                        >
+                            <HelpCircle className="w-3 h-3" />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-x-2 gap-y-2 px-1">
+                        <Toggle
+                            label="Full FP16"
+                            name="full_fp16"
+                            checked={config.fullFp16}
+                            onChange={(e) => updateConfig({
+                                fullFp16: e.target.checked,
+                                fullBf16: false,
+                                fp8Base: false
+                            })}
+                        />
+                        <Toggle
+                            label="Full BF16"
+                            name="full_bf16"
+                            checked={config.fullBf16}
+                            onChange={(e) => updateConfig({
+                                fullBf16: e.target.checked,
+                                fullFp16: false,
+                                fp8Base: false
+                            })}
+                        />
+                        <Toggle
+                            label="FP8 Base"
+                            name="fp8_base"
+                            checked={config.fp8Base}
+                            onChange={(e) => updateConfig({
+                                fp8Base: e.target.checked,
+                                fullFp16: false,
+                                fullBf16: false
+                            })}
+                        />
+                    </div>
+                </div>
+
+                {/* Training */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 px-1">
+                        <h5 className="text-[10px] font-medium text-[#5B5680] uppercase tracking-wider">Training</h5>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); openGemini('flags_training'); }}
+                            className="text-[#5B5680] hover:text-violet-400 transition-colors"
+                            title="Query Intelligence"
+                        >
+                            <HelpCircle className="w-3 h-3" />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-x-2 gap-y-2 px-1">
+                        <Toggle
+                            label="V-Prediction"
+                            name="v_pred"
+                            checked={config.v_parameterization}
+                            onChange={(e) => updateConfig({ v_parameterization: e.target.checked })}
+                        />
+                        <Toggle
+                            label="Scale V Loss"
+                            name="scale_v_pred_loss"
+                            checked={config.scaleVPredLoss}
+                            onChange={(e) => updateConfig({ scaleVPredLoss: e.target.checked })}
+                        />
+                        <Toggle
+                            label="Debiased Estimation"
+                            name="debiased_estimation"
+                            checked={config.debiasedEstimationLoss}
+                            onChange={(e) => updateConfig({ debiasedEstimationLoss: e.target.checked })}
+                        />
+                    </div>
+                </div>
+
+                {/* Optimizations */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 px-1">
+                        <h5 className="text-[10px] font-medium text-[#5B5680] uppercase tracking-wider">Optimizations</h5>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); openGemini('flags_optimizations'); }}
+                            className="text-[#5B5680] hover:text-violet-400 transition-colors"
+                            title="Query Intelligence"
+                        >
+                            <HelpCircle className="w-3 h-3" />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-x-2 gap-y-2 px-1">
+                        <Toggle
+                            label="Xformers"
+                            name="xformers_enable"
+                            checked={config.useXformers}
+                            onChange={(e) => updateConfig({
+                                useXformers: e.target.checked,
+                                useSdpa: e.target.checked ? false : config.useSdpa
+                            })}
+                        />
+                        <Toggle
+                            label="SDPA"
+                            name="sdpa_enable"
+                            checked={config.useSdpa}
+                            onChange={(e) => updateConfig({
+                                useSdpa: e.target.checked,
+                                useXformers: e.target.checked ? false : config.useXformers
+                            })}
+                        />
+                        <Toggle
+                            label="Cache Latents"
+                            name="cache_latents"
+                            checked={config.cacheLatents}
+                            onChange={(e) => updateConfig({
+                                cacheLatents: e.target.checked,
+                                cacheLatentsToDisk: e.target.checked ? config.cacheLatentsToDisk : false
+                            })}
+                        />
+                        <Toggle
+                            label="Cache Latents to Disk"
+                            name="cache_latents_to_disk"
+                            checked={config.cacheLatentsToDisk}
+                            onChange={(e) => updateConfig({
+                                cacheLatentsToDisk: e.target.checked,
+                                cacheLatents: e.target.checked ? true : config.cacheLatents
+                            })}
+                        />
+                        <Toggle
+                            label="No Half VAE"
+                            name="no_half_vae"
+                            checked={config.noHalfVae}
+                            onChange={(e) => updateConfig({ noHalfVae: e.target.checked })}
+                        />
+                    </div>
+                </div>
             </div>
 
             <div className="h-px bg-[#2A273F]" />
@@ -234,19 +379,6 @@ export const GeneralArgsIsland: React.FC = () => {
                             />
                         </div>
                     </FieldWrapper>
-                </div>
-            </div>
-
-            <div className="h-px bg-[#2A273F]" />
-
-            {/* Section 4: Optimizations */}
-            <div className="space-y-3">
-                <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Optimizations</h3>
-                <div className="grid grid-cols-4 gap-4 px-1">
-                    <Toggle label="Xformers" name="xformers_enable" checked={config.useXformers} onChange={(e) => updateConfig({ useXformers: e.target.checked })} />
-                    <Toggle label="SDPA" name="sdpa_enable" checked={config.useSdpa} onChange={(e) => updateConfig({ useSdpa: e.target.checked })} />
-                    <Toggle label="Cache Latents" name="cache_latents" checked={config.cacheLatents} onChange={(e) => updateConfig({ cacheLatents: e.target.checked })} />
-                    <Toggle label="To Disk" name="cache_latents_to_disk" checked={config.cacheLatentsToDisk} onChange={(e) => updateConfig({ cacheLatentsToDisk: e.target.checked })} disabled={!config.cacheLatents} />
                 </div>
             </div>
 

@@ -60,6 +60,27 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
   - **`web/hooks/useIslandLOD.ts`**: React hook for components to easily access LOD state.
   - **Benefits**: Single source of truth for threshold logic; easier to maintain and adjust in the future.
 
+### 3. General Args Island Reorganization
+- **Flag Consolidation**: Reorganized all model/training flags into a single, well-structured "Flags" section with categorical sub-headers:
+  - **Model**: SDXL, SD2.X (mutually exclusive)
+  - **Precision**: Full FP16, Full BF16, FP8 Base (mutually exclusive - selecting one disables others)
+  - **Training**: V-Prediction, Scale V Loss, Debiased Estimation
+  - **Optimizations**: Xformers, SDPA, Cache Latents, Cache Latents to Disk, No Half VAE
+- **Mutual Exclusivity Logic**:
+  - Precision flags now automatically disable other precision modes when one is selected
+  - Xformers and SDPA cannot both be enabled simultaneously
+  - Cache Latents to Disk automatically enables Cache Latents when toggled on
+  - Disabling Cache Latents also disables Cache Latents to Disk
+- **Field Reorganization**:
+  - Moved "VAE Padding Mode" field to appear directly below "External VAE" for logical grouping
+  - Renamed "To Disk" to "Cache Latents to Disk" for clarity
+  - Removed duplicate Optimizations section (now consolidated into Flags)
+- **Query Intelligence UX Improvements**:
+  - Added help icons to each flag category header (Model, Precision, Training, Optimizations)
+  - Updated `FieldWrapper` component to position help icons immediately after labels (instead of far right)
+  - Created consistent UX pattern: all Query Intelligence icons now appear with `gap-1.5` spacing after their labels
+  - Users can click category help icons to get AI explanations for all flags in that category
+
 ## Next Steps
 - Verify all specific form inputs and their interactions with the backend.
 - Connect the frontend to the FastAPI backend (Python).
