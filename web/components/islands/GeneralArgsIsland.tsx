@@ -50,7 +50,7 @@ export const GeneralArgsIsland: React.FC = () => {
                     <Toggle label="FP8 Base" name="fp8_base" checked={config.fp8Base} onChange={(e) => updateConfig({ fp8Base: e.target.checked })} />
 
                     <Toggle label="Scale V Loss" name="scale_v_pred_loss" checked={config.scaleVPredLoss} onChange={(e) => updateConfig({ scaleVPredLoss: e.target.checked })} />
-                    <Toggle label="Debiased Est." name="debiased_estimation" checked={config.debiasedEstimationLoss} onChange={(e) => updateConfig({ debiasedEstimationLoss: e.target.checked })} />
+                    <Toggle label="Debiased Estimation" name="debiased_estimation" checked={config.debiasedEstimationLoss} onChange={(e) => updateConfig({ debiasedEstimationLoss: e.target.checked })} />
                 </div>
 
                 <Select
