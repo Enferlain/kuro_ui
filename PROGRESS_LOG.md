@@ -50,6 +50,16 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
     - **Optimizations Section**: Created a dedicated, 4-column grid for optimization flags (Xformers, SDPA, etc.).
 - **Visual Polish**: Removed extraneous backgrounds and aligned labels/inputs perfectly across different field types.
 
+### 2. Level of Detail (LOD) System Improvements
+- **Click to Expand**: Panels now force-expand to full view when clicked, overriding LOD effects.
+- **LOD Immunity Toggle**: Added an "Eye" icon to each panel header that allows users to make panels permanently immune to LOD shrinking.
+  - **Implementation**: Added `lodImmuneIslands` state array and `toggleLodImmunity` action to the Zustand store.
+  - **UI Feedback**: Eye icon shows "open" when immunity is ON (violet color) and "crossed-out" when OFF (gray color).
+- **Code Refactor**: Centralized LOD calculation logic:
+  - **`web/lib/lod.ts`**: Pure function for LOD state calculations.
+  - **`web/hooks/useIslandLOD.ts`**: React hook for components to easily access LOD state.
+  - **Benefits**: Single source of truth for threshold logic; easier to maintain and adjust in the future.
+
 ## Next Steps
 - Verify all specific form inputs and their interactions with the backend.
 - Connect the frontend to the FastAPI backend (Python).

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../lib/store';
 import { IslandId } from '../lib/types';
 import { Island, LOD_WIDTH, LOD_HEIGHT } from './Island';
+import { calculateLodState } from '../lib/lod';
 import { ISLAND_REGISTRY, GRAPH_EDGES, SEARCH_INDEX, SearchItem } from './islandRegistry';
 import { Save, MousePointer2, ZoomIn, ZoomOut, Activity, LayoutGrid, Search, X, CornerDownRight } from 'lucide-react';
 
@@ -108,9 +109,23 @@ export const Canvas: React.FC = () => {
 
     const setTranslation = useStore(state => state.setTranslation);
     const setTransform = useStore(state => state.setTransform);
+    const activeIsland = useStore(state => state.activeIsland);
+    const lodImmuneIslands = useStore(state => state.lodImmuneIslands);
     const setActiveIsland = useStore(state => state.setActiveIsland);
     const resetLayout = useStore(state => state.resetLayout);
     const setHighlightedField = useStore(state => state.setHighlightedField);
+    const setViewportSize = useStore(state => state.setViewportSize);
+    const viewportSize = useStore(state => state.viewportSize);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setViewportSize(window.innerWidth, window.innerHeight);
+        };
+        // Initial set
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [setViewportSize]);
 
     const [isDragging, setIsDragging] = useState(false);
     const isZoomedOut = scale < 0.55;
@@ -297,7 +312,18 @@ export const Canvas: React.FC = () => {
         let effectiveWidth = dim.width;
         let effectiveHeight = dim.height;
 
-        if (isZoomedOut) {
+        const isActive = id === activeIsland;
+        const isImmune = lodImmuneIslands.includes(id);
+
+        const { isZoomedOut: isIslandLOD } = calculateLodState({
+            scale,
+            viewportSize,
+            dimensions: dim,
+            isActive,
+            isImmune
+        });
+
+        if (isIslandLOD) {
             effectiveWidth = LOD_WIDTH;
             effectiveHeight = LOD_HEIGHT;
             effectiveX += (dim.width - LOD_WIDTH) / 2;
@@ -316,7 +342,18 @@ export const Canvas: React.FC = () => {
         // let effectiveWidth = dim.width; 
         let effectiveHeight = dim.height;
 
-        if (isZoomedOut) {
+        const isActive = id === activeIsland;
+        const isImmune = lodImmuneIslands.includes(id);
+
+        const { isZoomedOut: isIslandLOD } = calculateLodState({
+            scale,
+            viewportSize,
+            dimensions: dim,
+            isActive,
+            isImmune
+        });
+
+        if (isIslandLOD) {
             // effectiveWidth = LOD_WIDTH;
             effectiveHeight = LOD_HEIGHT;
             effectiveX += (dim.width - LOD_WIDTH) / 2;

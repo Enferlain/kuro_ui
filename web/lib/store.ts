@@ -4,8 +4,11 @@ import { TrainingConfig, UIState, IslandId } from './types';
 interface Store extends UIState {
     config: TrainingConfig;
     isIslandDragging: boolean;
+    viewportSize: { width: number, height: number };
+    lodImmuneIslands: IslandId[];
 
     // Actions
+    setViewportSize: (width: number, height: number) => void;
     setTranslation: (x: number, y: number) => void;
     setScale: (s: number) => void;
     setTransform: (x: number, y: number, scale: number) => void;
@@ -13,6 +16,7 @@ interface Store extends UIState {
     resizeIsland: (id: IslandId, width: number, height: number) => void;
     setActiveIsland: (id: IslandId | null) => void;
     setIsIslandDragging: (isDragging: boolean) => void;
+    toggleLodImmunity: (id: IslandId) => void;
     updateConfig: (partial: Partial<TrainingConfig>) => void;
     openGemini: (context: string) => void;
     closeGemini: () => void;
@@ -112,6 +116,11 @@ export const useStore = create<Store>((set) => ({
         networkAlpha: 16,
     },
 
+    // Viewport State
+    viewportSize: { width: 1920, height: 1080 }, // Default to 1080p until hydrated/resized
+    setViewportSize: (width, height) => set({ viewportSize: { width, height } }),
+    lodImmuneIslands: [],
+
     setTranslation: (x, y) => set({ translation: { x, y } }),
     setScale: (s) => set({ scale: s }),
     setTransform: (x, y, scale) => set({ translation: { x, y }, scale }),
@@ -129,6 +138,14 @@ export const useStore = create<Store>((set) => ({
     })),
     setActiveIsland: (id) => set({ activeIsland: id }),
     setIsIslandDragging: (isDragging) => set({ isIslandDragging: isDragging }),
+    toggleLodImmunity: (id) => set((state) => {
+        const isImmune = state.lodImmuneIslands.includes(id);
+        return {
+            lodImmuneIslands: isImmune
+                ? state.lodImmuneIslands.filter((i) => i !== id)
+                : [...state.lodImmuneIslands, id]
+        };
+    }),
     updateConfig: (partial) => set((state) => ({ config: { ...state.config, ...partial } })),
     openGemini: (context) => set({ geminiContext: context, isGeminiOpen: true }),
     closeGemini: () => set({ isGeminiOpen: false, geminiContext: null }),

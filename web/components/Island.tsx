@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../lib/store';
 import { IslandId } from '../lib/types';
 import { LucideIcon, Scaling } from 'lucide-react';
+import { useIslandLOD } from '../hooks/useIslandLOD';
 
 interface IslandProps {
     id: IslandId;
@@ -23,11 +24,13 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
     const dimensions = useStore((state) => state.islandDimensions[id]);
     const isActive = useStore((state) => state.activeIsland === id);
     const anyActive = useStore((state) => !!state.activeIsland);
-    const isZoomedOut = useStore((state) => state.scale < 0.55);
+    const scale = useStore((state) => state.scale);
     const moveIsland = useStore((state) => state.moveIsland);
     const resizeIsland = useStore((state) => state.resizeIsland);
     const setActiveIsland = useStore((state) => state.setActiveIsland);
     const setIsIslandDragging = useStore((state) => state.setIsIslandDragging);
+    const lodImmuneIslands = useStore((state) => state.lodImmuneIslands);
+    const toggleLodImmunity = useStore((state) => state.toggleLodImmunity);
 
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
@@ -37,10 +40,12 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
     const currentWidth = dimensions?.width || 300;
     const currentHeight = dimensions?.height || 300;
 
+    const { isZoomedOut } = useIslandLOD(id, { width: currentWidth, height: currentHeight });
+    const isImmune = lodImmuneIslands.includes(id);
+
     // Calculate offset to center the LOD card relative to the full island size
     const xOffset = isZoomedOut ? (currentWidth - LOD_WIDTH) / 2 : 0;
     const yOffset = isZoomedOut ? (currentHeight - LOD_HEIGHT) / 2 : 0;
-
     const opacity = (isActive || isDragging || isResizing || !anyActive) ? 1 : 0.4;
     const zIndex = isActive || isDragging || isResizing ? 50 : 10;
 
@@ -239,14 +244,16 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
                         >
                             {/* Header */}
                             <div
-                                onPointerDown={handlePointerDown}
                                 className={`
                             flex items-center justify-between p-3 border-b select-none touch-none shrink-0
                             ${isActive ? 'border-violet-500/20 bg-violet-500/5' : 'border-[#3E3B5E] bg-[#3E3B5E]/10'}
-                            cursor-grab active:cursor-grabbing
                         `}
                             >
-                                <div className="flex items-center gap-3">
+                                {/* Title & Icon - Acts as Drag Handle */}
+                                <div
+                                    className="flex items-center gap-3 flex-1 cursor-grab active:cursor-grabbing"
+                                    onPointerDown={handlePointerDown}
+                                >
                                     <div className={`p-1.5 rounded-sm ${isActive ? 'bg-violet-600 text-white' : 'bg-[#3E3B5E] text-[#948FB2]'}`}>
                                         <Icon size={16} />
                                     </div>
@@ -255,17 +262,45 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
                                     </h2>
                                 </div>
 
-                                {/* Content Scale Control */}
-                                <div
-                                    className="p-1.5 rounded-md hover:bg-[#3E3B5E] cursor-ns-resize text-[#5B5680] hover:text-white transition-colors"
-                                    onPointerDown={handleScaleDrag}
-                                    title="Drag up/down to scale content"
-                                >
-                                    <Scaling size={14} />
+                                {/* Header Controls - Separate from Drag Handle */}
+                                <div className="flex items-center gap-1 pl-2">
+                                    {/* LOD Immunity Toggle */}
+                                    <div
+                                        className={`p-1.5 rounded-md cursor-pointer transition-colors ${isImmune ? 'text-violet-400 hover:text-violet-300' : 'text-[#5B5680] hover:text-white'}`}
+                                        onPointerDown={(e) => {
+                                            e.stopPropagation();
+                                            toggleLodImmunity(id);
+                                        }}
+                                        title={isImmune ? "Lock node visibility" : "Unlock node visibility"}
+                                    >
+                                        {/* Simple Eye Icon SVG since we can't import Eye/EyeOff easily without adding imports */}
+                                        {isImmune ? (
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                        ) : (
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                                                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                                                <line x1="2" x2="22" y1="2" y2="22" />
+                                            </svg>
+                                        )}
+                                    </div>
+
+                                    {/* Content Scale Control */}
+                                    <div
+                                        className="p-1.5 rounded-md hover:bg-[#3E3B5E] cursor-ns-resize text-[#5B5680] hover:text-white transition-colors"
+                                        onPointerDown={handleScaleDrag}
+                                        title="Drag to scale content"
+                                    >
+                                        <Scaling size={14} />
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Content */}
+                            {/* Content Area */}
                             <div
                                 className="p-4 cursor-default flex-grow overflow-y-auto overflow-x-hidden custom-scrollbar relative"
                                 onWheel={(e) => {

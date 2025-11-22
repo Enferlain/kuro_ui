@@ -39,7 +39,7 @@ export const GeneralArgsIsland: React.FC = () => {
                         checked={config.modelType === 'sd2'}
                         onChange={(e) => updateConfig({ modelType: e.target.checked ? 'sd2' : 'sd15' })}
                     />
-                    <Toggle label="V-Param" name="v_param" checked={config.v_parameterization} onChange={(e) => updateConfig({ v_parameterization: e.target.checked })} />
+                    <Toggle label="V-Prediction" name="v_pred" checked={config.v_parameterization} onChange={(e) => updateConfig({ v_parameterization: e.target.checked })} />
 
                     <Toggle label="No Half VAE" name="no_half_vae" checked={config.noHalfVae} onChange={(e) => updateConfig({ noHalfVae: e.target.checked })} />
                     <Toggle label="Low RAM" name="low_ram" checked={config.lowRam} onChange={(e) => updateConfig({ lowRam: e.target.checked })} />
