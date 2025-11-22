@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../lib/store';
 import { IslandId } from '../lib/types';
-import { LucideIcon, Scaling } from 'lucide-react';
+import { LucideIcon, Scaling, Pin, Minimize2, Maximize2 } from 'lucide-react';
 import { useIslandLOD } from '../hooks/useIslandLOD';
 import { pushIslandsOnDrag, pushIslandsOnResize } from '../lib/collision';
 
@@ -34,6 +34,8 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
     const toggleLodImmunity = useStore((state) => state.toggleLodImmunity);
     const allPositions = useStore((state) => state.islandPositions);
     const allDimensions = useStore((state) => state.islandDimensions);
+    const minimizedIslands = useStore((state) => state.minimizedIslands);
+    const toggleMinimize = useStore((state) => state.toggleMinimize);
 
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
@@ -45,6 +47,7 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
 
     const { isZoomedOut } = useIslandLOD(id, { width: currentWidth, height: currentHeight });
     const isImmune = lodImmuneIslands.includes(id);
+    const isMinimized = minimizedIslands.includes(id);
 
     // Calculate offset to center the LOD card relative to the full island size
     const xOffset = isZoomedOut ? (currentWidth - LOD_WIDTH) / 2 : 0;
@@ -311,29 +314,45 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
 
                                 {/* Header Controls - Separate from Drag Handle */}
                                 <div className="flex items-center gap-1 pl-2">
-                                    {/* LOD Immunity Toggle */}
+                                    {/* Minimize Toggle */}
+                                    <div
+                                        className={`p-1.5 rounded-md cursor-pointer transition-colors 
+                                            ${isImmune ? 'opacity-30 cursor-not-allowed text-[#5B5680]' :
+                                                (isMinimized && !isActive) ? 'text-violet-400 hover:text-violet-300' : 'text-[#5B5680] hover:text-white'}
+                                        `}
+                                        onPointerDown={(e) => {
+                                            e.stopPropagation();
+                                            if (isImmune) return;
+
+                                            if (isActive) {
+                                                // If active, we are closing/minimizing
+                                                // If NOT minimized, set it to minimized
+                                                if (!isMinimized) toggleMinimize(id);
+                                                // Always deselect to collapse
+                                                setActiveIsland(null);
+                                            } else {
+                                                toggleMinimize(id);
+                                            }
+                                        }}
+                                        title={isImmune ? "Cannot minimize pinned node" : (isMinimized && !isActive) ? "Expand node" : "Minimize node"}
+                                    >
+                                        {(isMinimized && !isActive) ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
+                                    </div>
+
+                                    {/* LOD Immunity Toggle (Pin) */}
                                     <div
                                         className={`p-1.5 rounded-md cursor-pointer transition-colors ${isImmune ? 'text-violet-400 hover:text-violet-300' : 'text-[#5B5680] hover:text-white'}`}
                                         onPointerDown={(e) => {
                                             e.stopPropagation();
+                                            // If we are pinning (currently not immune) and it's minimized, un-minimize it
+                                            if (!isImmune && isMinimized) {
+                                                toggleMinimize(id);
+                                            }
                                             toggleLodImmunity(id);
                                         }}
-                                        title={isImmune ? "Lock node visibility" : "Unlock node visibility"}
+                                        title={isImmune ? "Unpin node" : "Pin node open"}
                                     >
-                                        {/* Simple Eye Icon SVG since we can't import Eye/EyeOff easily without adding imports */}
-                                        {isImmune ? (
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                                <circle cx="12" cy="12" r="3" />
-                                            </svg>
-                                        ) : (
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                                                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                                                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                                                <line x1="2" x2="22" y1="2" y2="22" />
-                                            </svg>
-                                        )}
+                                        <Pin size={14} className={isImmune ? "fill-current" : ""} />
                                     </div>
 
                                     {/* Content Scale Control */}

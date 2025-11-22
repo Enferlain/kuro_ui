@@ -112,3 +112,45 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 - Verify all specific form inputs and their interactions with the backend.
 - Connect the frontend to the FastAPI backend (Python).
 
+
+---
+
+## Entry: November 23, 2025
+
+### 1. Dataset Node Overhaul
+- **Subsets Architecture**: Completely refactored the Dataset node to support multiple subsets, each with independent configurations.
+- **Dynamic UI**:
+    - **Add/Remove Subsets**: Users can dynamically add or remove subset cards.
+    - **Comprehensive Config**: Each subset supports its own paths (Image, Target, Masked), basic settings (Repeats, Keep Tokens), and toggles (Shuffle, Augments).
+    - **Optional Arguments**: Collapsible sections for advanced features like Face Crop, Caption Dropout, and Token Warmup.
+- **Cleanup**: Removed the global "Output Directory" field as it was deemed out of scope for the Dataset node.
+
+### 2. Manual View Controls
+- **Pin (Immunity)**: Replaced the "Eye" icon with a **Pin** icon.
+    - **Function**: Keeps a node expanded ("Detailed View") even when zoomed out far enough that it would normally collapse.
+- **Minimize (Force Card)**: Added a **Minimize** icon.
+    - **Function**: Forces a node into "Card View" (LOD view) regardless of zoom level.
+- **Refined Interaction**:
+    - **Mutual Exclusivity**: Pinning a node automatically un-minimizes it. Minimizing a node automatically un-pins it.
+    - **Peek Logic**: Clicking a minimized node "peeks" it (expands it temporarily). The Minimize button remains available to close the peek immediately.
+
+### 3. UI & UX Refinements
+- **Alignment Fixes**:
+    - **DataIsland**: Fixed alignment of the Trash icon (delete subset) and Folder icons within input fields to be pixel-perfect.
+- **Link Connections**: Fixed an issue where connection lines would point to the wrong location when a node was minimized. Links now correctly snap to the card's edges in minimized mode.
+- **Canvas Consistency**: Ensured `DataIsland` shares the exact same canvas behavior (drag, scroll, LOD) as `GeneralArgsIsland` and updated its default dimensions to match.
+
+### 4. Subset Card Interaction Refinements
+- **Editable Header**:
+    - **Direct Renaming**: Subset names are now directly editable within the card header.
+    - **Dynamic Sizing**: The name input field automatically adjusts its width to fit the text content.
+    - **Visual Cues**: Added a subtle "Pencil" icon that appears on hover to indicate editability.
+- **Improved Hitboxes**:
+    - **Unified Edit Zone**: Wrapped the name input and pencil icon in a larger, unified click target with extra padding.
+    - **Conflict Prevention**: Clicking the name/edit zone stops propagation, preventing accidental card collapse.
+    - **Header Toggle**: Clicking anywhere else on the header toggles the collapse/expand state.
+- **Focus Management**:
+    - **Click-Away Blur**: Clicking the canvas background now automatically blurs any active input field, improving the "deselect" experience.
+- **Layout Fixes**:
+    - **Header Height**: Used negative margins to ensure the larger click targets don't increase the visual height of the header.
+

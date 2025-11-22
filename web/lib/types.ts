@@ -4,8 +4,6 @@ import { LucideIcon } from 'lucide-react';
 export enum IslandId {
   GENERAL_ARGS = 'general_args',
   DATA = 'data',
-  MODEL = 'model',
-  TRAINING = 'training',
   OPTIMIZER = 'optimizer',
   OUTPUT = 'output'
 }
@@ -23,6 +21,50 @@ export interface IslandPosition {
 export interface IslandDimensions {
   width: number;
   height: number;
+}
+
+export interface SubsetConfig {
+  id: string;
+  name: string;
+
+  // Paths
+  imageDir: string;
+  targetImageDir: string;
+  maskedImageDir: string;
+
+  // Basic
+  numRepeats: number;
+  keepTokens: number;
+  captionExtension: string;
+  randomCropPadding: number;
+
+  // Toggles
+  shuffleCaptions: boolean;
+  flipAugment: boolean;
+  colorAugment: boolean;
+  randomCrop: boolean;
+  isRegImage: boolean;
+  isValImage: boolean;
+
+  // Optional Args - Face Crop
+  faceCrop: boolean;
+  augmentRangeWidth: number;
+  augmentRangeHeight: number;
+
+  // Optional Args - Caption Dropout
+  captionDropout: boolean;
+  captionDropoutRate: number;
+  captionDropoutRateViaEpoch: number;
+  tagDropoutRate: number;
+
+  // Optional Args - Token Warmup
+  tokenWarmup: boolean;
+  tokenWarmupMin: number;
+  tokenWarmupStep: number;
+
+  // Optional Args - Caption Shuffle
+  captionShuffleModifiers: boolean;
+  captionShuffleSigma: number;
 }
 
 export interface TrainingConfig {
@@ -70,8 +112,7 @@ export interface TrainingConfig {
   comment: string;
 
   // Data
-  imageDir: string;
-  regDir: string;
+  subsets: SubsetConfig[];
   outputDir: string;
 
   // Optimizer

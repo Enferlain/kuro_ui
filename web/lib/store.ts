@@ -7,6 +7,7 @@ interface Store extends UIState {
     isIslandDragging: boolean;
     viewportSize: { width: number, height: number };
     lodImmuneIslands: IslandId[];
+    minimizedIslands: IslandId[];
 
     // Actions
     setViewportSize: (width: number, height: number) => void;
@@ -18,6 +19,7 @@ interface Store extends UIState {
     setActiveIsland: (id: IslandId | null) => void;
     setIsIslandDragging: (isDragging: boolean) => void;
     toggleLodImmunity: (id: IslandId) => void;
+    toggleMinimize: (id: IslandId) => void;
     updateConfig: (partial: Partial<TrainingConfig>) => void;
     openGemini: (context: string) => void;
     closeGemini: () => void;
@@ -27,18 +29,14 @@ interface Store extends UIState {
 
 const DEFAULT_POSITIONS = {
     [IslandId.GENERAL_ARGS]: { x: 100, y: 400 },
-    [IslandId.MODEL]: { x: 600, y: 150 },
     [IslandId.DATA]: { x: 600, y: 500 },
-    [IslandId.TRAINING]: { x: 1100, y: 150 },
     [IslandId.OPTIMIZER]: { x: 1550, y: 150 },
     [IslandId.OUTPUT]: { x: 1900, y: 300 },
 };
 
 const DEFAULT_DIMENSIONS = {
     [IslandId.GENERAL_ARGS]: { width: 400, height: 600 },
-    [IslandId.DATA]: { width: 350, height: 250 },
-    [IslandId.MODEL]: { width: 350, height: 200 },
-    [IslandId.TRAINING]: { width: 400, height: 300 },
+    [IslandId.DATA]: { width: 400, height: 500 },
     [IslandId.OPTIMIZER]: { width: 380, height: 350 },
     [IslandId.OUTPUT]: { width: 300, height: 200 },
 };
@@ -105,8 +103,7 @@ export const useStore = create<Store>()(
                 comment: '',
 
                 // Data
-                imageDir: '/content/train/images',
-                regDir: '/content/train/reg',
+                subsets: [],
                 outputDir: '/content/output',
 
                 // Optimizer
@@ -123,6 +120,7 @@ export const useStore = create<Store>()(
             viewportSize: { width: 1920, height: 1080 }, // Default to 1080p until hydrated/resized
             setViewportSize: (width, height) => set({ viewportSize: { width, height } }),
             lodImmuneIslands: [],
+            minimizedIslands: [],
 
             setTranslation: (x, y) => set({ translation: { x, y } }),
             setScale: (s) => set({ scale: s }),
@@ -149,6 +147,14 @@ export const useStore = create<Store>()(
                         : [...state.lodImmuneIslands, id]
                 };
             }),
+            toggleMinimize: (id) => set((state) => {
+                const isMinimized = state.minimizedIslands.includes(id);
+                return {
+                    minimizedIslands: isMinimized
+                        ? state.minimizedIslands.filter((i) => i !== id)
+                        : [...state.minimizedIslands, id]
+                };
+            }),
             updateConfig: (partial) => set((state) => ({ config: { ...state.config, ...partial } })),
             openGemini: (context) => set({ geminiContext: context, isGeminiOpen: true }),
             closeGemini: () => set({ isGeminiOpen: false, geminiContext: null }),
@@ -169,6 +175,7 @@ export const useStore = create<Store>()(
                 islandPositions: state.islandPositions,
                 islandDimensions: state.islandDimensions,
                 lodImmuneIslands: state.lodImmuneIslands,
+                minimizedIslands: state.minimizedIslands,
                 config: state.config,
             }),
         }

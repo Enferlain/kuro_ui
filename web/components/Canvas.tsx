@@ -207,6 +207,11 @@ export const Canvas: React.FC = () => {
     };
 
     const handlePointerDown = (e: React.PointerEvent) => {
+        // Blur any active input when clicking the canvas
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+
         setActiveIsland(null);
 
         setIsDragging(true);
@@ -302,6 +307,8 @@ export const Canvas: React.FC = () => {
         setTransform(newTx, newTy, newScale);
     };
 
+    const minimizedIslands = useStore(state => state.minimizedIslands);
+
     // Helper to get connection handles (Left and Right edges)
     const getOutputHandle = (id: IslandId) => {
         const pos = islandPositions[id];
@@ -314,13 +321,15 @@ export const Canvas: React.FC = () => {
 
         const isActive = id === activeIsland;
         const isImmune = lodImmuneIslands.includes(id);
+        const isMinimized = minimizedIslands.includes(id);
 
         const { isZoomedOut: isIslandLOD } = calculateLodState({
             scale,
             viewportSize,
             dimensions: dim,
             isActive,
-            isImmune
+            isImmune,
+            isMinimized
         });
 
         if (isIslandLOD) {
@@ -344,13 +353,15 @@ export const Canvas: React.FC = () => {
 
         const isActive = id === activeIsland;
         const isImmune = lodImmuneIslands.includes(id);
+        const isMinimized = minimizedIslands.includes(id);
 
         const { isZoomedOut: isIslandLOD } = calculateLodState({
             scale,
             viewportSize,
             dimensions: dim,
             isActive,
-            isImmune
+            isImmune,
+            isMinimized
         });
 
         if (isIslandLOD) {
