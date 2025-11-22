@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { TrainingConfig, UIState, IslandId } from './types';
 
 interface Store extends UIState {
@@ -42,118 +43,134 @@ const DEFAULT_DIMENSIONS = {
     [IslandId.OUTPUT]: { width: 300, height: 200 },
 };
 
-export const useStore = create<Store>((set) => ({
-    // Initial UI State
-    scale: 0.8, // Zoom out a bit to fit the larger graph
-    translation: { x: 0, y: 0 },
-    activeIsland: null,
-    geminiContext: null,
-    isGeminiOpen: false,
-    isIslandDragging: false,
-    highlightedField: null,
+export const useStore = create<Store>()(
+    persist(
+        (set) => ({
+            // Initial UI State
+            scale: 0.8, // Zoom out a bit to fit the larger graph
+            translation: { x: 0, y: 0 },
+            activeIsland: null,
+            geminiContext: null,
+            isGeminiOpen: false,
+            isIslandDragging: false,
+            highlightedField: null,
 
-    // Initial Positions
-    islandPositions: { ...DEFAULT_POSITIONS },
-    islandDimensions: { ...DEFAULT_DIMENSIONS },
+            // Initial Positions
+            islandPositions: { ...DEFAULT_POSITIONS },
+            islandDimensions: { ...DEFAULT_DIMENSIONS },
 
-    // Initial Config State
-    config: {
-        // Global
-        trainMode: 'lora',
+            // Initial Config State
+            config: {
+                // Global
+                trainMode: 'lora',
 
-        // Base Args
-        seed: 23,
-        clipSkip: 2,
-        priorLossWeight: 1.0,
-        maxDataLoaderWorkers: 1,
-        cacheLatents: true,
-        cacheLatentsToDisk: false,
-        useXformers: false,
-        useSdpa: true,
+                // Base Args
+                seed: 23,
+                clipSkip: 2,
+                priorLossWeight: 1.0,
+                maxDataLoaderWorkers: 1,
+                cacheLatents: true,
+                cacheLatentsToDisk: false,
+                useXformers: false,
+                useSdpa: true,
 
-        // Resolution
-        width: 512,
-        height: 512,
+                // Resolution
+                width: 512,
+                height: 512,
 
-        // Training
-        batchSize: 1,
-        maxTokenLength: '225',
-        mixedPrecision: 'fp16',
-        maxTrainTimeType: 'epochs',
-        maxTrainTimeValue: 10,
-        keepTokensSeparator: '',
-        gradientAccumulation: 1,
-        gradientCheckpointing: true,
+                // Training
+                batchSize: 1,
+                maxTokenLength: '225',
+                mixedPrecision: 'fp16',
+                maxTrainTimeType: 'epochs',
+                maxTrainTimeValue: 10,
+                keepTokensSeparator: '',
+                gradientAccumulation: 1,
+                gradientCheckpointing: true,
 
-        // Model
-        baseModelPath: 'runwayml/stable-diffusion-v1-5',
-        modelType: 'sd15',
-        v_parameterization: false,
-        scaleVPredLoss: false,
-        debiasedEstimationLoss: false,
-        fullFp16: false,
-        fullBf16: false,
-        fp8Base: false,
-        noHalfVae: false,
-        lowRam: false,
-        highVram: false,
-        vaePath: '',
-        vaePaddingMode: 'zeros',
-        comment: '',
+                // Model
+                baseModelPath: 'runwayml/stable-diffusion-v1-5',
+                modelType: 'sd15',
+                v_parameterization: false,
+                scaleVPredLoss: false,
+                debiasedEstimationLoss: false,
+                fullFp16: false,
+                fullBf16: false,
+                fp8Base: false,
+                noHalfVae: false,
+                lowRam: false,
+                highVram: false,
+                vaePath: '',
+                vaePaddingMode: 'zeros',
+                comment: '',
 
-        // Data
-        imageDir: '/content/train/images',
-        regDir: '/content/train/reg',
-        outputDir: '/content/output',
+                // Data
+                imageDir: '/content/train/images',
+                regDir: '/content/train/reg',
+                outputDir: '/content/output',
 
-        // Optimizer
-        learningRate: 0.0001,
-        unetLr: 0.0001,
-        textEncoderLr: 0.00005,
-        optimizerType: 'AdamW8bit',
-        lrScheduler: 'cosine',
-        networkDim: 32,
-        networkAlpha: 16,
-    },
+                // Optimizer
+                learningRate: 0.0001,
+                unetLr: 0.0001,
+                textEncoderLr: 0.00005,
+                optimizerType: 'AdamW8bit',
+                lrScheduler: 'cosine',
+                networkDim: 32,
+                networkAlpha: 16,
+            },
 
-    // Viewport State
-    viewportSize: { width: 1920, height: 1080 }, // Default to 1080p until hydrated/resized
-    setViewportSize: (width, height) => set({ viewportSize: { width, height } }),
-    lodImmuneIslands: [],
+            // Viewport State
+            viewportSize: { width: 1920, height: 1080 }, // Default to 1080p until hydrated/resized
+            setViewportSize: (width, height) => set({ viewportSize: { width, height } }),
+            lodImmuneIslands: [],
 
-    setTranslation: (x, y) => set({ translation: { x, y } }),
-    setScale: (s) => set({ scale: s }),
-    setTransform: (x, y, scale) => set({ translation: { x, y }, scale }),
-    moveIsland: (id, x, y) => set((state) => ({
-        islandPositions: {
-            ...state.islandPositions,
-            [id]: { x, y }
+            setTranslation: (x, y) => set({ translation: { x, y } }),
+            setScale: (s) => set({ scale: s }),
+            setTransform: (x, y, scale) => set({ translation: { x, y }, scale }),
+            moveIsland: (id, x, y) => set((state) => ({
+                islandPositions: {
+                    ...state.islandPositions,
+                    [id]: { x, y }
+                }
+            })),
+            resizeIsland: (id, width, height) => set((state) => ({
+                islandDimensions: {
+                    ...state.islandDimensions,
+                    [id]: { width, height }
+                }
+            })),
+            setActiveIsland: (id) => set({ activeIsland: id }),
+            setIsIslandDragging: (isDragging) => set({ isIslandDragging: isDragging }),
+            toggleLodImmunity: (id) => set((state) => {
+                const isImmune = state.lodImmuneIslands.includes(id);
+                return {
+                    lodImmuneIslands: isImmune
+                        ? state.lodImmuneIslands.filter((i) => i !== id)
+                        : [...state.lodImmuneIslands, id]
+                };
+            }),
+            updateConfig: (partial) => set((state) => ({ config: { ...state.config, ...partial } })),
+            openGemini: (context) => set({ geminiContext: context, isGeminiOpen: true }),
+            closeGemini: () => set({ isGeminiOpen: false, geminiContext: null }),
+            resetLayout: () => set({
+                islandPositions: { ...DEFAULT_POSITIONS },
+                islandDimensions: { ...DEFAULT_DIMENSIONS },
+                translation: { x: 0, y: 0 },
+                scale: 0.8
+            }),
+            setHighlightedField: (fieldId) => set({ highlightedField: fieldId }),
+        }),
+        {
+            name: 'kuro-canvas-storage',
+            // Only persist canvas state, not transient UI state
+            partialize: (state) => ({
+                translation: state.translation,
+                scale: state.scale,
+                islandPositions: state.islandPositions,
+                islandDimensions: state.islandDimensions,
+                lodImmuneIslands: state.lodImmuneIslands,
+                config: state.config,
+            }),
         }
-    })),
-    resizeIsland: (id, width, height) => set((state) => ({
-        islandDimensions: {
-            ...state.islandDimensions,
-            [id]: { width, height }
-        }
-    })),
-    setActiveIsland: (id) => set({ activeIsland: id }),
-    setIsIslandDragging: (isDragging) => set({ isIslandDragging: isDragging }),
-    toggleLodImmunity: (id) => set((state) => {
-        const isImmune = state.lodImmuneIslands.includes(id);
-        return {
-            lodImmuneIslands: isImmune
-                ? state.lodImmuneIslands.filter((i) => i !== id)
-                : [...state.lodImmuneIslands, id]
-        };
-    }),
-    updateConfig: (partial) => set((state) => ({ config: { ...state.config, ...partial } })),
-    openGemini: (context) => set({ geminiContext: context, isGeminiOpen: true }),
-    closeGemini: () => set({ isGeminiOpen: false, geminiContext: null }),
-    resetLayout: () => set({
-        islandPositions: { ...DEFAULT_POSITIONS },
-        islandDimensions: { ...DEFAULT_DIMENSIONS },
-        translation: { x: 0, y: 0 },
-        scale: 0.8
-    }),
-    setHighlightedField: (fieldId) => set({ highlightedField: fieldId }),
-}));
+    )
+);
