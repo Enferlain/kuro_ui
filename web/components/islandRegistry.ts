@@ -5,14 +5,14 @@ import { DataIsland } from './islands/DataIsland';
 import { ModelIsland } from './islands/ModelIsland';
 import { TrainingIsland } from './islands/TrainingIsland';
 import { OptimizerIsland } from './islands/OptimizerIsland';
-import { BaseArgsIsland } from './islands/BaseArgsIsland';
+import { GeneralArgsIsland } from './islands/GeneralArgsIsland';
 
 export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
-    [IslandId.BASE_ARGS]: {
-        id: IslandId.BASE_ARGS,
-        title: 'Base Arguments',
+    [IslandId.GENERAL_ARGS]: {
+        id: IslandId.GENERAL_ARGS,
+        title: 'General Arguments',
         icon: Sliders,
-        component: BaseArgsIsland
+        component: GeneralArgsIsland
     },
     [IslandId.DATA]: {
         id: IslandId.DATA,
@@ -41,7 +41,7 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
 };
 
 export const GRAPH_EDGES: GraphEdge[] = [
-    { source: IslandId.BASE_ARGS, target: IslandId.MODEL },
+    { source: IslandId.GENERAL_ARGS, target: IslandId.MODEL },
     { source: IslandId.MODEL, target: IslandId.DATA },
     { source: IslandId.DATA, target: IslandId.TRAINING },
     { source: IslandId.TRAINING, target: IslandId.OPTIMIZER },
@@ -54,24 +54,40 @@ export interface SearchItem {
 }
 
 export const SEARCH_INDEX: SearchItem[] = [
-    // Base Args
-    { id: 'seed', label: 'Seed', islandId: IslandId.BASE_ARGS },
-    { id: 'clip_skip', label: 'Clip Skip', islandId: IslandId.BASE_ARGS },
-    { id: 'loss_weight', label: 'Prior Loss Weight', islandId: IslandId.BASE_ARGS },
-    { id: 'max_data_loader_n_workers', label: 'Max Data Loader Workers', islandId: IslandId.BASE_ARGS },
-    { id: 'cache_latents', label: 'Cache Latents', islandId: IslandId.BASE_ARGS },
-    { id: 'cache_latents_to_disk', label: 'Cache Latents To Disk', islandId: IslandId.BASE_ARGS },
-    { id: 'xformers_enable', label: 'Xformers', islandId: IslandId.BASE_ARGS },
-    { id: 'sdpa_enable', label: 'SDPA', islandId: IslandId.BASE_ARGS },
-    { id: 'max_token_length', label: 'Max Token Length', islandId: IslandId.BASE_ARGS },
-    { id: 'keep_tokens_separator', label: 'Keep Tokens Separator', islandId: IslandId.BASE_ARGS },
-    { id: 'grad_accumulation', label: 'Gradient Accumulation', islandId: IslandId.BASE_ARGS },
-    { id: 'low_ram', label: 'Low RAM', islandId: IslandId.BASE_ARGS },
-    { id: 'high_vram', label: 'High VRAM', islandId: IslandId.BASE_ARGS },
-    { id: 'no_half_vae', label: 'No Half VAE', islandId: IslandId.BASE_ARGS },
-    { id: 'vae_path', label: 'VAE Path', islandId: IslandId.BASE_ARGS },
-    { id: 'vae_padding_mode', label: 'VAE Padding Mode', islandId: IslandId.BASE_ARGS },
-    { id: 'comment', label: 'Metadata Comment', islandId: IslandId.BASE_ARGS },
+    // General Args
+    { id: 'seed', label: 'Seed', islandId: IslandId.GENERAL_ARGS },
+    { id: 'clip_skip', label: 'Clip Skip', islandId: IslandId.GENERAL_ARGS },
+    { id: 'loss_weight', label: 'Prior Loss Weight', islandId: IslandId.GENERAL_ARGS },
+    { id: 'max_data_loader_n_workers', label: 'Max Data Loader Workers', islandId: IslandId.GENERAL_ARGS },
+    { id: 'cache_latents', label: 'Cache Latents', islandId: IslandId.GENERAL_ARGS },
+    { id: 'cache_latents_to_disk', label: 'Cache Latents To Disk', islandId: IslandId.GENERAL_ARGS },
+    { id: 'xformers_enable', label: 'Xformers', islandId: IslandId.GENERAL_ARGS },
+    { id: 'sdpa_enable', label: 'SDPA', islandId: IslandId.GENERAL_ARGS },
+    { id: 'width', label: 'Width', islandId: IslandId.GENERAL_ARGS },
+    { id: 'height', label: 'Height', islandId: IslandId.GENERAL_ARGS },
+    { id: 'batch_size', label: 'Batch Size', islandId: IslandId.GENERAL_ARGS },
+    { id: 'max_token_length', label: 'Max Token Length', islandId: IslandId.GENERAL_ARGS },
+    { id: 'mixed_precision', label: 'Training Precision', islandId: IslandId.GENERAL_ARGS },
+    { id: 'max_train_time_type', label: 'Max Training Time Type', islandId: IslandId.GENERAL_ARGS },
+    { id: 'max_train_time_value', label: 'Max Training Time Value', islandId: IslandId.GENERAL_ARGS },
+    { id: 'keep_tokens_separator', label: 'Keep Tokens Separator', islandId: IslandId.GENERAL_ARGS },
+    { id: 'grad_accumulation_steps', label: 'Gradient Accumulation Steps', islandId: IslandId.GENERAL_ARGS },
+    { id: 'grad_checkpointing', label: 'Gradient Checkpointing', islandId: IslandId.GENERAL_ARGS },
+    { id: 'base_model', label: 'Base Model', islandId: IslandId.GENERAL_ARGS },
+    { id: 'v_param', label: 'V Param', islandId: IslandId.GENERAL_ARGS },
+    { id: 'scale_v_pred_loss', label: 'Scale V Pred Loss', islandId: IslandId.GENERAL_ARGS },
+    { id: 'full_fp16', label: 'Full FP16', islandId: IslandId.GENERAL_ARGS },
+    { id: 'full_bf16', label: 'Full BF16', islandId: IslandId.GENERAL_ARGS },
+    { id: 'fp8_base', label: 'FP8 Base', islandId: IslandId.GENERAL_ARGS },
+    { id: 'debiased_estimation', label: 'Debiased Estimation', islandId: IslandId.GENERAL_ARGS },
+    { id: 'v2_enable', label: 'SD2.X Based', islandId: IslandId.GENERAL_ARGS },
+    { id: 'sdxl_enable', label: 'SDXL Based', islandId: IslandId.GENERAL_ARGS },
+    { id: 'no_half_vae', label: 'No Half VAE', islandId: IslandId.GENERAL_ARGS },
+    { id: 'low_ram', label: 'Low RAM', islandId: IslandId.GENERAL_ARGS },
+    { id: 'high_vram', label: 'High VRAM', islandId: IslandId.GENERAL_ARGS },
+    { id: 'vae_path', label: 'External VAE', islandId: IslandId.GENERAL_ARGS },
+    { id: 'vae_padding_mode', label: 'VAE Padding Mode', islandId: IslandId.GENERAL_ARGS },
+    { id: 'comment', label: 'Comment', islandId: IslandId.GENERAL_ARGS },
 
     // Data Island
     { id: 'image_directory', label: 'Image Directory', islandId: IslandId.DATA },

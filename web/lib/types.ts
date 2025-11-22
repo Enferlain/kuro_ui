@@ -2,7 +2,7 @@
 import { LucideIcon } from 'lucide-react';
 
 export enum IslandId {
-  BASE_ARGS = 'base_args',
+  GENERAL_ARGS = 'general_args',
   DATA = 'data',
   MODEL = 'model',
   TRAINING = 'training',
@@ -38,9 +38,25 @@ export interface TrainingConfig {
   cacheLatentsToDisk: boolean;
   useXformers: boolean;
   useSdpa: boolean;
+
+  // Resolution
+  width: number;
+  height: number;
+
+  // Training
+  batchSize: number;
   maxTokenLength: '75' | '150' | '225';
+  mixedPrecision: 'no' | 'fp16' | 'bf16';
+  maxTrainTimeType: 'epochs' | 'steps';
+  maxTrainTimeValue: number;
   keepTokensSeparator: string;
   gradientAccumulation: number;
+  gradientCheckpointing: boolean;
+
+  // Model
+  baseModelPath: string; // Replaces pretrainedModelPath
+  modelType: 'sd15' | 'sdxl' | 'sd2';
+  v_parameterization: boolean;
   scaleVPredLoss: boolean;
   debiasedEstimationLoss: boolean;
   fullFp16: boolean;
@@ -53,24 +69,11 @@ export interface TrainingConfig {
   vaePaddingMode: 'zeros' | 'reflect' | 'replicate' | 'circular';
   comment: string;
 
-  // Model
-  pretrainedModelPath: string;
-  modelType: 'sd15' | 'sdxl' | 'sd2';
-  v_parameterization: boolean;
-  
   // Data
   imageDir: string;
   regDir: string;
   outputDir: string;
-  
-  // Training
-  resolution: number;
-  batchSize: number;
-  maxTrainEpochs: number;
-  saveEveryNEpochs: number;
-  mixedPrecision: 'no' | 'fp16' | 'bf16';
-  gradientCheckpointing: boolean;
-  
+
   // Optimizer
   learningRate: number;
   unetLr: number;

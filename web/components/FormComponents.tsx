@@ -67,11 +67,11 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
     options: { value: string; label: string }[];
 }
 
-export const Select: React.FC<SelectProps> = ({ label, name, options, ...props }) => {
+export const Select: React.FC<SelectProps> = ({ label, name, options, className = '', ...props }) => {
     return (
         <FieldWrapper label={label} id={name}>
             <select
-                className="bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all appearance-none font-mono w-full"
+                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all appearance-none font-mono w-full ${className}`}
                 {...props}
             >
                 {options.map(opt => (
@@ -98,5 +98,38 @@ export const Checkbox: React.FC<CheckboxProps> = ({ label, name, className = '',
             />
             <label htmlFor={name} className="text-sm text-[#948FB2] select-none cursor-pointer font-mono">{label}</label>
         </div>
+    );
+};
+
+interface ToggleProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    label?: string;
+    name: string;
+}
+
+export const Toggle: React.FC<ToggleProps> = ({ label, name, className = '', ...props }) => {
+    return (
+        <div className={`flex items-center gap-3 ${className}`}>
+            <label htmlFor={name} className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" id={name} className="sr-only peer" {...props} />
+                <div className="w-9 h-5 bg-[#2A273F] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#948FB2] after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-violet-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+            </label>
+            {label && <span className="text-sm text-[#948FB2] select-none cursor-pointer font-mono" onClick={() => document.getElementById(name)?.click()}>{label}</span>}
+        </div>
+    );
+};
+
+interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+    label: string;
+    name: string;
+}
+
+export const TextArea: React.FC<TextAreaProps> = ({ label, name, className = '', ...props }) => {
+    return (
+        <FieldWrapper label={label} id={name}>
+            <textarea
+                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all font-mono w-full min-h-[100px] resize-y ${className}`}
+                {...props}
+            />
+        </FieldWrapper>
     );
 };

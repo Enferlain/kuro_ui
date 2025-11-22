@@ -21,7 +21,7 @@ interface Store extends UIState {
 }
 
 const DEFAULT_POSITIONS = {
-    [IslandId.BASE_ARGS]: { x: 100, y: 400 },
+    [IslandId.GENERAL_ARGS]: { x: 100, y: 400 },
     [IslandId.MODEL]: { x: 600, y: 150 },
     [IslandId.DATA]: { x: 600, y: 500 },
     [IslandId.TRAINING]: { x: 1100, y: 150 },
@@ -30,7 +30,7 @@ const DEFAULT_POSITIONS = {
 };
 
 const DEFAULT_DIMENSIONS = {
-    [IslandId.BASE_ARGS]: { width: 400, height: 600 },
+    [IslandId.GENERAL_ARGS]: { width: 400, height: 600 },
     [IslandId.DATA]: { width: 350, height: 250 },
     [IslandId.MODEL]: { width: 350, height: 200 },
     [IslandId.TRAINING]: { width: 400, height: 300 },
@@ -66,9 +66,25 @@ export const useStore = create<Store>((set) => ({
         cacheLatentsToDisk: false,
         useXformers: false,
         useSdpa: true,
+
+        // Resolution
+        width: 512,
+        height: 512,
+
+        // Training
+        batchSize: 1,
         maxTokenLength: '225',
-        keepTokensSeparator: '|||',
+        mixedPrecision: 'fp16',
+        maxTrainTimeType: 'epochs',
+        maxTrainTimeValue: 10,
+        keepTokensSeparator: '',
         gradientAccumulation: 1,
+        gradientCheckpointing: true,
+
+        // Model
+        baseModelPath: 'runwayml/stable-diffusion-v1-5',
+        modelType: 'sd15',
+        v_parameterization: false,
         scaleVPredLoss: false,
         debiasedEstimationLoss: false,
         fullFp16: false,
@@ -81,23 +97,10 @@ export const useStore = create<Store>((set) => ({
         vaePaddingMode: 'zeros',
         comment: '',
 
-        // Model
-        pretrainedModelPath: 'runwayml/stable-diffusion-v1-5',
-        modelType: 'sd15',
-        v_parameterization: false,
-
         // Data
         imageDir: '/content/train/images',
         regDir: '/content/train/reg',
         outputDir: '/content/output',
-
-        // Training
-        resolution: 512,
-        batchSize: 1,
-        maxTrainEpochs: 10,
-        saveEveryNEpochs: 2,
-        mixedPrecision: 'fp16',
-        gradientCheckpointing: true,
 
         // Optimizer
         learningRate: 0.0001,

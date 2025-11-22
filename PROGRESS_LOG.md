@@ -27,7 +27,14 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
     - Implemented a search popup (Ctrl+K or button).
     - Clicking a result now **zooms** to the specific island AND **scrolls** the target field into view.
     - Added a visual highlight (violet ring) to the found field.
-- **Performance**: Verified build success (`npm run build`) and optimized component re-renders.
+
+### 4. Performance Optimization
+- **Issue**: Addressed FPS drops (mid 100s) when zooming and dragging panels.
+- **Fixes**:
+    - **Connection Lines**: Removed per-frame store subscriptions; lines now only update when crossing LOD thresholds.
+    - **Canvas Rendering**: Memoized `Island` components to prevent full re-renders of all islands during drag operations.
+    - **Store Selectors**: Optimized `Canvas` state selection to reduce unnecessary updates.
+- **Result**: Restored smooth performance (200+ FPS) during complex interactions.
 
 ## Next Steps
 - Verify all specific form inputs and their interactions with the backend.
