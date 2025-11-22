@@ -6,6 +6,7 @@ import { useStore } from '../lib/store';
 import { IslandId } from '../lib/types';
 import { LucideIcon, Scaling } from 'lucide-react';
 import { useIslandLOD } from '../hooks/useIslandLOD';
+import { pushIslandsOnDrag, pushIslandsOnResize } from '../lib/collision';
 
 interface IslandProps {
     id: IslandId;
@@ -31,6 +32,8 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
     const setIsIslandDragging = useStore((state) => state.setIsIslandDragging);
     const lodImmuneIslands = useStore((state) => state.lodImmuneIslands);
     const toggleLodImmunity = useStore((state) => state.toggleLodImmunity);
+    const allPositions = useStore((state) => state.islandPositions);
+    const allDimensions = useStore((state) => state.islandDimensions);
 
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
@@ -78,7 +81,35 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
             if (hasMoved) {
                 const dx = rawDx / currentScale;
                 const dy = rawDy / currentScale;
-                moveIsland(id, startIslandX + dx, startIslandY + dy);
+                const desiredX = startIslandX + dx;
+                const desiredY = startIslandY + dy;
+
+                // Move the dragged island
+                moveIsland(id, desiredX, desiredY);
+
+                // Calculate actual visual dimensions for collision (accounting for LOD)
+                const visualWidth = isZoomedOut ? LOD_WIDTH : currentWidth;
+                const visualHeight = isZoomedOut ? LOD_HEIGHT : currentHeight;
+                // Adjust position for LOD centering
+                const visualX = isZoomedOut ? desiredX + xOffset : desiredX;
+                const visualY = isZoomedOut ? desiredY + yOffset : desiredY;
+
+                // Push other islands out of the way
+                pushIslandsOnDrag(
+                    id,
+                    visualX,
+                    visualY,
+                    visualWidth,
+                    visualHeight,
+                    allPositions,
+                    allDimensions,
+                    (pushedId, newX, newY) => {
+                        // Use the store's moveIsland to update pushed islands
+                        useStore.getState().moveIsland(pushedId, newX, newY);
+                    },
+                    scale, // Pass current scale for LOD calculation
+                    lodImmuneIslands // Pass LOD immunity list
+                );
             }
         };
 
@@ -116,10 +147,26 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
             const rawDx = moveEvent.clientX - startMouseX;
             const rawDy = moveEvent.clientY - startMouseY;
 
-            const newWidth = Math.max(250, startWidth + (rawDx / currentScale));
-            const newHeight = Math.max(200, startHeight + (rawDy / currentScale));
+            const desiredWidth = Math.max(250, startWidth + (rawDx / currentScale));
+            const desiredHeight = Math.max(200, startHeight + (rawDy / currentScale));
 
-            resizeIsland(id, newWidth, newHeight);
+            // Resize the island
+            resizeIsland(id, desiredWidth, desiredHeight);
+
+            // Push other islands out of the way
+            pushIslandsOnResize(
+                id,
+                position.x,
+                position.y,
+                desiredWidth,
+                desiredHeight,
+                allPositions,
+                allDimensions,
+                (pushedId, newX, newY) => {
+                    // Use the store's moveIsland to update pushed islands
+                    useStore.getState().moveIsland(pushedId, newX, newY);
+                }
+            );
         };
 
         const handleResizeUp = () => {

@@ -81,6 +81,34 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
   - Created consistent UX pattern: all Query Intelligence icons now appear with `gap-1.5` spacing after their labels
   - Users can click category help icons to get AI explanations for all flags in that category
 
+### 4. Canvas State Persistence
+- **localStorage Integration**: Implemented Zustand persist middleware to save and restore canvas state between sessions.
+- **Persisted State**: The following canvas/UI states now persist automatically:
+  - Canvas position (`translation`)
+  - Zoom level (`scale`)
+  - Island positions (`islandPositions`)
+  - Island dimensions (`islandDimensions`) - manual panel resizing
+  - Content scale within panels
+  - LOD immunity status (`lodImmuneIslands`) - which panels are locked from collapsing
+  - All configuration values (`config`)
+- **Storage Key**: `kuro-canvas-storage` in browser localStorage
+- **Reset Functionality**: Existing "Reset Layout" button (LayoutGrid icon) properly clears saved state and restores defaults
+
+### 5. Dynamic Collision Detection System
+- **Problem Solved**: Islands could overlap freely on the infinite canvas, creating visual clutter and confusion.
+- **Implementation**: Created `web/lib/collision.ts` with physics-like collision handling:
+  - **`pushIslandsOnDrag()`**: When dragging an island, other islands are dynamically pushed out of the way
+  - **`pushIslandsOnResize()`**: When resizing an island, nearby islands are pushed to make room
+  - **Push Direction**: Intelligent direction detection (horizontal or vertical) based on island centers
+  - **Chain Reactions**: Islands can push multiple others in sequence (up to 5 iterations to prevent infinite loops)
+  - **Padding**: Maintains 20px visual breathing room between islands
+- **LOD Awareness**: 
+  - Collision detection respects visual boundaries (card mode vs expanded mode)
+  - Islands in LOD (card) mode have smaller collision boundaries matching their visual size
+  - **LOD Immunity Support**: Locked islands maintain full collision boundaries even when zoomed out
+- **User Experience**: No restrictions on movement - islands smoothly slide out of the way, creating a fluid, physics-like interaction on the infinite canvas
+
 ## Next Steps
 - Verify all specific form inputs and their interactions with the backend.
 - Connect the frontend to the FastAPI backend (Python).
+
