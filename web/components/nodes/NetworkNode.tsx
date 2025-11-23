@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../lib/store';
 import { Input, Select, FieldWrapper } from '../FormComponents';
+import { NodeSeparator, NodeHeader } from '../NodeStyles';
 import { Plus, Trash2 } from 'lucide-react';
 
 export const NetworkNode: React.FC = () => {
@@ -86,7 +87,7 @@ export const NetworkNode: React.FC = () => {
                             placeholder="Path to preset file..."
                         />
 
-                        <div className="h-px bg-[#2A273F]" />
+                        <NodeSeparator />
 
                         <div className="grid grid-cols-2 gap-3">
                             <Input
@@ -122,7 +123,7 @@ export const NetworkNode: React.FC = () => {
                             />
                         </div>
 
-                        <div className="h-px bg-[#2A273F]" />
+                        <NodeSeparator />
                     </div>
                 )}
 
@@ -134,16 +135,18 @@ export const NetworkNode: React.FC = () => {
 
                 {activeTab === 'args' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Network Arguments</h3>
-                            <button
-                                onClick={addNetworkArg}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-[#2A273F] hover:bg-violet-600 text-[#948FB2] hover:text-white rounded text-xs font-medium transition-colors"
-                            >
-                                <Plus className="w-3 h-3" />
-                                Add Arg
-                            </button>
-                        </div>
+                        <NodeHeader
+                            title="Network Arguments"
+                            action={
+                                <button
+                                    onClick={addNetworkArg}
+                                    className="flex items-center gap-1.5 px-2 py-1 bg-[#2A273F] hover:bg-violet-600 text-[#948FB2] hover:text-white rounded text-xs font-medium transition-colors"
+                                >
+                                    <Plus className="w-3 h-3" />
+                                    Add Arg
+                                </button>
+                            }
+                        />
 
                         <div className="space-y-2">
                             {(config.networkArgs || []).length === 0 ? (

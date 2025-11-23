@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '../../lib/store';
 import { Input, Select, Toggle, TextArea, FieldWrapper } from '../FormComponents';
+import { NodeSeparator, NodeHeader } from '../NodeStyles';
 import { HelpCircle } from 'lucide-react';
 
 export const GeneralArgsNode: React.FC = () => {
@@ -10,7 +11,7 @@ export const GeneralArgsNode: React.FC = () => {
         <div className="space-y-5">
             {/* Section 1: Model Configuration */}
             <div className="space-y-3">
-                <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Model Configuration</h3>
+                <NodeHeader title="Model Configuration" />
                 <Input
                     label="Base Model"
                     name="base_model"
@@ -37,9 +38,13 @@ export const GeneralArgsNode: React.FC = () => {
                         { value: 'circular', label: 'circular' },
                     ]}
                 />
+            </div>
 
+            <NodeSeparator />
+
+            <div className="space-y-3">
                 {/* Flags */}
-                <h4 className="text-xs font-semibold text-[#7B77A0] uppercase tracking-wide pt-2">Flags</h4>
+                <NodeHeader title="Flags" />
 
                 {/* Model */}
                 <div className="space-y-2">
@@ -212,11 +217,13 @@ export const GeneralArgsNode: React.FC = () => {
                 </div>
             </div>
 
-            <div className="h-px bg-[#2A273F]" />
+
+
+            <NodeSeparator />
 
             {/* Section 2: Training Parameters - 3x3 Grid */}
             <div className="space-y-3">
-                <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Training Parameters</h3>
+                <NodeHeader title="Training Parameters" />
                 <div className="grid grid-cols-3 gap-3">
                     <Input
                         label="Seed"
@@ -321,13 +328,13 @@ export const GeneralArgsNode: React.FC = () => {
                 </div>
             </div>
 
-            <div className="h-px bg-[#2A273F]" />
+            <NodeSeparator />
 
             {/* Section 3: Resolution & Gradient */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Resolution */}
                 <div className="space-y-3">
-                    <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Resolution</h3>
+                    <NodeHeader title="Resolution" />
                     <div className="flex flex-col gap-3">
                         <Input
                             label="Width"
@@ -348,7 +355,7 @@ export const GeneralArgsNode: React.FC = () => {
 
                 {/* Gradient */}
                 <div className="space-y-3">
-                    <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Gradient</h3>
+                    <NodeHeader title="Gradient" />
                     <div className="flex flex-col gap-3">
                         <FieldWrapper label="Gradient Checkpointing" id="grad_checkpointing">
                             <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm px-3">
@@ -382,13 +389,13 @@ export const GeneralArgsNode: React.FC = () => {
                 </div>
             </div>
 
-            <div className="h-px bg-[#2A273F]" />
+            <NodeSeparator />
 
             {/* Section 4: Bucketing */}
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Bucketing</h3>
+                        <NodeHeader title="Bucketing" />
                         <Toggle
                             name="enable_bucket"
                             checked={config.enableBucket}
@@ -433,7 +440,7 @@ export const GeneralArgsNode: React.FC = () => {
                 </div>
             </div>
 
-            <div className="h-px bg-[#2A273F]" />
+            <NodeSeparator />
 
             {/* Section 5: Metadata */}
             <div>
@@ -446,6 +453,6 @@ export const GeneralArgsNode: React.FC = () => {
                     className="min-h-[80px]"
                 />
             </div>
-        </div>
+        </div >
     );
 };

@@ -137,7 +137,7 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 ### 3. UI & UX Refinements
 - **Alignment Fixes**:
     - **DataNode**: Fixed alignment of the Trash icon (delete subset) and Folder icons within input fields to be pixel-perfect.
-- **Link Connections**: Fixed an issue where connection lines would point to the wrong location when a node was minimized. Links now correctly snap to the card's edges in minimized mode.
+- **Link Connections**: Fixed an issue where connection lines would point to the wrong location when a node is minimized. Links now correctly snap to the card's edges in minimized mode.
 - **Canvas Consistency**: Ensured `DataNode` shares the exact same canvas behavior (drag, scroll, LOD) as `GeneralArgsNode` and updated its default dimensions to match.
 
 ### 4. Subset Card Interaction Refinements
@@ -153,7 +153,6 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
     - **Click-Away Blur**: Clicking the canvas background now automatically blurs any active input field, improving the "deselect" experience.
 - **Layout Fixes**:
     - **Header Height**: Used negative margins to ensure the larger click targets don't increase the visual height of the header.
-
 
 ### 5. Canvas & Node Interaction Polish
 - **Smart Un-Minimize**:
@@ -191,3 +190,9 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 -   **Robustness**:
     -   **Runtime Safety**: Implemented fallback logic in `Canvas.tsx`, `Node.tsx`, and `NetworkNode.tsx` to handle missing data in local storage gracefully, preventing application crashes when loading older state.
 
+### 8. Node Styling Standardization
+-   **Shared Components**: Introduced `NodeSeparator` and `NodeHeader` components in `web/components/NodeStyles.tsx` to ensure consistent styling across all nodes.
+-   **Refactoring**: Updated `NetworkNode`, `GeneralArgsNode`, `DataNode`, and `OptimizerNode` to use these shared components, replacing inconsistent manual styling.
+-   **Spacing Fixes**:
+    -   Removed the default `mb-5` margin from `FieldWrapper` in `FormComponents.tsx`. This resolved an issue where grid layouts had double the vertical spacing compared to block layouts. Spacing is now consistently controlled by parent containers.
+    -   Refactored `GeneralArgsNode` to split "Model Configuration" and "Flags" into separate sections, ensuring the separator between them has equal spacing (20px) above and below, matching the rest of the UI.

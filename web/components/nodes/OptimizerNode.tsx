@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '../../lib/store';
 import { Input, Select } from '../FormComponents';
+import { NodeSeparator } from '../NodeStyles';
 
 export const OptimizerNode: React.FC = () => {
     const { config, updateConfig } = useStore();
@@ -32,7 +33,9 @@ export const OptimizerNode: React.FC = () => {
                 />
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-[#3E3B5E]">
+            <NodeSeparator />
+
+            <div className="space-y-2">
                 <Input
                     label="Learning Rate"
                     name="learning_rate"
@@ -55,7 +58,9 @@ export const OptimizerNode: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#3E3B5E]">
+            <NodeSeparator />
+
+            <div className="grid grid-cols-2 gap-3">
                 <Input
                     label="Network Dim (Rank)"
                     name="network_dim"

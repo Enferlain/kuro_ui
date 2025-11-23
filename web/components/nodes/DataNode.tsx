@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../lib/store';
 import { Input, Select, Toggle, FieldWrapper } from '../FormComponents';
+import { NodeHeader } from '../NodeStyles';
 import { FolderOpen, Plus, Trash2, ChevronDown, ChevronRight, ChevronUp, Pencil } from 'lucide-react';
 import { SubsetConfig } from '../../lib/types';
 
@@ -181,10 +182,13 @@ const SubsetCard: React.FC<{
                     <div className="border-t border-[#3E3B5E] pt-2">
                         <button
                             onClick={() => setIsOptionalOpen(!isOptionalOpen)}
-                            className="flex items-center gap-2 text-[10px] font-bold text-[#5B5680] uppercase tracking-wider hover:text-[#E2E0EC] transition-colors w-full"
+                            className="flex items-center gap-2 w-full group"
                         >
-                            {isOptionalOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                            Optional Args
+                            <NodeHeader
+                                title="Optional Args"
+                                className="!text-[10px] group-hover:text-[#E2E0EC] transition-colors"
+                            />
+                            {isOptionalOpen ? <ChevronDown size={14} className="text-[#5B5680]" /> : <ChevronRight size={14} className="text-[#5B5680]" />}
                         </button>
 
                         {isOptionalOpen && (
