@@ -154,3 +154,13 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 - **Layout Fixes**:
     - **Header Height**: Used negative margins to ensure the larger click targets don't increase the visual height of the header.
 
+
+### 5. Canvas & Node Interaction Polish
+- **Smart Un-Minimize**:
+    - **Logic Update**: Manually minimized nodes now automatically "un-minimize" when activated if the current zoom level allows them to be expanded. This fixes an issue where nodes would re-collapse immediately after being deselected.
+    - **Behavior**: Clicking a minimized node while zoomed in keeps it expanded; clicking while zoomed out (LOD mode) keeps it as a temporary peek.
+- **Visual Indicators**:
+    - **Minimize Icon**: Added a "Minimize" icon to the top-right of the card view (LOD view) when a node is manually minimized. This clearly distinguishes manually minimized nodes from those that are simply auto-collapsed due to zoom.
+- **Collision Physics Upgrade**:
+    - **Minimized State Awareness**: The collision system now correctly detects if a node is minimized (manually or via zoom) and uses its smaller "Card Size" boundary for physics calculations.
+    - **Logic Synchronization**: Synchronized the collision engine's LOD logic with the visual rendering engine's logic (using exact viewport thresholds). This ensures that what you see is exactly what you collide with, eliminating "ghost" collisions around expanded-looking nodes that physics treated as cards.

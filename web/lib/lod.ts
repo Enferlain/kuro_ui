@@ -2,6 +2,7 @@ export interface LodState {
     isZoomedOut: boolean;
     visualSize: number;
     threshold: number;
+    autoCollapse: boolean;
 }
 
 export interface LodParams {
@@ -44,11 +45,12 @@ export const calculateLodState = ({
     // - NOT Active AND
     // - (Minimized OR GlobalZoomedOut OR (SmallVisualSize AND NOT Immune))
 
+    const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isImmune);
+
     const isZoomedOut = !isActive && (
         isMinimized ||
-        isGlobalZoomedOut ||
-        (scale < 0.65 && visualSize < threshold && !isImmune)
+        autoCollapse
     );
 
-    return { isZoomedOut, visualSize, threshold };
+    return { isZoomedOut, visualSize, threshold, autoCollapse };
 };

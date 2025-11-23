@@ -36,6 +36,7 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
     const allDimensions = useStore((state) => state.islandDimensions);
     const minimizedIslands = useStore((state) => state.minimizedIslands);
     const toggleMinimize = useStore((state) => state.toggleMinimize);
+    const viewportSize = useStore((state) => state.viewportSize);
 
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
@@ -45,9 +46,37 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
     const currentWidth = dimensions?.width || 300;
     const currentHeight = dimensions?.height || 300;
 
-    const { isZoomedOut } = useIslandLOD(id, { width: currentWidth, height: currentHeight });
+    const { isZoomedOut, autoCollapse } = useIslandLOD(id, { width: currentWidth, height: currentHeight });
     const isImmune = lodImmuneIslands.includes(id);
     const isMinimized = minimizedIslands.includes(id);
+
+    // Track previous zoomed state to detect expansion
+    const prevIsZoomedOut = React.useRef(isZoomedOut);
+
+    React.useEffect(() => {
+        // Check if we just expanded (went from zoomed out to NOT zoomed out)
+        if (prevIsZoomedOut.current && !isZoomedOut) {
+            const state = useStore.getState();
+
+            pushIslandsOnResize(
+                id,
+                position.x,
+                position.y,
+                currentWidth,
+                currentHeight,
+                state.islandPositions,
+                state.islandDimensions,
+                (pushedId, newX, newY) => {
+                    state.moveIsland(pushedId, newX, newY);
+                },
+                scale,
+                lodImmuneIslands,
+                minimizedIslands,
+                viewportSize
+            );
+        }
+        prevIsZoomedOut.current = isZoomedOut;
+    }, [isZoomedOut, id, position.x, position.y, currentWidth, currentHeight, scale, lodImmuneIslands, minimizedIslands, viewportSize]);
 
     // Calculate offset to center the LOD card relative to the full island size
     const xOffset = isZoomedOut ? (currentWidth - LOD_WIDTH) / 2 : 0;
@@ -111,7 +140,9 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
                         useStore.getState().moveIsland(pushedId, newX, newY);
                     },
                     scale, // Pass current scale for LOD calculation
-                    lodImmuneIslands // Pass LOD immunity list
+                    lodImmuneIslands, // Pass LOD immunity list
+                    minimizedIslands, // Pass minimized list
+                    viewportSize // Pass viewport size for accurate LOD calculation
                 );
             }
         };
@@ -125,6 +156,11 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
 
             if (!hasMoved) {
                 setActiveIsland(id);
+                // If we are clicking a minimized island that SHOULD be open (based on zoom),
+                // we un-minimize it so it stays open when we click away.
+                if (isMinimized && !autoCollapse) {
+                    toggleMinimize(id);
+                }
             }
         };
 
@@ -168,7 +204,11 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
                 (pushedId, newX, newY) => {
                     // Use the store's moveIsland to update pushed islands
                     useStore.getState().moveIsland(pushedId, newX, newY);
-                }
+                },
+                currentScale,
+                lodImmuneIslands,
+                minimizedIslands,
+                viewportSize
             );
         };
 
@@ -281,6 +321,11 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
                             <h2 className="text-lg font-bold text-[#E2E0EC] tracking-widest uppercase text-center leading-none font-mono">
                                 {title}
                             </h2>
+                            {isMinimized && (
+                                <div className="absolute top-2 right-2 text-[#5B5680]" title="Manually Minimized">
+                                    <Minimize2 size={16} />
+                                </div>
+                            )}
                         </motion.div>
                     ) : (
                         /* Detailed View */

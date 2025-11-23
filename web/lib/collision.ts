@@ -23,6 +23,53 @@ export function rectanglesOverlap(rect1: Rectangle, rect2: Rectangle, padding: n
 }
 
 /**
+ * Helper to calculate the visual rectangle of an island, accounting for LOD and Minimized state
+ */
+function getVisualIslandRect(
+    id: IslandId,
+    pos: { x: number; y: number },
+    dim: { width: number; height: number },
+    scale: number,
+    lodImmuneIslands: IslandId[],
+    minimizedIslands: IslandId[],
+    viewportSize: { width: number; height: number }
+): Rectangle {
+    const LOD_WIDTH = 200;
+    const LOD_HEIGHT = 128;
+
+    // Exact logic from lod.ts
+    const threshold = Math.min(viewportSize.width, viewportSize.height) * 0.5;
+    const maxDimension = Math.max(dim.width, dim.height);
+    const visualSize = maxDimension * scale;
+    const isGlobalZoomedOut = scale < 0.3;
+
+    const isImmune = lodImmuneIslands.includes(id);
+    const isMinimized = minimizedIslands.includes(id);
+
+    const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isImmune);
+
+    const isZoomedOut = isMinimized || autoCollapse;
+
+    if (isZoomedOut) {
+        const xOffset = (dim.width - LOD_WIDTH) / 2;
+        const yOffset = (dim.height - LOD_HEIGHT) / 2;
+        return {
+            x: pos.x + xOffset,
+            y: pos.y + yOffset,
+            width: LOD_WIDTH,
+            height: LOD_HEIGHT
+        };
+    }
+
+    return {
+        x: pos.x,
+        y: pos.y,
+        width: dim.width,
+        height: dim.height
+    };
+}
+
+/**
  * Push islands out of the way when dragging
  */
 export function pushIslandsOnDrag(
@@ -35,13 +82,12 @@ export function pushIslandsOnDrag(
     allDimensions: Record<IslandId, { width: number; height: number }>,
     onPushIsland: (id: IslandId, x: number, y: number) => void,
     scale: number = 1,
-    lodImmuneIslands: IslandId[] = []
+    lodImmuneIslands: IslandId[] = [],
+    minimizedIslands: IslandId[] = [],
+    viewportSize: { width: number; height: number } = { width: 1920, height: 1080 }
 ): void {
     const COLLISION_PADDING = 20;
     const MAX_ITERATIONS = 5;
-    const LOD_WIDTH = 200;
-    const LOD_HEIGHT = 128;
-    const LOD_THRESHOLD = 0.55;
 
     const draggedRect: Rectangle = {
         x: draggedX,
@@ -59,26 +105,15 @@ export function pushIslandsOnDrag(
             const otherDim = allDimensions[otherId as IslandId];
             if (!otherDim) continue;
 
-            // Calculate if this island is in LOD mode (considering immunity)
-            const isOtherImmune = lodImmuneIslands.includes(otherId as IslandId);
-            const isOtherZoomedOut = scale < LOD_THRESHOLD && !isOtherImmune;
-
-            // Use visual dimensions (LOD if zoomed out and not immune, full otherwise)
-            const otherVisualWidth = isOtherZoomedOut ? LOD_WIDTH : otherDim.width;
-            const otherVisualHeight = isOtherZoomedOut ? LOD_HEIGHT : otherDim.height;
-
-            // Calculate visual position (centered for LOD)
-            const otherXOffset = isOtherZoomedOut ? (otherDim.width - LOD_WIDTH) / 2 : 0;
-            const otherYOffset = isOtherZoomedOut ? (otherDim.height - LOD_HEIGHT) / 2 : 0;
-            const otherVisualX = otherPos.x + otherXOffset;
-            const otherVisualY = otherPos.y + otherYOffset;
-
-            const otherRect: Rectangle = {
-                x: otherVisualX,
-                y: otherVisualY,
-                width: otherVisualWidth,
-                height: otherVisualHeight,
-            };
+            const otherRect = getVisualIslandRect(
+                otherId as IslandId,
+                otherPos,
+                otherDim,
+                scale,
+                lodImmuneIslands,
+                minimizedIslands,
+                viewportSize
+            );
 
             if (rectanglesOverlap(draggedRect, otherRect, COLLISION_PADDING)) {
                 const draggedCenterX = draggedRect.x + draggedRect.width / 2;
@@ -95,17 +130,48 @@ export function pushIslandsOnDrag(
                 let newX = otherPos.x;
                 let newY = otherPos.y;
 
+                // Re-calculate offsets for the other island to map back to real coordinates
+                // We need to know the visual offset of the other island to update its REAL position correctly
+                // getVisualIslandRect returns the visual rect.
+                // The "real" position is visualRect.x - xOffset.
+                // But we want to calculate the NEW real position.
+
+                // Re-calculate offsets for the other island to map back to real coordinates
+                const LOD_WIDTH = 200;
+                const LOD_HEIGHT = 128;
+
+                const threshold = Math.min(viewportSize.width, viewportSize.height) * 0.5;
+                const maxDimension = Math.max(otherDim.width, otherDim.height);
+                const visualSize = maxDimension * scale;
+                const isGlobalZoomedOut = scale < 0.3;
+
+                const isOtherImmune = lodImmuneIslands.includes(otherId as IslandId);
+                const isOtherMinimized = minimizedIslands.includes(otherId as IslandId);
+
+                const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isOtherImmune);
+                const isOtherZoomedOut = isOtherMinimized || autoCollapse;
+
+                const otherXOffset = isOtherZoomedOut ? (otherDim.width - LOD_WIDTH) / 2 : 0;
+                const otherYOffset = isOtherZoomedOut ? (otherDim.height - LOD_HEIGHT) / 2 : 0;
+
                 if (absDx > absDy) {
                     if (dx > 0) {
+                        // Push right
+                        // newVisualX = draggedRight + padding
+                        // newRealX = newVisualX - offset
                         newX = draggedRect.x + draggedRect.width + COLLISION_PADDING - otherXOffset;
                     } else {
-                        newX = draggedRect.x - otherVisualWidth - COLLISION_PADDING - otherXOffset;
+                        // Push left
+                        // newVisualX = draggedLeft - otherVisualWidth - padding
+                        newX = draggedRect.x - otherRect.width - COLLISION_PADDING - otherXOffset;
                     }
                 } else {
                     if (dy > 0) {
+                        // Push down
                         newY = draggedRect.y + draggedRect.height + COLLISION_PADDING - otherYOffset;
                     } else {
-                        newY = draggedRect.y - otherVisualHeight - COLLISION_PADDING - otherYOffset;
+                        // Push up
+                        newY = draggedRect.y - otherRect.height - COLLISION_PADDING - otherYOffset;
                     }
                 }
 
@@ -132,7 +198,11 @@ export function pushIslandsOnResize(
     newHeight: number,
     allPositions: Record<IslandId, { x: number; y: number }>,
     allDimensions: Record<IslandId, { width: number; height: number }>,
-    onPushIsland: (id: IslandId, x: number, y: number) => void
+    onPushIsland: (id: IslandId, x: number, y: number) => void,
+    scale: number = 1,
+    lodImmuneIslands: IslandId[] = [],
+    minimizedIslands: IslandId[] = [],
+    viewportSize: { width: number; height: number } = { width: 1920, height: 1080 }
 ): void {
     const COLLISION_PADDING = 20;
     const MAX_ITERATIONS = 5;
@@ -153,12 +223,15 @@ export function pushIslandsOnResize(
             const otherDim = allDimensions[otherId as IslandId];
             if (!otherDim) continue;
 
-            const otherRect: Rectangle = {
-                x: otherPos.x,
-                y: otherPos.y,
-                width: otherDim.width,
-                height: otherDim.height,
-            };
+            const otherRect = getVisualIslandRect(
+                otherId as IslandId,
+                otherPos,
+                otherDim,
+                scale,
+                lodImmuneIslands,
+                minimizedIslands,
+                viewportSize
+            );
 
             if (rectanglesOverlap(resizedRect, otherRect, COLLISION_PADDING)) {
                 const otherCenterX = otherRect.x + otherRect.width / 2;
@@ -175,17 +248,35 @@ export function pushIslandsOnResize(
                 let newX = otherPos.x;
                 let newY = otherPos.y;
 
+                // Re-calculate offsets for the other island to map back to real coordinates
+                const LOD_WIDTH = 200;
+                const LOD_HEIGHT = 128;
+
+                const threshold = Math.min(viewportSize.width, viewportSize.height) * 0.5;
+                const maxDimension = Math.max(otherDim.width, otherDim.height);
+                const visualSize = maxDimension * scale;
+                const isGlobalZoomedOut = scale < 0.3;
+
+                const isOtherImmune = lodImmuneIslands.includes(otherId as IslandId);
+                const isOtherMinimized = minimizedIslands.includes(otherId as IslandId);
+
+                const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isOtherImmune);
+                const isOtherZoomedOut = isOtherMinimized || autoCollapse;
+
+                const otherXOffset = isOtherZoomedOut ? (otherDim.width - LOD_WIDTH) / 2 : 0;
+                const otherYOffset = isOtherZoomedOut ? (otherDim.height - LOD_HEIGHT) / 2 : 0;
+
                 if (absDx > absDy) {
                     if (dx > 0) {
-                        newX = resizedRect.x + resizedRect.width + COLLISION_PADDING;
+                        newX = resizedRect.x + resizedRect.width + COLLISION_PADDING - otherXOffset;
                     } else {
-                        newX = resizedRect.x - otherRect.width - COLLISION_PADDING;
+                        newX = resizedRect.x - otherRect.width - COLLISION_PADDING - otherXOffset;
                     }
                 } else {
                     if (dy > 0) {
-                        newY = resizedRect.y + resizedRect.height + COLLISION_PADDING;
+                        newY = resizedRect.y + resizedRect.height + COLLISION_PADDING - otherYOffset;
                     } else {
-                        newY = resizedRect.y - otherRect.height - COLLISION_PADDING;
+                        newY = resizedRect.y - otherRect.height - COLLISION_PADDING - otherYOffset;
                     }
                 }
 
