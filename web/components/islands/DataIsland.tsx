@@ -4,6 +4,8 @@ import { Input, Select, Toggle, FieldWrapper } from '../FormComponents';
 import { FolderOpen, Plus, Trash2, ChevronDown, ChevronRight, ChevronUp, Pencil } from 'lucide-react';
 import { SubsetConfig } from '../../lib/types';
 
+// TODO: query to flags
+
 const SubsetCard: React.FC<{
     subset: SubsetConfig;
     index: number;

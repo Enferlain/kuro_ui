@@ -301,7 +301,7 @@ export const GeneralArgsIsland: React.FC = () => {
                         onChange={(e) => updateConfig({ clipSkip: parseInt(e.target.value) })}
                     />
                     <Select
-                        label="Token Length"
+                        label="Max Token Length"
                         name="max_token_length"
                         value={config.maxTokenLength}
                         onChange={(e) => updateConfig({ maxTokenLength: e.target.value as any })}
@@ -312,8 +312,8 @@ export const GeneralArgsIsland: React.FC = () => {
                         ]}
                     />
                     <Input
-                        label="Loss Weight"
-                        name="loss_weight"
+                        label="Prior Loss Weight"
+                        name="prior_loss_weight"
                         type="number"
                         step="0.01"
                         value={config.priorLossWeight}
