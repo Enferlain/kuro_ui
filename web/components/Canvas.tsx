@@ -9,6 +9,7 @@ import { Node, LOD_WIDTH, LOD_HEIGHT } from './Node';
 import { calculateLodState } from '../lib/lod';
 import { NODE_REGISTRY, GRAPH_EDGES, SEARCH_INDEX, SearchItem } from './NodeRegistry';
 import { Save, MousePointer2, ZoomIn, ZoomOut, Activity, LayoutGrid, Search, X, CornerDownRight } from 'lucide-react';
+import { VoidIcon } from './VoidIcon';
 
 // Base limit for panning. This will be scaled dynamically.
 const BASE_PAN_LIMIT = 5000;
@@ -439,10 +440,17 @@ export const Canvas: React.FC = () => {
 
             {/* HUD / Overlay UI */}
             <div className="absolute top-6 left-6 pointer-events-none select-none">
-                <h1 className="text-4xl font-bold text-[#E2E0EC] tracking-tighter drop-shadow-xl">
-                    KURO
+                <h1 className="text-4xl font-bold text-[#E2E0EC] tracking-tighter drop-shadow-xl flex items-center">
+                    <span className="relative z-10">KUR</span>
+                    <div className="relative">
+                        <span className="relative z-10">O</span>
+                        {/* Adjust marginLeft and marginTop to manually position the SVG */}
+                        <VoidIcon
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] opacity-90 z-0 pointer-events-none"
+                            style={{ marginLeft: '1px', marginTop: '0px' }}
+                        />
+                    </div>
                 </h1>
-                <p className="text-[#948FB2] text-xs font-mono uppercase tracking-[0.2em] mt-1">Void Configurator</p>
             </div>
 
             <FPSCounter />
@@ -522,12 +530,7 @@ export const Canvas: React.FC = () => {
                 </div>
             </div>
 
-            <div className="absolute bottom-6 right-6 pointer-events-auto">
-                <button className="group bg-[#E2E0EC] hover:bg-white text-[#181625] font-bold py-3 px-6 rounded-sm shadow-[0_0_20px_rgba(139,92,246,0.2)] flex items-center gap-3 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
-                    <Save className="w-4 h-4 group-hover:text-violet-600 transition-colors" />
-                    <span className="tracking-tight">EXPORT CONFIG</span>
-                </button>
-            </div>
+
         </div>
     );
 };

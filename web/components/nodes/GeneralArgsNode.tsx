@@ -125,9 +125,9 @@ export const GeneralArgsNode: React.FC = () => {
                 {/* Training */}
                 <div className="space-y-2">
                     <div className="flex items-center gap-1.5 px-1">
-                        <h5 className="text-[10px] font-medium text-[#5B5680] uppercase tracking-wider">Training</h5>
+                        <h5 className="text-[10px] font-medium text-[#5B5680] uppercase tracking-wider">Objective</h5>
                         <button
-                            onClick={(e) => { e.stopPropagation(); openGemini('flags_training'); }}
+                            onClick={(e) => { e.stopPropagation(); openGemini('flags_objective'); }}
                             className="text-[#5B5680] hover:text-violet-400 transition-colors"
                             title="Query Intelligence"
                         >
