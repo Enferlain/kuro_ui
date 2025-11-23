@@ -440,16 +440,9 @@ export const Canvas: React.FC = () => {
 
             {/* HUD / Overlay UI */}
             <div className="absolute top-6 left-6 pointer-events-none select-none">
-                <h1 className="text-4xl font-bold text-[#E2E0EC] tracking-tighter drop-shadow-xl flex items-center">
-                    <span className="relative z-10">KUR</span>
-                    <div className="relative">
-                        <span className="relative z-10">O</span>
-                        {/* Adjust marginLeft and marginTop to manually position the SVG */}
-                        <VoidIcon
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] opacity-90 z-0 pointer-events-none"
-                            style={{ marginLeft: '1px', marginTop: '0px' }}
-                        />
-                    </div>
+                <h1 className="text-4xl font-bold text-[#E2E0EC] tracking-tighter drop-shadow-xl flex items-center gap-2">
+                    KURO
+                    <VoidIcon className="w-10 h-10" />
                 </h1>
             </div>
 
