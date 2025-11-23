@@ -4,6 +4,7 @@ import { Database, Sliders, Cpu } from 'lucide-react';
 import { DataNode } from './nodes/DataNode';
 import { OptimizerNode } from './nodes/OptimizerNode';
 import { GeneralArgsNode } from './nodes/GeneralArgsNode';
+import { NetworkNode } from './nodes/NetworkNode';
 
 export const NODE_REGISTRY: Record<string, NodeConfig> = {
     [NodeId.GENERAL_ARGS]: {
@@ -24,10 +25,17 @@ export const NODE_REGISTRY: Record<string, NodeConfig> = {
         icon: Cpu,
         component: OptimizerNode
     },
+    [NodeId.NETWORK]: {
+        id: NodeId.NETWORK,
+        title: 'Network',
+        icon: Database, // Using Database icon as placeholder, maybe change later
+        component: NetworkNode
+    },
 };
 
 export const GRAPH_EDGES: GraphEdge[] = [
-    { source: NodeId.GENERAL_ARGS, target: NodeId.DATA },
+    { source: NodeId.GENERAL_ARGS, target: NodeId.NETWORK },
+    { source: NodeId.NETWORK, target: NodeId.DATA },
     { source: NodeId.DATA, target: NodeId.OPTIMIZER },
 ];
 
@@ -82,6 +90,10 @@ export const SEARCH_INDEX: SearchItem[] = [
     { id: 'learning_rate', label: 'Learning Rate', nodeId: NodeId.OPTIMIZER },
     { id: 'unet_lr', label: 'UNet Learning Rate', nodeId: NodeId.OPTIMIZER },
     { id: 'text_encoder_lr', label: 'Text Encoder LR', nodeId: NodeId.OPTIMIZER },
-    { id: 'network_dim', label: 'Network Rank (Dim)', nodeId: NodeId.OPTIMIZER },
-    { id: 'network_alpha', label: 'Network Alpha', nodeId: NodeId.OPTIMIZER },
+    { id: 'network_dim', label: 'Network Rank (Dim)', nodeId: NodeId.NETWORK },
+    { id: 'network_alpha', label: 'Network Alpha', nodeId: NodeId.NETWORK },
+    { id: 'network_algo', label: 'Network Algo', nodeId: NodeId.NETWORK },
+    { id: 'network_preset', label: 'LyCORIS Preset', nodeId: NodeId.NETWORK },
+    { id: 'network_conv_dim', label: 'Conv Dim', nodeId: NodeId.NETWORK },
+    { id: 'network_conv_alpha', label: 'Conv Alpha', nodeId: NodeId.NETWORK },
 ];

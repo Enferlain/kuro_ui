@@ -17,3 +17,11 @@ Currently in the process of building the frontend for the following project:
 ---
 
 References based on the previous ui can be found in trainer_reference.txt
+
+---
+
+# TODOs and Notes
+
+## Network Node Next Steps
+-   **Dynamic Fields**: Implement logic to show/hide specific toggles and entry fields based on the selected "Network Algo" (e.g., different options for LoRA vs. LoHa).
+-   **Layer Groups**: Implement the functionality for the "Layer groups" tab, which is currently a placeholder.

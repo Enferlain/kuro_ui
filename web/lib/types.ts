@@ -5,6 +5,7 @@ export enum NodeId {
   GENERAL_ARGS = 'general_args',
   DATA = 'data',
   OPTIMIZER = 'optimizer',
+  NETWORK = 'network',
   OUTPUT = 'output'
 }
 
@@ -130,6 +131,13 @@ export interface TrainingConfig {
   lrScheduler: 'cosine' | 'constant' | 'constant_with_warmup';
   networkDim: number; // LoRA Rank
   networkAlpha: number;
+
+  // Network
+  networkAlgo: string;
+  networkPreset: string;
+  networkConvDim: number;
+  networkConvAlpha: number;
+  networkArgs: Array<{ key: string; value: string }>;
 }
 
 export interface UIState {

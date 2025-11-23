@@ -3,7 +3,7 @@
 import { Sidebar } from './Sidebar';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../lib/store';
+import { useStore, DEFAULT_POSITIONS, DEFAULT_DIMENSIONS } from '../lib/store';
 import { NodeId } from '../lib/types';
 import { Node, LOD_WIDTH, LOD_HEIGHT } from './Node';
 import { calculateLodState } from '../lib/lod';
@@ -162,8 +162,8 @@ export const Canvas: React.FC = () => {
     }, [searchQuery]);
 
     const handleSearchResultClick = (item: SearchItem) => {
-        const nodePos = nodePositions[item.nodeId];
-        const nodeDim = nodeDimensions[item.nodeId] || { width: 300, height: 200 };
+        const nodePos = nodePositions[item.nodeId] || DEFAULT_POSITIONS[item.nodeId];
+        const nodeDim = nodeDimensions[item.nodeId] || DEFAULT_DIMENSIONS[item.nodeId] || { width: 300, height: 200 };
         const rect = containerRef.current?.getBoundingClientRect();
 
         if (nodePos && rect) {
@@ -311,8 +311,8 @@ export const Canvas: React.FC = () => {
 
     // Helper to get connection handles (Left and Right edges)
     const getOutputHandle = (id: NodeId) => {
-        const pos = nodePositions[id];
-        const dim = nodeDimensions[id] || { width: 300, height: 200 };
+        const pos = nodePositions[id] || DEFAULT_POSITIONS[id] || { x: 0, y: 0 };
+        const dim = nodeDimensions[id] || DEFAULT_DIMENSIONS[id] || { width: 300, height: 200 };
 
         let effectiveX = pos.x;
         let effectiveY = pos.y;
@@ -343,8 +343,8 @@ export const Canvas: React.FC = () => {
     };
 
     const getInputHandle = (id: NodeId) => {
-        const pos = nodePositions[id];
-        const dim = nodeDimensions[id] || { width: 300, height: 200 };
+        const pos = nodePositions[id] || DEFAULT_POSITIONS[id] || { x: 0, y: 0 };
+        const dim = nodeDimensions[id] || DEFAULT_DIMENSIONS[id] || { width: 300, height: 200 };
 
         let effectiveX = pos.x;
         let effectiveY = pos.y;

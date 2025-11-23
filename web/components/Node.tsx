@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../lib/store';
+import { useStore, DEFAULT_POSITIONS, DEFAULT_DIMENSIONS } from '../lib/store';
 import { NodeId } from '../lib/types';
 import { LucideIcon, Scaling, Pin, Minimize2, Maximize2 } from 'lucide-react';
 import { useNodeLOD } from '../hooks/useNodeLOD';
@@ -21,8 +21,8 @@ export const LOD_HEIGHT = 128;
 
 export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, children }) => {
     // Optimize Selectors
-    const position = useStore((state) => state.nodePositions[id]);
-    const dimensions = useStore((state) => state.nodeDimensions[id]);
+    const position = useStore((state) => state.nodePositions[id]) || DEFAULT_POSITIONS[id] || { x: 0, y: 0 };
+    const dimensions = useStore((state) => state.nodeDimensions[id]) || DEFAULT_DIMENSIONS[id] || { width: 300, height: 200 };
     const isActive = useStore((state) => state.activeNode === id);
     const anyActive = useStore((state) => !!state.activeNode);
     const scale = useStore((state) => state.scale);

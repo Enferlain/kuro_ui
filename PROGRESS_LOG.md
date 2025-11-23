@@ -177,3 +177,17 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
     -   **UX Refinement**: Implemented a "disabled state" logic where turning off the main "Bucketing" toggle visually dims and disables all related input fields, preventing accidental edits while keeping settings visible.
 -   **State Management**:
     -   Updated `TrainingConfig` interface (`types.ts`) and Zustand store (`store.ts`) to support the new bucketing parameters (`enableBucket`, `minBucketReso`, `maxBucketReso`, `bucketResoSteps`, `bucketNoUpscale`).
+
+### 7. Network Node Implementation
+-   **New Component**: Created `NetworkNode.tsx` with a tabbed interface (Main, Layers, Args).
+-   **Main Tab**: Implemented configuration fields for:
+    -   **Network Algo**: Dropdown for selecting algorithm (LoRA, LoHa, etc.).
+    -   **LyCORIS Preset**: Input for preset path.
+    -   **Dimensions**: Network Dim/Alpha and Conv Dim/Alpha inputs.
+-   **Args Tab**: Implemented a dynamic key-value pair list for adding arbitrary network arguments.
+-   **Visual Polish**:
+    -   **Separators**: Added visual separators to group related fields (Algo/Preset, Dims, Conv Dims).
+    -   **Spacing**: Ensured consistent 20px spacing between all sections using `space-y-5` and margin collapse, mirroring the `GeneralArgsNode` style.
+-   **Robustness**:
+    -   **Runtime Safety**: Implemented fallback logic in `Canvas.tsx`, `Node.tsx`, and `NetworkNode.tsx` to handle missing data in local storage gracefully, preventing application crashes when loading older state.
+
