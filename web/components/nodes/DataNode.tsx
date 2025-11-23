@@ -314,7 +314,7 @@ const SubsetCard: React.FC<{
     );
 };
 
-export const DataIsland: React.FC = () => {
+export const DataNode: React.FC = () => {
     const { config, updateConfig } = useStore();
 
     // Initialize subsets if they don't exist (migration for existing users)

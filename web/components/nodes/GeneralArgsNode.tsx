@@ -3,7 +3,7 @@ import { useStore } from '../../lib/store';
 import { Input, Select, Toggle, TextArea, FieldWrapper } from '../FormComponents';
 import { HelpCircle } from 'lucide-react';
 
-export const GeneralArgsIsland: React.FC = () => {
+export const GeneralArgsNode: React.FC = () => {
     const { config, updateConfig, openGemini } = useStore();
 
     return (

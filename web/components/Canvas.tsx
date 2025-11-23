@@ -4,10 +4,10 @@ import { Sidebar } from './Sidebar';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../lib/store';
-import { IslandId } from '../lib/types';
-import { Island, LOD_WIDTH, LOD_HEIGHT } from './Island';
+import { NodeId } from '../lib/types';
+import { Node, LOD_WIDTH, LOD_HEIGHT } from './Node';
 import { calculateLodState } from '../lib/lod';
-import { ISLAND_REGISTRY, GRAPH_EDGES, SEARCH_INDEX, SearchItem } from './islandRegistry';
+import { NODE_REGISTRY, GRAPH_EDGES, SEARCH_INDEX, SearchItem } from './NodeRegistry';
 import { Save, MousePointer2, ZoomIn, ZoomOut, Activity, LayoutGrid, Search, X, CornerDownRight } from 'lucide-react';
 
 // Base limit for panning. This will be scaled dynamically.
@@ -19,7 +19,7 @@ const CONTENT_CENTER_Y = 450;
 
 // Connection line component (Animated)
 const Connection: React.FC<{ x1: number, y1: number, x2: number, y2: number, isZoomedOut: boolean }> = React.memo(({ x1, y1, x2, y2, isZoomedOut }) => {
-    const isIslandDragging = useStore(state => state.isIslandDragging);
+    const isNodeDragging = useStore(state => state.isNodeDragging);
 
     const dx = x2 - x1;
     const dy = y2 - y1;
@@ -29,9 +29,9 @@ const Connection: React.FC<{ x1: number, y1: number, x2: number, y2: number, isZ
     // Visibility check for very zoomed out view
     const opacity = isZoomedOut ? 0.15 : 0.4;
 
-    // Synced transition to match Island movement/resizing
+    // Synced transition to match Node movement/resizing
     const transition = {
-        duration: isIslandDragging ? 0 : 0.3,
+        duration: isNodeDragging ? 0 : 0.3,
         type: "tween" as const,
         ease: "circOut" as const
     };
@@ -104,14 +104,14 @@ export const Canvas: React.FC = () => {
     // Optimized Selectors
     const translation = useStore(state => state.translation);
     const scale = useStore(state => state.scale);
-    const islandPositions = useStore(state => state.islandPositions);
-    const islandDimensions = useStore(state => state.islandDimensions);
+    const nodePositions = useStore(state => state.nodePositions);
+    const nodeDimensions = useStore(state => state.nodeDimensions);
 
     const setTranslation = useStore(state => state.setTranslation);
     const setTransform = useStore(state => state.setTransform);
-    const activeIsland = useStore(state => state.activeIsland);
-    const lodImmuneIslands = useStore(state => state.lodImmuneIslands);
-    const setActiveIsland = useStore(state => state.setActiveIsland);
+    const activeNode = useStore(state => state.activeNode);
+    const lodImmuneNodes = useStore(state => state.lodImmuneNodes);
+    const setActiveNode = useStore(state => state.setActiveNode);
     const resetLayout = useStore(state => state.resetLayout);
     const setHighlightedField = useStore(state => state.setHighlightedField);
     const setViewportSize = useStore(state => state.setViewportSize);
@@ -162,14 +162,14 @@ export const Canvas: React.FC = () => {
     }, [searchQuery]);
 
     const handleSearchResultClick = (item: SearchItem) => {
-        const islandPos = islandPositions[item.islandId];
-        const islandDim = islandDimensions[item.islandId] || { width: 300, height: 200 };
+        const nodePos = nodePositions[item.nodeId];
+        const nodeDim = nodeDimensions[item.nodeId] || { width: 300, height: 200 };
         const rect = containerRef.current?.getBoundingClientRect();
 
-        if (islandPos && rect) {
-            // Calculate center of the target island
-            const targetX = islandPos.x + islandDim.width / 2;
-            const targetY = islandPos.y + islandDim.height / 2;
+        if (nodePos && rect) {
+            // Calculate center of the target Node
+            const targetX = nodePos.x + nodeDim.width / 2;
+            const targetY = nodePos.y + nodeDim.height / 2;
 
             // Center of the screen
             const screenCX = rect.width / 2;
@@ -178,14 +178,14 @@ export const Canvas: React.FC = () => {
             // Target scale
             const targetScale = 1; // Zoom in to default 1
 
-            // Calculate new translation to put island in center
+            // Calculate new translation to put Node in center
             // screenCX = targetX * scale + tx
             // tx = screenCX - targetX * scale
             const newTx = screenCX - targetX * targetScale;
             const newTy = screenCY - targetY * targetScale;
 
             setTransform(newTx, newTy, targetScale);
-            setActiveIsland(item.islandId);
+            setActiveNode(item.nodeId);
             setHighlightedField(item.id);
 
             // Close search but keep highlight for a moment
@@ -212,7 +212,7 @@ export const Canvas: React.FC = () => {
             document.activeElement.blur();
         }
 
-        setActiveIsland(null);
+        setActiveNode(null);
 
         setIsDragging(true);
         triggerInteraction();
@@ -307,23 +307,23 @@ export const Canvas: React.FC = () => {
         setTransform(newTx, newTy, newScale);
     };
 
-    const minimizedIslands = useStore(state => state.minimizedIslands);
+    const minimizedNodes = useStore(state => state.minimizedNodes);
 
     // Helper to get connection handles (Left and Right edges)
-    const getOutputHandle = (id: IslandId) => {
-        const pos = islandPositions[id];
-        const dim = islandDimensions[id] || { width: 300, height: 200 };
+    const getOutputHandle = (id: NodeId) => {
+        const pos = nodePositions[id];
+        const dim = nodeDimensions[id] || { width: 300, height: 200 };
 
         let effectiveX = pos.x;
         let effectiveY = pos.y;
         let effectiveWidth = dim.width;
         let effectiveHeight = dim.height;
 
-        const isActive = id === activeIsland;
-        const isImmune = lodImmuneIslands.includes(id);
-        const isMinimized = minimizedIslands.includes(id);
+        const isActive = id === activeNode;
+        const isImmune = lodImmuneNodes.includes(id);
+        const isMinimized = minimizedNodes.includes(id);
 
-        const { isZoomedOut: isIslandLOD } = calculateLodState({
+        const { isZoomedOut: isNodeLOD } = calculateLodState({
             scale,
             viewportSize,
             dimensions: dim,
@@ -332,7 +332,7 @@ export const Canvas: React.FC = () => {
             isMinimized
         });
 
-        if (isIslandLOD) {
+        if (isNodeLOD) {
             effectiveWidth = LOD_WIDTH;
             effectiveHeight = LOD_HEIGHT;
             effectiveX += (dim.width - LOD_WIDTH) / 2;
@@ -342,20 +342,20 @@ export const Canvas: React.FC = () => {
         return { x: effectiveX + effectiveWidth, y: effectiveY + effectiveHeight / 2 };
     };
 
-    const getInputHandle = (id: IslandId) => {
-        const pos = islandPositions[id];
-        const dim = islandDimensions[id] || { width: 300, height: 200 };
+    const getInputHandle = (id: NodeId) => {
+        const pos = nodePositions[id];
+        const dim = nodeDimensions[id] || { width: 300, height: 200 };
 
         let effectiveX = pos.x;
         let effectiveY = pos.y;
         // let effectiveWidth = dim.width; 
         let effectiveHeight = dim.height;
 
-        const isActive = id === activeIsland;
-        const isImmune = lodImmuneIslands.includes(id);
-        const isMinimized = minimizedIslands.includes(id);
+        const isActive = id === activeNode;
+        const isImmune = lodImmuneNodes.includes(id);
+        const isMinimized = minimizedNodes.includes(id);
 
-        const { isZoomedOut: isIslandLOD } = calculateLodState({
+        const { isZoomedOut: isNodeLOD } = calculateLodState({
             scale,
             viewportSize,
             dimensions: dim,
@@ -364,7 +364,7 @@ export const Canvas: React.FC = () => {
             isMinimized
         });
 
-        if (isIslandLOD) {
+        if (isNodeLOD) {
             // effectiveWidth = LOD_WIDTH;
             effectiveHeight = LOD_HEIGHT;
             effectiveX += (dim.width - LOD_WIDTH) / 2;
@@ -378,14 +378,14 @@ export const Canvas: React.FC = () => {
     // Fade from 0.2 (at scale 0.5) down to 0 (at scale 0.1)
     const gridOpacity = Math.max(0, Math.min(0.2, (scale - 0.1) * 0.5));
 
-    // Memoize Island elements to prevent re-rendering them when Canvas re-renders (e.g. during drag)
+    // Memoize Node elements to prevent re-rendering them when Canvas re-renders (e.g. during drag)
     // unless the registry itself changes (which it doesn't).
-    // The Island components themselves are React.memo'd and subscribe to the store for their own updates.
-    const islandElements = useMemo(() => {
-        return Object.values(ISLAND_REGISTRY).map((config) => (
-            <Island key={config.id} id={config.id} title={config.title} icon={config.icon}>
+    // The Node components themselves are React.memo'd and subscribe to the store for their own updates.
+    const nodeElements = useMemo(() => {
+        return Object.values(NODE_REGISTRY).map((config) => (
+            <Node key={config.id} id={config.id} title={config.title} icon={config.icon}>
                 <config.component />
-            </Island>
+            </Node>
         ));
     }, []);
 
@@ -433,8 +433,8 @@ export const Canvas: React.FC = () => {
                     return <Connection key={`${edge.source}-${edge.target}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} isZoomedOut={isZoomedOut} />;
                 })}
 
-                {/* Islands (Memoized) */}
-                {islandElements}
+                {/* Nodes (Memoized) */}
+                {nodeElements}
             </motion.div>
 
             {/* HUD / Overlay UI */}

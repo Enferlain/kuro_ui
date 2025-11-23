@@ -23,7 +23,7 @@ export const calculateLodState = ({
     isMinimized
 }: LodParams): LodState => {
     // Dynamic LOD Logic:
-    // Switch to LOD if global scale is low AND the visual size of the island is small.
+    // Switch to LOD if global scale is low AND the visual size of the Node is small.
     // Threshold is 50% of the smallest viewport dimension.
     const threshold = Math.min(viewportSize.width, viewportSize.height) * 0.5;
     const maxDimension = Math.max(dimensions.width, dimensions.height);

@@ -1,4 +1,4 @@
-import { IslandId } from './types';
+import { NodeId } from './types';
 
 /**
  * Represents a rectangle boundary
@@ -23,15 +23,15 @@ export function rectanglesOverlap(rect1: Rectangle, rect2: Rectangle, padding: n
 }
 
 /**
- * Helper to calculate the visual rectangle of an island, accounting for LOD and Minimized state
+ * Helper to calculate the visual rectangle of an Node, accounting for LOD and Minimized state
  */
-function getVisualIslandRect(
-    id: IslandId,
+function getVisualNodeRect(
+    id: NodeId,
     pos: { x: number; y: number },
     dim: { width: number; height: number },
     scale: number,
-    lodImmuneIslands: IslandId[],
-    minimizedIslands: IslandId[],
+    lodImmuneNodes: NodeId[],
+    minimizedNodes: NodeId[],
     viewportSize: { width: number; height: number }
 ): Rectangle {
     const LOD_WIDTH = 200;
@@ -43,8 +43,8 @@ function getVisualIslandRect(
     const visualSize = maxDimension * scale;
     const isGlobalZoomedOut = scale < 0.3;
 
-    const isImmune = lodImmuneIslands.includes(id);
-    const isMinimized = minimizedIslands.includes(id);
+    const isImmune = lodImmuneNodes.includes(id);
+    const isMinimized = minimizedNodes.includes(id);
 
     const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isImmune);
 
@@ -70,20 +70,20 @@ function getVisualIslandRect(
 }
 
 /**
- * Push islands out of the way when dragging
+ * Push nodes out of the way when dragging
  */
-export function pushIslandsOnDrag(
-    draggedId: IslandId,
+export function pushNodesOnDrag(
+    draggedId: NodeId,
     draggedX: number,
     draggedY: number,
     draggedWidth: number,
     draggedHeight: number,
-    allPositions: Record<IslandId, { x: number; y: number }>,
-    allDimensions: Record<IslandId, { width: number; height: number }>,
-    onPushIsland: (id: IslandId, x: number, y: number) => void,
+    allPositions: Record<NodeId, { x: number; y: number }>,
+    allDimensions: Record<NodeId, { width: number; height: number }>,
+    onPushNode: (id: NodeId, x: number, y: number) => void,
     scale: number = 1,
-    lodImmuneIslands: IslandId[] = [],
-    minimizedIslands: IslandId[] = [],
+    lodImmuneNodes: NodeId[] = [],
+    minimizedNodes: NodeId[] = [],
     viewportSize: { width: number; height: number } = { width: 1920, height: 1080 }
 ): void {
     const COLLISION_PADDING = 20;
@@ -102,16 +102,16 @@ export function pushIslandsOnDrag(
         for (const [otherId, otherPos] of Object.entries(allPositions)) {
             if (otherId === draggedId) continue;
 
-            const otherDim = allDimensions[otherId as IslandId];
+            const otherDim = allDimensions[otherId as NodeId];
             if (!otherDim) continue;
 
-            const otherRect = getVisualIslandRect(
-                otherId as IslandId,
+            const otherRect = getVisualNodeRect(
+                otherId as NodeId,
                 otherPos,
                 otherDim,
                 scale,
-                lodImmuneIslands,
-                minimizedIslands,
+                lodImmuneNodes,
+                minimizedNodes,
                 viewportSize
             );
 
@@ -130,13 +130,13 @@ export function pushIslandsOnDrag(
                 let newX = otherPos.x;
                 let newY = otherPos.y;
 
-                // Re-calculate offsets for the other island to map back to real coordinates
-                // We need to know the visual offset of the other island to update its REAL position correctly
-                // getVisualIslandRect returns the visual rect.
+                // Re-calculate offsets for the other Node to map back to real coordinates
+                // We need to know the visual offset of the other Node to update its REAL position correctly
+                // getVisualNodeRect returns the visual rect.
                 // The "real" position is visualRect.x - xOffset.
                 // But we want to calculate the NEW real position.
 
-                // Re-calculate offsets for the other island to map back to real coordinates
+                // Re-calculate offsets for the other Node to map back to real coordinates
                 const LOD_WIDTH = 200;
                 const LOD_HEIGHT = 128;
 
@@ -145,8 +145,8 @@ export function pushIslandsOnDrag(
                 const visualSize = maxDimension * scale;
                 const isGlobalZoomedOut = scale < 0.3;
 
-                const isOtherImmune = lodImmuneIslands.includes(otherId as IslandId);
-                const isOtherMinimized = minimizedIslands.includes(otherId as IslandId);
+                const isOtherImmune = lodImmuneNodes.includes(otherId as NodeId);
+                const isOtherMinimized = minimizedNodes.includes(otherId as NodeId);
 
                 const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isOtherImmune);
                 const isOtherZoomedOut = isOtherMinimized || autoCollapse;
@@ -176,9 +176,9 @@ export function pushIslandsOnDrag(
                 }
 
                 if (newX !== otherPos.x || newY !== otherPos.y) {
-                    onPushIsland(otherId as IslandId, newX, newY);
+                    onPushNode(otherId as NodeId, newX, newY);
                     pushedAny = true;
-                    allPositions[otherId as IslandId] = { x: newX, y: newY };
+                    allPositions[otherId as NodeId] = { x: newX, y: newY };
                 }
             }
         }
@@ -188,20 +188,20 @@ export function pushIslandsOnDrag(
 }
 
 /**
- * Push islands out of the way when resizing
+ * Push nodes out of the way when resizing
  */
-export function pushIslandsOnResize(
-    resizedId: IslandId,
+export function pushNodesOnResize(
+    resizedId: NodeId,
     x: number,
     y: number,
     newWidth: number,
     newHeight: number,
-    allPositions: Record<IslandId, { x: number; y: number }>,
-    allDimensions: Record<IslandId, { width: number; height: number }>,
-    onPushIsland: (id: IslandId, x: number, y: number) => void,
+    allPositions: Record<NodeId, { x: number; y: number }>,
+    allDimensions: Record<NodeId, { width: number; height: number }>,
+    onPushNode: (id: NodeId, x: number, y: number) => void,
     scale: number = 1,
-    lodImmuneIslands: IslandId[] = [],
-    minimizedIslands: IslandId[] = [],
+    lodImmuneNodes: NodeId[] = [],
+    minimizedNodes: NodeId[] = [],
     viewportSize: { width: number; height: number } = { width: 1920, height: 1080 }
 ): void {
     const COLLISION_PADDING = 20;
@@ -220,16 +220,16 @@ export function pushIslandsOnResize(
         for (const [otherId, otherPos] of Object.entries(allPositions)) {
             if (otherId === resizedId) continue;
 
-            const otherDim = allDimensions[otherId as IslandId];
+            const otherDim = allDimensions[otherId as NodeId];
             if (!otherDim) continue;
 
-            const otherRect = getVisualIslandRect(
-                otherId as IslandId,
+            const otherRect = getVisualNodeRect(
+                otherId as NodeId,
                 otherPos,
                 otherDim,
                 scale,
-                lodImmuneIslands,
-                minimizedIslands,
+                lodImmuneNodes,
+                minimizedNodes,
                 viewportSize
             );
 
@@ -248,7 +248,7 @@ export function pushIslandsOnResize(
                 let newX = otherPos.x;
                 let newY = otherPos.y;
 
-                // Re-calculate offsets for the other island to map back to real coordinates
+                // Re-calculate offsets for the other Node to map back to real coordinates
                 const LOD_WIDTH = 200;
                 const LOD_HEIGHT = 128;
 
@@ -257,8 +257,8 @@ export function pushIslandsOnResize(
                 const visualSize = maxDimension * scale;
                 const isGlobalZoomedOut = scale < 0.3;
 
-                const isOtherImmune = lodImmuneIslands.includes(otherId as IslandId);
-                const isOtherMinimized = minimizedIslands.includes(otherId as IslandId);
+                const isOtherImmune = lodImmuneNodes.includes(otherId as NodeId);
+                const isOtherMinimized = minimizedNodes.includes(otherId as NodeId);
 
                 const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isOtherImmune);
                 const isOtherZoomedOut = isOtherMinimized || autoCollapse;
@@ -281,9 +281,9 @@ export function pushIslandsOnResize(
                 }
 
                 if (newX !== otherPos.x || newY !== otherPos.y) {
-                    onPushIsland(otherId as IslandId, newX, newY);
+                    onPushNode(otherId as NodeId, newX, newY);
                     pushedAny = true;
-                    allPositions[otherId as IslandId] = { x: newX, y: newY };
+                    allPositions[otherId as NodeId] = { x: newX, y: newY };
                 }
             }
         }

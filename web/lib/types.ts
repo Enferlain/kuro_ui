@@ -1,7 +1,7 @@
 
 import { LucideIcon } from 'lucide-react';
 
-export enum IslandId {
+export enum NodeId {
   GENERAL_ARGS = 'general_args',
   DATA = 'data',
   OPTIMIZER = 'optimizer',
@@ -13,12 +13,12 @@ export interface Coordinates {
   y: number;
 }
 
-export interface IslandPosition {
+export interface NodePosition {
   x: number;
   y: number;
 }
 
-export interface IslandDimensions {
+export interface NodeDimensions {
   width: number;
   height: number;
 }
@@ -135,22 +135,22 @@ export interface TrainingConfig {
 export interface UIState {
   scale: number;
   translation: Coordinates;
-  islandPositions: Record<IslandId, IslandPosition>;
-  islandDimensions: Record<IslandId, IslandDimensions>;
-  activeIsland: IslandId | null;
+  nodePositions: Record<NodeId, NodePosition>;
+  nodeDimensions: Record<NodeId, NodeDimensions>;
+  activeNode: NodeId | null;
   geminiContext: string | null; // The parameter user wants help with
   isGeminiOpen: boolean;
   highlightedField: string | null; // For search result highlighting
 }
 
-export interface IslandConfig {
-  id: IslandId;
+export interface NodeConfig {
+  id: NodeId;
   title: string;
   icon: LucideIcon;
   component: React.FC;
 }
 
 export interface GraphEdge {
-  source: IslandId;
-  target: IslandId;
+  source: NodeId;
+  target: NodeId;
 }

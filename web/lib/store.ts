@@ -1,25 +1,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { TrainingConfig, UIState, IslandId } from './types';
+import { TrainingConfig, UIState, NodeId } from './types';
 
 interface Store extends UIState {
     config: TrainingConfig;
-    isIslandDragging: boolean;
+    isNodeDragging: boolean;
     viewportSize: { width: number, height: number };
-    lodImmuneIslands: IslandId[];
-    minimizedIslands: IslandId[];
+    lodImmuneNodes: NodeId[];
+    minimizedNodes: NodeId[];
 
     // Actions
     setViewportSize: (width: number, height: number) => void;
     setTranslation: (x: number, y: number) => void;
     setScale: (s: number) => void;
     setTransform: (x: number, y: number, scale: number) => void;
-    moveIsland: (id: IslandId, x: number, y: number) => void;
-    resizeIsland: (id: IslandId, width: number, height: number) => void;
-    setActiveIsland: (id: IslandId | null) => void;
-    setIsIslandDragging: (isDragging: boolean) => void;
-    toggleLodImmunity: (id: IslandId) => void;
-    toggleMinimize: (id: IslandId) => void;
+    moveNode: (id: NodeId, x: number, y: number) => void;
+    resizeNode: (id: NodeId, width: number, height: number) => void;
+    setActiveNode: (id: NodeId | null) => void;
+    setIsNodeDragging: (isDragging: boolean) => void;
+    toggleLodImmunity: (id: NodeId) => void;
+    toggleMinimize: (id: NodeId) => void;
     updateConfig: (partial: Partial<TrainingConfig>) => void;
     openGemini: (context: string) => void;
     closeGemini: () => void;
@@ -28,17 +28,17 @@ interface Store extends UIState {
 }
 
 const DEFAULT_POSITIONS = {
-    [IslandId.GENERAL_ARGS]: { x: 100, y: 400 },
-    [IslandId.DATA]: { x: 600, y: 500 },
-    [IslandId.OPTIMIZER]: { x: 1550, y: 150 },
-    [IslandId.OUTPUT]: { x: 1900, y: 300 },
+    [NodeId.GENERAL_ARGS]: { x: 100, y: 400 },
+    [NodeId.DATA]: { x: 600, y: 500 },
+    [NodeId.OPTIMIZER]: { x: 1550, y: 150 },
+    [NodeId.OUTPUT]: { x: 1900, y: 300 },
 };
 
 const DEFAULT_DIMENSIONS = {
-    [IslandId.GENERAL_ARGS]: { width: 400, height: 600 },
-    [IslandId.DATA]: { width: 400, height: 500 },
-    [IslandId.OPTIMIZER]: { width: 380, height: 350 },
-    [IslandId.OUTPUT]: { width: 300, height: 200 },
+    [NodeId.GENERAL_ARGS]: { width: 400, height: 600 },
+    [NodeId.DATA]: { width: 400, height: 500 },
+    [NodeId.OPTIMIZER]: { width: 380, height: 350 },
+    [NodeId.OUTPUT]: { width: 300, height: 200 },
 };
 
 export const useStore = create<Store>()(
@@ -47,15 +47,15 @@ export const useStore = create<Store>()(
             // Initial UI State
             scale: 0.8, // Zoom out a bit to fit the larger graph
             translation: { x: 0, y: 0 },
-            activeIsland: null,
+            activeNode: null,
             geminiContext: null,
             isGeminiOpen: false,
-            isIslandDragging: false,
+            isNodeDragging: false,
             highlightedField: null,
 
             // Initial Positions
-            islandPositions: { ...DEFAULT_POSITIONS },
-            islandDimensions: { ...DEFAULT_DIMENSIONS },
+            nodePositions: { ...DEFAULT_POSITIONS },
+            nodeDimensions: { ...DEFAULT_DIMENSIONS },
 
             // Initial Config State
             config: {
@@ -126,48 +126,48 @@ export const useStore = create<Store>()(
             // Viewport State
             viewportSize: { width: 1920, height: 1080 }, // Default to 1080p until hydrated/resized
             setViewportSize: (width, height) => set({ viewportSize: { width, height } }),
-            lodImmuneIslands: [],
-            minimizedIslands: [],
+            lodImmuneNodes: [],
+            minimizedNodes: [],
 
             setTranslation: (x, y) => set({ translation: { x, y } }),
             setScale: (s) => set({ scale: s }),
             setTransform: (x, y, scale) => set({ translation: { x, y }, scale }),
-            moveIsland: (id, x, y) => set((state) => ({
-                islandPositions: {
-                    ...state.islandPositions,
+            moveNode: (id, x, y) => set((state) => ({
+                nodePositions: {
+                    ...state.nodePositions,
                     [id]: { x, y }
                 }
             })),
-            resizeIsland: (id, width, height) => set((state) => ({
-                islandDimensions: {
-                    ...state.islandDimensions,
+            resizeNode: (id, width, height) => set((state) => ({
+                nodeDimensions: {
+                    ...state.nodeDimensions,
                     [id]: { width, height }
                 }
             })),
-            setActiveIsland: (id) => set({ activeIsland: id }),
-            setIsIslandDragging: (isDragging) => set({ isIslandDragging: isDragging }),
+            setActiveNode: (id) => set({ activeNode: id }),
+            setIsNodeDragging: (isDragging) => set({ isNodeDragging: isDragging }),
             toggleLodImmunity: (id) => set((state) => {
-                const isImmune = state.lodImmuneIslands.includes(id);
+                const isImmune = state.lodImmuneNodes.includes(id);
                 return {
-                    lodImmuneIslands: isImmune
-                        ? state.lodImmuneIslands.filter((i) => i !== id)
-                        : [...state.lodImmuneIslands, id]
+                    lodImmuneNodes: isImmune
+                        ? state.lodImmuneNodes.filter((i) => i !== id)
+                        : [...state.lodImmuneNodes, id]
                 };
             }),
             toggleMinimize: (id) => set((state) => {
-                const isMinimized = state.minimizedIslands.includes(id);
+                const isMinimized = state.minimizedNodes.includes(id);
                 return {
-                    minimizedIslands: isMinimized
-                        ? state.minimizedIslands.filter((i) => i !== id)
-                        : [...state.minimizedIslands, id]
+                    minimizedNodes: isMinimized
+                        ? state.minimizedNodes.filter((i) => i !== id)
+                        : [...state.minimizedNodes, id]
                 };
             }),
             updateConfig: (partial) => set((state) => ({ config: { ...state.config, ...partial } })),
             openGemini: (context) => set({ geminiContext: context, isGeminiOpen: true }),
             closeGemini: () => set({ isGeminiOpen: false, geminiContext: null }),
             resetLayout: () => set({
-                islandPositions: { ...DEFAULT_POSITIONS },
-                islandDimensions: { ...DEFAULT_DIMENSIONS },
+                nodePositions: { ...DEFAULT_POSITIONS },
+                nodeDimensions: { ...DEFAULT_DIMENSIONS },
                 translation: { x: 0, y: 0 },
                 scale: 0.8
             }),
@@ -179,10 +179,10 @@ export const useStore = create<Store>()(
             partialize: (state) => ({
                 translation: state.translation,
                 scale: state.scale,
-                islandPositions: state.islandPositions,
-                islandDimensions: state.islandDimensions,
-                lodImmuneIslands: state.lodImmuneIslands,
-                minimizedIslands: state.minimizedIslands,
+                nodePositions: state.nodePositions,
+                nodeDimensions: state.nodeDimensions,
+                lodImmuneNodes: state.lodImmuneNodes,
+                minimizedNodes: state.minimizedNodes,
                 config: state.config,
             }),
         }

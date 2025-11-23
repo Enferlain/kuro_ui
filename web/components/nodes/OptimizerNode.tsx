@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../../lib/store';
 import { Input, Select } from '../FormComponents';
 
-export const OptimizerIsland: React.FC = () => {
+export const OptimizerNode: React.FC = () => {
     const { config, updateConfig } = useStore();
 
     return (

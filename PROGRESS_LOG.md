@@ -3,7 +3,7 @@
 ## Entry: November 21, 2025
 
 ### Summary
-Successfully migrated the "Kuro Trainer" frontend from a Vite/React application to a Next.js 14 application, while fully restoring the original premium "Islands" UI design and implementing requested enhancements.
+Successfully migrated the "Kuro Trainer" frontend from a Vite/React application to a Next.js 14 application, while fully restoring the original premium "Nodes" UI design and implementing requested enhancements.
 
 ### Key Achievements
 
@@ -14,26 +14,26 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 - **Cleanup**: Removed all legacy Vite configuration and source files from the root directory.
 
 #### 2. UI Restoration & Polish
-- **Islands Architecture**: Re-implemented the core "Island" component with:
+- **Nodes Architecture**: Re-implemented the core "Node" component with:
     - Correct `#232034` background colors (fixed "too dark" issue).
     - Original drag-and-drop and resize physics.
     - Content scaling via header icon drag or Ctrl+Scroll.
 - **Canvas**: Restored the infinite pan/zoom canvas with:
     - **Dynamic Grid**: Implemented a fade-out effect for the grid when zooming out to reduce eye strain.
-    - **Connections**: Restored animated connection lines between islands.
+    - **Connections**: Restored animated connection lines between Nodes.
 - **Sidebar**: Restored the left-hand sidebar for global project settings ("Train Mode").
 
 #### 3. Feature Enhancements
 - **Search Deep Linking**:
     - Implemented a search popup (Ctrl+K or button).
-    - Clicking a result now **zooms** to the specific island AND **scrolls** the target field into view.
+    - Clicking a result now **zooms** to the specific Node AND **scrolls** the target field into view.
     - Added a visual highlight (violet ring) to the found field.
 
 #### 4. Performance Optimization
 - **Issue**: Addressed FPS drops (mid 100s) when zooming and dragging panels.
 - **Fixes**:
     - **Connection Lines**: Removed per-frame store subscriptions; lines now only update when crossing LOD thresholds.
-    - **Canvas Rendering**: Memoized `Island` components to prevent full re-renders of all islands during drag operations.
+    - **Canvas Rendering**: Memoized `Node` components to prevent full re-renders of all Nodes during drag operations.
     - **Store Selectors**: Optimized `Canvas` state selection to reduce unnecessary updates.
 - **Result**: Restored smooth performance (200+ FPS) during complex interactions.
 
@@ -53,14 +53,14 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 ### 2. Level of Detail (LOD) System Improvements
 - **Click to Expand**: Panels now force-expand to full view when clicked, overriding LOD effects.
 - **LOD Immunity Toggle**: Added an "Eye" icon to each panel header that allows users to make panels permanently immune to LOD shrinking.
-  - **Implementation**: Added `lodImmuneIslands` state array and `toggleLodImmunity` action to the Zustand store.
+  - **Implementation**: Added `lodImmuneNodes` state array and `toggleLodImmunity` action to the Zustand store.
   - **UI Feedback**: Eye icon shows "open" when immunity is ON (violet color) and "crossed-out" when OFF (gray color).
 - **Code Refactor**: Centralized LOD calculation logic:
   - **`web/lib/lod.ts`**: Pure function for LOD state calculations.
-  - **`web/hooks/useIslandLOD.ts`**: React hook for components to easily access LOD state.
+  - **`web/hooks/useNodeLOD.ts`**: React hook for components to easily access LOD state.
   - **Benefits**: Single source of truth for threshold logic; easier to maintain and adjust in the future.
 
-### 3. General Args Island Reorganization
+### 3. General Args Node Reorganization
 - **Flag Consolidation**: Reorganized all model/training flags into a single, well-structured "Flags" section with categorical sub-headers:
   - **Model**: SDXL, SD2.X (mutually exclusive)
   - **Precision**: Full FP16, Full BF16, FP8 Base (mutually exclusive - selecting one disables others)
@@ -86,27 +86,27 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 - **Persisted State**: The following canvas/UI states now persist automatically:
   - Canvas position (`translation`)
   - Zoom level (`scale`)
-  - Island positions (`islandPositions`)
-  - Island dimensions (`islandDimensions`) - manual panel resizing
+  - Node positions (`nodePositions`)
+  - Node dimensions (`nodeDimensions`) - manual panel resizing
   - Content scale within panels
-  - LOD immunity status (`lodImmuneIslands`) - which panels are locked from collapsing
+  - LOD immunity status (`lodImmuneNodes`) - which panels are locked from collapsing
   - All configuration values (`config`)
 - **Storage Key**: `kuro-canvas-storage` in browser localStorage
 - **Reset Functionality**: Existing "Reset Layout" button (LayoutGrid icon) properly clears saved state and restores defaults
 
 ### 5. Dynamic Collision Detection System
-- **Problem Solved**: Islands could overlap freely on the infinite canvas, creating visual clutter and confusion.
+- **Problem Solved**: Nodes could overlap freely on the infinite canvas, creating visual clutter and confusion.
 - **Implementation**: Created `web/lib/collision.ts` with physics-like collision handling:
-  - **`pushIslandsOnDrag()`**: When dragging an island, other islands are dynamically pushed out of the way
-  - **`pushIslandsOnResize()`**: When resizing an island, nearby islands are pushed to make room
-  - **Push Direction**: Intelligent direction detection (horizontal or vertical) based on island centers
-  - **Chain Reactions**: Islands can push multiple others in sequence (up to 5 iterations to prevent infinite loops)
-  - **Padding**: Maintains 20px visual breathing room between islands
+  - **`pushNodesOnDrag()`**: When dragging an Node, other Nodes are dynamically pushed out of the way
+  - **`pushNodesOnResize()`**: When resizing an Node, nearby Nodes are pushed to make room
+  - **Push Direction**: Intelligent direction detection (horizontal or vertical) based on Node centers
+  - **Chain Reactions**: Nodes can push multiple others in sequence (up to 5 iterations to prevent infinite loops)
+  - **Padding**: Maintains 20px visual breathing room between Nodes
 - **LOD Awareness**: 
   - Collision detection respects visual boundaries (card mode vs expanded mode)
-  - Islands in LOD (card) mode have smaller collision boundaries matching their visual size
-  - **LOD Immunity Support**: Locked islands maintain full collision boundaries even when zoomed out
-- **User Experience**: No restrictions on movement - islands smoothly slide out of the way, creating a fluid, physics-like interaction on the infinite canvas
+  - Nodes in LOD (card) mode have smaller collision boundaries matching their visual size
+  - **LOD Immunity Support**: Locked Nodes maintain full collision boundaries even when zoomed out
+- **User Experience**: No restrictions on movement - Nodes smoothly slide out of the way, creating a fluid, physics-like interaction on the infinite canvas
 
 ## Next Steps
 - Verify all specific form inputs and their interactions with the backend.
@@ -136,9 +136,9 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 
 ### 3. UI & UX Refinements
 - **Alignment Fixes**:
-    - **DataIsland**: Fixed alignment of the Trash icon (delete subset) and Folder icons within input fields to be pixel-perfect.
+    - **DataNode**: Fixed alignment of the Trash icon (delete subset) and Folder icons within input fields to be pixel-perfect.
 - **Link Connections**: Fixed an issue where connection lines would point to the wrong location when a node was minimized. Links now correctly snap to the card's edges in minimized mode.
-- **Canvas Consistency**: Ensured `DataIsland` shares the exact same canvas behavior (drag, scroll, LOD) as `GeneralArgsIsland` and updated its default dimensions to match.
+- **Canvas Consistency**: Ensured `DataNode` shares the exact same canvas behavior (drag, scroll, LOD) as `GeneralArgsNode` and updated its default dimensions to match.
 
 ### 4. Subset Card Interaction Refinements
 - **Editable Header**:
@@ -164,3 +164,16 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 - **Collision Physics Upgrade**:
     - **Minimized State Awareness**: The collision system now correctly detects if a node is minimized (manually or via zoom) and uses its smaller "Card Size" boundary for physics calculations.
     - **Logic Synchronization**: Synchronized the collision engine's LOD logic with the visual rendering engine's logic (using exact viewport thresholds). This ensures that what you see is exactly what you collide with, eliminating "ghost" collisions around expanded-looking nodes that physics treated as cards.
+
+### 6. BucketUI Integration
+-   **New "Bucketing" Section**:
+    -   **Implementation**: Added a dedicated "Bucketing" section to the `GeneralArgsNode` component.
+    -   **Reordering**: Reorganized the Node's layout to follow a logical flow: Model -> Training -> Resolution -> Bucketing.
+    -   **New Fields**:
+        -   **Enable Bucketing**: Main toggle to enable/disable the entire feature.
+        -   **Don't Upscale Images**: Toggle switch.
+        -   **Min/Max Bucket Resolution**: Number inputs for defining resolution boundaries.
+        -   **Bucket Resolution Steps**: Number input for step size.
+    -   **UX Refinement**: Implemented a "disabled state" logic where turning off the main "Bucketing" toggle visually dims and disables all related input fields, preventing accidental edits while keeping settings visible.
+-   **State Management**:
+    -   Updated `TrainingConfig` interface (`types.ts`) and Zustand store (`store.ts`) to support the new bucketing parameters (`enableBucket`, `minBucketReso`, `maxBucketReso`, `bucketResoSteps`, `bucketNoUpscale`).

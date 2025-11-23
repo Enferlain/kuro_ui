@@ -3,13 +3,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../lib/store';
-import { IslandId } from '../lib/types';
+import { NodeId } from '../lib/types';
 import { LucideIcon, Scaling, Pin, Minimize2, Maximize2 } from 'lucide-react';
-import { useIslandLOD } from '../hooks/useIslandLOD';
-import { pushIslandsOnDrag, pushIslandsOnResize } from '../lib/collision';
+import { useNodeLOD } from '../hooks/useNodeLOD';
+import { pushNodesOnDrag, pushNodesOnResize } from '../lib/collision';
 
-interface IslandProps {
-    id: IslandId;
+interface NodeProps {
+    id: NodeId;
     title: string;
     icon: LucideIcon;
     children: React.ReactNode;
@@ -19,22 +19,22 @@ interface IslandProps {
 export const LOD_WIDTH = 200;
 export const LOD_HEIGHT = 128;
 
-export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon, children }) => {
+export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, children }) => {
     // Optimize Selectors
-    const position = useStore((state) => state.islandPositions[id]);
-    const dimensions = useStore((state) => state.islandDimensions[id]);
-    const isActive = useStore((state) => state.activeIsland === id);
-    const anyActive = useStore((state) => !!state.activeIsland);
+    const position = useStore((state) => state.nodePositions[id]);
+    const dimensions = useStore((state) => state.nodeDimensions[id]);
+    const isActive = useStore((state) => state.activeNode === id);
+    const anyActive = useStore((state) => !!state.activeNode);
     const scale = useStore((state) => state.scale);
-    const moveIsland = useStore((state) => state.moveIsland);
-    const resizeIsland = useStore((state) => state.resizeIsland);
-    const setActiveIsland = useStore((state) => state.setActiveIsland);
-    const setIsIslandDragging = useStore((state) => state.setIsIslandDragging);
-    const lodImmuneIslands = useStore((state) => state.lodImmuneIslands);
+    const moveNode = useStore((state) => state.moveNode);
+    const resizeNode = useStore((state) => state.resizeNode);
+    const setActiveNode = useStore((state) => state.setActiveNode);
+    const setIsNodeDragging = useStore((state) => state.setIsNodeDragging);
+    const lodImmuneNodes = useStore((state) => state.lodImmuneNodes);
     const toggleLodImmunity = useStore((state) => state.toggleLodImmunity);
-    const allPositions = useStore((state) => state.islandPositions);
-    const allDimensions = useStore((state) => state.islandDimensions);
-    const minimizedIslands = useStore((state) => state.minimizedIslands);
+    const allPositions = useStore((state) => state.nodePositions);
+    const allDimensions = useStore((state) => state.nodeDimensions);
+    const minimizedNodes = useStore((state) => state.minimizedNodes);
     const toggleMinimize = useStore((state) => state.toggleMinimize);
     const viewportSize = useStore((state) => state.viewportSize);
 
@@ -46,9 +46,9 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
     const currentWidth = dimensions?.width || 300;
     const currentHeight = dimensions?.height || 300;
 
-    const { isZoomedOut, autoCollapse } = useIslandLOD(id, { width: currentWidth, height: currentHeight });
-    const isImmune = lodImmuneIslands.includes(id);
-    const isMinimized = minimizedIslands.includes(id);
+    const { isZoomedOut, autoCollapse } = useNodeLOD(id, { width: currentWidth, height: currentHeight });
+    const isImmune = lodImmuneNodes.includes(id);
+    const isMinimized = minimizedNodes.includes(id);
 
     // Track previous zoomed state to detect expansion
     const prevIsZoomedOut = React.useRef(isZoomedOut);
@@ -58,46 +58,46 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
         if (prevIsZoomedOut.current && !isZoomedOut) {
             const state = useStore.getState();
 
-            pushIslandsOnResize(
+            pushNodesOnResize(
                 id,
                 position.x,
                 position.y,
                 currentWidth,
                 currentHeight,
-                state.islandPositions,
-                state.islandDimensions,
+                state.nodePositions,
+                state.nodeDimensions,
                 (pushedId, newX, newY) => {
-                    state.moveIsland(pushedId, newX, newY);
+                    state.moveNode(pushedId, newX, newY);
                 },
                 scale,
-                lodImmuneIslands,
-                minimizedIslands,
+                lodImmuneNodes,
+                minimizedNodes,
                 viewportSize
             );
         }
         prevIsZoomedOut.current = isZoomedOut;
-    }, [isZoomedOut, id, position.x, position.y, currentWidth, currentHeight, scale, lodImmuneIslands, minimizedIslands, viewportSize]);
+    }, [isZoomedOut, id, position.x, position.y, currentWidth, currentHeight, scale, lodImmuneNodes, minimizedNodes, viewportSize]);
 
-    // Calculate offset to center the LOD card relative to the full island size
+    // Calculate offset to center the LOD card relative to the full Node size
     const xOffset = isZoomedOut ? (currentWidth - LOD_WIDTH) / 2 : 0;
     const yOffset = isZoomedOut ? (currentHeight - LOD_HEIGHT) / 2 : 0;
     const opacity = (isActive || isDragging || isResizing || !anyActive) ? 1 : 0.4;
     const zIndex = isActive || isDragging || isResizing ? 50 : 10;
 
-    // --- DRAG LOGIC (Moves the Island) ---
+    // --- DRAG LOGIC (Moves the Node) ---
     const handlePointerDown = (e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         const startMouseX = e.clientX;
         const startMouseY = e.clientY;
-        const startIslandX = position.x;
-        const startIslandY = position.y;
+        const startNodeX = position.x;
+        const startNodeY = position.y;
 
         const currentScale = useStore.getState().scale;
 
         setIsDragging(true);
-        setIsIslandDragging(true);
+        setIsNodeDragging(true);
 
         let hasMoved = false;
 
@@ -113,11 +113,11 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
             if (hasMoved) {
                 const dx = rawDx / currentScale;
                 const dy = rawDy / currentScale;
-                const desiredX = startIslandX + dx;
-                const desiredY = startIslandY + dy;
+                const desiredX = startNodeX + dx;
+                const desiredY = startNodeY + dy;
 
-                // Move the dragged island
-                moveIsland(id, desiredX, desiredY);
+                // Move the dragged Node
+                moveNode(id, desiredX, desiredY);
 
                 // Calculate actual visual dimensions for collision (accounting for LOD)
                 const visualWidth = isZoomedOut ? LOD_WIDTH : currentWidth;
@@ -126,8 +126,8 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
                 const visualX = isZoomedOut ? desiredX + xOffset : desiredX;
                 const visualY = isZoomedOut ? desiredY + yOffset : desiredY;
 
-                // Push other islands out of the way
-                pushIslandsOnDrag(
+                // Push other nodes out of the way
+                pushNodesOnDrag(
                     id,
                     visualX,
                     visualY,
@@ -136,12 +136,12 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
                     allPositions,
                     allDimensions,
                     (pushedId, newX, newY) => {
-                        // Use the store's moveIsland to update pushed islands
-                        useStore.getState().moveIsland(pushedId, newX, newY);
+                        // Use the store's moveNode to update pushed nodes
+                        useStore.getState().moveNode(pushedId, newX, newY);
                     },
                     scale, // Pass current scale for LOD calculation
-                    lodImmuneIslands, // Pass LOD immunity list
-                    minimizedIslands, // Pass minimized list
+                    lodImmuneNodes, // Pass LOD immunity list
+                    minimizedNodes, // Pass minimized list
                     viewportSize // Pass viewport size for accurate LOD calculation
                 );
             }
@@ -149,14 +149,14 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
 
         const handlePointerUp = () => {
             setIsDragging(false);
-            setIsIslandDragging(false);
+            setIsNodeDragging(false);
 
             window.removeEventListener('pointermove', handlePointerMove);
             window.removeEventListener('pointerup', handlePointerUp);
 
             if (!hasMoved) {
-                setActiveIsland(id);
-                // If we are clicking a minimized island that SHOULD be open (based on zoom),
+                setActiveNode(id);
+                // If we are clicking a minimized Node that SHOULD be open (based on zoom),
                 // we un-minimize it so it stays open when we click away.
                 if (isMinimized && !autoCollapse) {
                     toggleMinimize(id);
@@ -168,7 +168,7 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
         window.addEventListener('pointerup', handlePointerUp);
     };
 
-    // --- RESIZE LOGIC (Scales the Island) ---
+    // --- RESIZE LOGIC (Scales the Node) ---
     const handleResizeDown = (e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -189,11 +189,11 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
             const desiredWidth = Math.max(250, startWidth + (rawDx / currentScale));
             const desiredHeight = Math.max(200, startHeight + (rawDy / currentScale));
 
-            // Resize the island
-            resizeIsland(id, desiredWidth, desiredHeight);
+            // Resize the Node
+            resizeNode(id, desiredWidth, desiredHeight);
 
-            // Push other islands out of the way
-            pushIslandsOnResize(
+            // Push other nodes out of the way
+            pushNodesOnResize(
                 id,
                 position.x,
                 position.y,
@@ -202,12 +202,12 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
                 allPositions,
                 allDimensions,
                 (pushedId, newX, newY) => {
-                    // Use the store's moveIsland to update pushed islands
-                    useStore.getState().moveIsland(pushedId, newX, newY);
+                    // Use the store's moveNode to update pushed nodes
+                    useStore.getState().moveNode(pushedId, newX, newY);
                 },
                 currentScale,
-                lodImmuneIslands,
-                minimizedIslands,
+                lodImmuneNodes,
+                minimizedNodes,
                 viewportSize
             );
         };
@@ -374,7 +374,7 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
                                                 // If NOT minimized, set it to minimized
                                                 if (!isMinimized) toggleMinimize(id);
                                                 // Always deselect to collapse
-                                                setActiveIsland(null);
+                                                setActiveNode(null);
                                             } else {
                                                 toggleMinimize(id);
                                             }
@@ -453,4 +453,4 @@ export const Island: React.FC<IslandProps> = React.memo(({ id, title, icon: Icon
     );
 });
 
-Island.displayName = 'Island';
+Node.displayName = 'Node';
