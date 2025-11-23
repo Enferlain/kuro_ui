@@ -95,6 +95,13 @@ export interface TrainingConfig {
   gradientAccumulation: number;
   gradientCheckpointing: boolean;
 
+  // Bucketing
+  enableBucket: boolean;
+  minBucketReso: number;
+  maxBucketReso: number;
+  bucketResoSteps: number;
+  bucketNoUpscale: boolean;
+
   // Model
   baseModelPath: string; // Replaces pretrainedModelPath
   modelType: 'sd15' | 'sdxl' | 'sd2';

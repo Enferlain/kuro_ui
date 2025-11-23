@@ -214,68 +214,7 @@ export const GeneralArgsIsland: React.FC = () => {
 
             <div className="h-px bg-[#2A273F]" />
 
-            {/* Section 2: Resolution & Gradient */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Resolution */}
-                <div className="space-y-3">
-                    <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Resolution</h3>
-                    <div className="flex flex-col gap-3">
-                        <Input
-                            label="Width"
-                            name="width"
-                            type="number"
-                            value={config.width}
-                            onChange={(e) => updateConfig({ width: parseInt(e.target.value) })}
-                        />
-                        <Input
-                            label="Height"
-                            name="height"
-                            type="number"
-                            value={config.height}
-                            onChange={(e) => updateConfig({ height: parseInt(e.target.value) })}
-                        />
-                    </div>
-                </div>
-
-                {/* Gradient */}
-                <div className="space-y-3">
-                    <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Gradient</h3>
-                    <div className="flex flex-col gap-3">
-                        <FieldWrapper label="Gradient Checkpointing" id="grad_checkpointing">
-                            <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm px-3">
-                                <Toggle
-                                    name="grad_checkpointing"
-                                    checked={config.gradientCheckpointing}
-                                    onChange={(e) => updateConfig({ gradientCheckpointing: e.target.checked })}
-                                />
-                            </div>
-                        </FieldWrapper>
-
-                        <FieldWrapper label="Gradient Accumulation" id="grad_accumulation_enable">
-                            <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm overflow-hidden">
-                                <div className="flex items-center justify-center px-3 h-full border-r border-[#3E3B5E]">
-                                    <Toggle
-                                        name="grad_accumulation_enable"
-                                        checked={config.gradientAccumulation > 1}
-                                        onChange={(e) => updateConfig({ gradientAccumulation: e.target.checked ? 2 : 1 })}
-                                    />
-                                </div>
-                                <input
-                                    type="number"
-                                    value={config.gradientAccumulation}
-                                    onChange={(e) => updateConfig({ gradientAccumulation: parseInt(e.target.value) })}
-                                    disabled={config.gradientAccumulation <= 1}
-                                    className="flex-1 bg-transparent px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full"
-                                />
-                            </div>
-                        </FieldWrapper>
-                    </div>
-                </div>
-            </div>
-
-            <div className="h-px bg-[#2A273F]" />
-
-            {/* Section 3: Training Parameters - 3x3 Grid */}
+            {/* Section 2: Training Parameters - 3x3 Grid */}
             <div className="space-y-3">
                 <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Training Parameters</h3>
                 <div className="grid grid-cols-3 gap-3">
@@ -379,6 +318,118 @@ export const GeneralArgsIsland: React.FC = () => {
                             />
                         </div>
                     </FieldWrapper>
+                </div>
+            </div>
+
+            <div className="h-px bg-[#2A273F]" />
+
+            {/* Section 3: Resolution & Gradient */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Resolution */}
+                <div className="space-y-3">
+                    <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Resolution</h3>
+                    <div className="flex flex-col gap-3">
+                        <Input
+                            label="Width"
+                            name="width"
+                            type="number"
+                            value={config.width}
+                            onChange={(e) => updateConfig({ width: parseInt(e.target.value) })}
+                        />
+                        <Input
+                            label="Height"
+                            name="height"
+                            type="number"
+                            value={config.height}
+                            onChange={(e) => updateConfig({ height: parseInt(e.target.value) })}
+                        />
+                    </div>
+                </div>
+
+                {/* Gradient */}
+                <div className="space-y-3">
+                    <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Gradient</h3>
+                    <div className="flex flex-col gap-3">
+                        <FieldWrapper label="Gradient Checkpointing" id="grad_checkpointing">
+                            <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm px-3">
+                                <Toggle
+                                    name="grad_checkpointing"
+                                    checked={config.gradientCheckpointing}
+                                    onChange={(e) => updateConfig({ gradientCheckpointing: e.target.checked })}
+                                />
+                            </div>
+                        </FieldWrapper>
+
+                        <FieldWrapper label="Gradient Accumulation" id="grad_accumulation_enable">
+                            <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm overflow-hidden">
+                                <div className="flex items-center justify-center px-3 h-full border-r border-[#3E3B5E]">
+                                    <Toggle
+                                        name="grad_accumulation_enable"
+                                        checked={config.gradientAccumulation > 1}
+                                        onChange={(e) => updateConfig({ gradientAccumulation: e.target.checked ? 2 : 1 })}
+                                    />
+                                </div>
+                                <input
+                                    type="number"
+                                    value={config.gradientAccumulation}
+                                    onChange={(e) => updateConfig({ gradientAccumulation: parseInt(e.target.value) })}
+                                    disabled={config.gradientAccumulation <= 1}
+                                    className="flex-1 bg-transparent px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full"
+                                />
+                            </div>
+                        </FieldWrapper>
+                    </div>
+                </div>
+            </div>
+
+            <div className="h-px bg-[#2A273F]" />
+
+            {/* Section 4: Bucketing */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-xs font-bold text-[#5B5680] uppercase tracking-wider">Bucketing</h3>
+                        <Toggle
+                            name="enable_bucket"
+                            checked={config.enableBucket}
+                            onChange={(e) => updateConfig({ enableBucket: e.target.checked })}
+                        />
+                    </div>
+                    <div className={`flex items-center gap-2 transition-opacity duration-200 ${!config.enableBucket ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <span className="text-xs text-[#7B77A0] font-medium">Don't Upscale Images</span>
+                        <Toggle
+                            name="bucket_no_upscale"
+                            checked={config.bucketNoUpscale}
+                            onChange={(e) => updateConfig({ bucketNoUpscale: e.target.checked })}
+                            disabled={!config.enableBucket}
+                        />
+                    </div>
+                </div>
+                <div className={`grid grid-cols-3 gap-3 transition-opacity duration-200 ${!config.enableBucket ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <Input
+                        label="Min Bucket Reso"
+                        name="min_bucket_reso"
+                        type="number"
+                        value={config.minBucketReso}
+                        onChange={(e) => updateConfig({ minBucketReso: parseInt(e.target.value) })}
+                        disabled={!config.enableBucket}
+                    />
+                    <Input
+                        label="Max Bucket Reso"
+                        name="max_bucket_reso"
+                        type="number"
+                        value={config.maxBucketReso}
+                        onChange={(e) => updateConfig({ maxBucketReso: parseInt(e.target.value) })}
+                        disabled={!config.enableBucket}
+                    />
+                    <Input
+                        label="Bucket Reso Steps"
+                        name="bucket_reso_steps"
+                        type="number"
+                        value={config.bucketResoSteps}
+                        onChange={(e) => updateConfig({ bucketResoSteps: parseInt(e.target.value) })}
+                        disabled={!config.enableBucket}
+                    />
                 </div>
             </div>
 

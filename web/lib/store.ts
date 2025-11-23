@@ -86,6 +86,13 @@ export const useStore = create<Store>()(
                 gradientAccumulation: 1,
                 gradientCheckpointing: true,
 
+                // Bucketing
+                enableBucket: false,
+                minBucketReso: 256,
+                maxBucketReso: 1024,
+                bucketResoSteps: 64,
+                bucketNoUpscale: false,
+
                 // Model
                 baseModelPath: 'runwayml/stable-diffusion-v1-5',
                 modelType: 'sd15',
