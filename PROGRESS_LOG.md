@@ -196,3 +196,22 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 -   **Spacing Fixes**:
     -   Removed the default `mb-5` margin from `FieldWrapper` in `FormComponents.tsx`. This resolved an issue where grid layouts had double the vertical spacing compared to block layouts. Spacing is now consistently controlled by parent containers.
     -   Refactored `GeneralArgsNode` to split "Model Configuration" and "Flags" into separate sections, ensuring the separator between them has equal spacing (20px) above and below, matching the rest of the UI.
+
+---
+
+## Entry: November 24, 2025
+
+### 1. Network Node Refinement
+- **Dynamic UI Architecture**:
+    - **Algorithm-Aware Rendering**: The UI now dynamically adapts based on the selected "Network Algo", showing only relevant options for each algorithm (LoRA, LoCon, LoHa, LoKr, IA3, DyLoRA, etc.).
+    - **Smart Defaults**: Implemented logic to handle default values and visibility for algorithm-specific settings.
+- **Visual & UX Polish**:
+    - **Standardized Toggles**: Replaced custom toggle implementations with the shared `Toggle` component, removing redundant "Enabled/Disabled" text labels for a cleaner look.
+    - **3-Column Grid**: Organized boolean flags into a dense, readable 3-column grid layout.
+    - **"Toggle + Input" Pattern**: Implemented a unified pattern for optional numeric fields (like `Constraint` and `Factor`) where the input is visually merged with its enabling toggle.
+- **Layout Reorganization**:
+    - **Logical Ordering**: Reordered settings to prioritize input fields (DyLoRA Unit, Factor, Constraint) at the top, followed by the grid of toggles.
+    - **Toggle Grouping**: Within the grid, algorithm-specific toggles (e.g., LoKr's "Full Matrix") appear first, followed by common toggles (Weight Decomposition), and finally general toggles (Train Norm, Bypass).
+- **Smart Logic**:
+    - **WD on Output**: Made `wd_on_output` always visible when applicable. Enabling it automatically enables the parent `weight_decomposition` flag.
+    - **LoKr Factor**: Implemented specific logic for the Factor field, allowing it to be toggled between "Auto" (-1) and a manual numeric value.

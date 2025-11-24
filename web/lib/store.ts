@@ -130,6 +130,27 @@ export const useStore = create<Store>()(
                 networkConvDim: 32,
                 networkConvAlpha: 16,
                 networkArgs: [],
+
+                // Network Algo Specific
+                networkLoConType: 'kohya',
+                networkDyLoRAType: 'lycoris',
+                networkWeightDecomposition: false,
+                networkWdOnOutput: false,
+                networkTuckerDecomposition: false,
+                networkOrthogonalize: false,
+                networkRankStabilized: false,
+                networkTrainNorm: false,
+                networkUseScalar: false,
+                networkBypassMode: false,
+                networkLoKrFactor: -1,
+                networkLoKrUnbalancedFactorization: false,
+                networkLoKrFullMatrix: false,
+                networkLoKrDecomposeBoth: false,
+                networkDyLoRAUnit: 4,
+                networkTrainOnInput: false,
+                networkRescaled: false,
+                networkConstraint: 1.0,
+                networkConstraintEnabled: false,
             },
 
             // Viewport State

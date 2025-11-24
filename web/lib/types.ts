@@ -138,6 +138,27 @@ export interface TrainingConfig {
   networkConvDim: number;
   networkConvAlpha: number;
   networkArgs: Array<{ key: string; value: string }>;
+
+  // Network Algo Specific
+  networkLoConType: 'kohya' | 'lycoris';
+  networkDyLoRAType: 'kohya' | 'lycoris';
+  networkWeightDecomposition: boolean;
+  networkWdOnOutput: boolean;
+  networkTuckerDecomposition: boolean;
+  networkOrthogonalize: boolean;
+  networkRankStabilized: boolean;
+  networkTrainNorm: boolean;
+  networkUseScalar: boolean;
+  networkBypassMode: boolean;
+  networkLoKrFactor: number;
+  networkLoKrUnbalancedFactorization: boolean;
+  networkLoKrFullMatrix: boolean;
+  networkLoKrDecomposeBoth: boolean;
+  networkDyLoRAUnit: number;
+  networkTrainOnInput: boolean;
+  networkRescaled: boolean;
+  networkConstraint: number;
+  networkConstraintEnabled: boolean;
 }
 
 export interface UIState {
