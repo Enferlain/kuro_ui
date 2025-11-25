@@ -215,3 +215,57 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 - **Smart Logic**:
     - **WD on Output**: Made `wd_on_output` always visible when applicable. Enabling it automatically enables the parent `weight_decomposition` flag.
     - **LoKr Factor**: Implemented specific logic for the Factor field, allowing it to be toggled between "Auto" (-1) and a manual numeric value.
+
+### 2. Network Node UI Adjustments
+- **Option Renaming**:
+    - Renamed "LoRA" to "LoRA (Kohya)" to clarify the implementation.
+    - Renamed "LoCon (LyCORIS)" to "LoCon" and "DyLoRA (LyCORIS)" to "DyLoRA" for cleaner labels.
+    - Removed "LoCon (Kohya)" and "DyLoRA (Kohya)" from the dropdown (deprecated implementations).
+- **Visibility Logic Refinements**:
+    - **Conv Dim/Alpha**: Updated visibility to hide for `LoRA (Kohya)`, `IA3`, `DIAG-OFT`, `BOFT`, and `FULL` algorithms.
+    - **Block Size**: Added new "Block Size" field (default: 4) visible for `DyLoRA`, `DIAG-OFT`, and `BOFT`.
+    - **DyLoRA Unit**: Removed redundant "DyLoRA Unit" field - replaced by "Block Size".
+    - **Preset Field**: Made "LyCORIS Preset" always visible but disabled (with opacity fade) when `LoRA (Kohya)` is selected, matching the General Args bucketing style.
+- **LoKr QoL Improvements**:
+    - **Factor Field**: Applied disabled styling (`opacity-50 pointer-events-none`) when "Full Matrix" toggle is enabled, preventing conflicting configurations.
+    - **Factor Default**: Ensured "Factor" field defaults to `-1` (auto) instead of empty, with proper fallback logic.
+- **State Management**:
+    - Added `networkBlockSize` to `TrainingConfig` interface and store with default value of 4.
+
+---
+
+## Entry: November 25, 2025
+
+### 1. Path Entry Field Enhancements
+- **Folder Icons**: Added folder icons to path entry fields for improved UX and visual consistency:
+    - **General Args Node**:
+        - Added `FolderOpen` icon to "Base Model" field
+        - Added `FolderOpen` icon to "External VAE" field
+    - **Network Node**:
+        - Added `FolderOpen` icon to "LyCORIS Preset" field
+- **Implementation Details**:
+    - Icons positioned absolutely on the right side of input fields (`right-3 top-9`)
+    - Consistent hover effect: icons transition from gray (`#484463`) to violet (`violet-400`)
+    - Wrapped input fields in `relative group cursor-pointer` containers for proper icon positioning
+    - Icons match the existing design pattern from Dataset Node subset path fields
+- **Visual Consistency**: All path-related input fields across the application now share the same visual language
+
+### 2. Training Node Implementation (formerly Optimizer Node)
+- **Dynamic Architecture**:
+    - **JSON Schema Driven**: The entire UI for the Training Node is now generated dynamically from a JSON schema (`web/lib/optimizer-schema.ts`). This allows for instant support of new optimizers without manual UI coding.
+    - **Automated Schema Generation**: Created a Python script (`generate_schema.py`) that parses Python optimizer source files (`ref_opt_*.py`) and automatically generates the TypeScript schema. This bridges the gap between backend definitions and frontend UI.
+- **Advanced Optimizer Support**:
+    - **Reference Optimizers**: Fully integrated complex optimizers like **AdaBelief**, **CAME**, and **OCGOpt**.
+    - **Dynamic Fields**: The UI correctly renders specific fields for each optimizer (e.g., "Rectify" for AdaBelief, "Update Strategy" for CAME) based on the schema.
+    - **Tuple Handling**: Automatically splits tuple arguments (like `betas`) into individual UI fields (`beta1`, `beta2`).
+- **Renaming & Refinement**:
+    - Renamed "Optimizer Node" to "**Training Node**" to better reflect its scope (Optimizer + Scheduler + future training settings).
+    - Renamed "Training Parameters" section in General Args to "**Run Configuration**".
+
+### 3. General Args Node Refinements
+- **Gradient Section Polish**:
+    - **Gradient Checkpointing**: Simplified the UI by removing the background box, presenting it as a clean, standalone toggle.
+    - **Gradient Accumulation**:
+        - **Enabled State Logic**: Implemented a "toggle + input" pattern. The toggle enables/disables the input field.
+        - **Value Preservation**: Toggling OFF resets the value to 1. Toggling ON restores editability without auto-incrementing the value.
+        - **Visual Consistency**: Fixed the disabled state styling to match the "Bucketing" section (faded background and text), ensuring a uniform look for disabled inputs across the app.

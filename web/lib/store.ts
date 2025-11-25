@@ -120,6 +120,7 @@ export const useStore = create<Store>()(
                 unetLr: 0.0001,
                 textEncoderLr: 0.00005,
                 optimizerType: 'AdamW8bit',
+                optimizerArgs: {},
                 lrScheduler: 'cosine',
                 networkDim: 32,
                 networkAlpha: 16,
@@ -151,6 +152,7 @@ export const useStore = create<Store>()(
                 networkRescaled: false,
                 networkConstraint: 1.0,
                 networkConstraintEnabled: false,
+                networkBlockSize: 4,
             },
 
             // Viewport State

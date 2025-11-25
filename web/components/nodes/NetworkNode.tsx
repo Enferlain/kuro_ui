@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../../lib/store';
 import { Input, Select, Toggle, FieldWrapper } from '../FormComponents';
 import { NodeSeparator, NodeHeader } from '../NodeStyles';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, FolderOpen } from 'lucide-react';
 
 export const NetworkNode: React.FC = () => {
     const { config, updateConfig } = useStore();
@@ -92,14 +92,12 @@ export const NetworkNode: React.FC = () => {
                                 }
                             }}
                             options={[
-                                { value: 'lora', label: 'LoRA' },
-                                { value: 'locon-kohya', label: 'LoCon (Kohya)' },
-                                { value: 'locon-lycoris', label: 'LoCon (LyCORIS)' },
+                                { value: 'lora', label: 'LoRA (Kohya)' },
+                                { value: 'locon-lycoris', label: 'LoCon' },
                                 { value: 'loha', label: 'LoHa' },
                                 { value: 'lokr', label: 'LoKr' },
                                 { value: 'ia3', label: 'IA3' },
-                                { value: 'dylora-lycoris', label: 'DyLoRA (LyCORIS)' },
-                                { value: 'dylora-kohya', label: 'DyLoRA (Kohya)' },
+                                { value: 'dylora-lycoris', label: 'DyLoRA' },
                                 { value: 'diag-oft', label: 'DIAG-OFT' },
                                 { value: 'boft', label: 'BOFT' },
                                 { value: 'glora', label: 'GLoRA' },
@@ -109,27 +107,18 @@ export const NetworkNode: React.FC = () => {
                             ]}
                         />
 
-                        {/* DyLoRA (Kohya) TBD Message */}
-                        {config.networkAlgo === 'dylora' && config.networkDyLoRAType === 'kohya' && (
-                            <div className="p-3 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 text-xs">
-                                TBD - This implementation is not yet verified.
-                            </div>
-                        )}
-
-                        {/* Preset Field - Only for non-Kohya algos */}
-                        {!(
-                            config.networkAlgo === 'lora' ||
-                            (config.networkAlgo === 'locon' && config.networkLoConType === 'kohya') ||
-                            (config.networkAlgo === 'dylora' && config.networkDyLoRAType === 'kohya')
-                        ) && (
-                                <Input
-                                    label="LyCORIS Preset"
-                                    name="network_preset"
-                                    value={config.networkPreset || ''}
-                                    onChange={(e) => updateConfig({ networkPreset: e.target.value })}
-                                    placeholder="Path to preset file..."
-                                />
-                            )}
+                        {/* Preset Field - Always visible but disabled for LoRA (Kohya) */}
+                        <div className={`relative group cursor-pointer transition-opacity duration-200 ${config.networkAlgo === 'lora' ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <Input
+                                label="LyCORIS Preset"
+                                name="network_preset"
+                                value={config.networkPreset || ''}
+                                onChange={(e) => updateConfig({ networkPreset: e.target.value })}
+                                placeholder="Path to preset file..."
+                                disabled={config.networkAlgo === 'lora'}
+                            />
+                            <FolderOpen className="absolute right-3 top-9 w-4 h-4 text-[#484463] group-hover:text-violet-400 transition-colors" />
+                        </div>
 
                         <NodeSeparator />
 
@@ -152,7 +141,7 @@ export const NetworkNode: React.FC = () => {
                         </div>
 
                         {/* Conv Dim/Alpha */}
-                        {(!['ia3', 'lokr', 'glora', 'glora-ex', 'abba', 'full'].includes(config.networkAlgo)) && (
+                        {(!['lora', 'ia3', 'diag-oft', 'boft', 'full'].includes(config.networkAlgo)) && (
                             <div className="grid grid-cols-2 gap-3">
                                 <Input
                                     label="Conv Dim"
@@ -177,27 +166,33 @@ export const NetworkNode: React.FC = () => {
                         <div className="space-y-4">
                             {/* Section 1: Fields & Toggle/Fields */}
                             <div className="space-y-3">
-                                {/* DyLoRA Unit */}
-                                {config.networkAlgo === 'dylora' && (
+                                {/* Block Size */}
+                                {(['dylora', 'diag-oft', 'boft'].includes(config.networkAlgo)) && (
                                     <Input
-                                        label="DyLoRA Unit"
-                                        name="network_dylora_unit"
+                                        label="Block Size"
+                                        name="network_block_size"
                                         type="number"
-                                        value={config.networkDyLoRAUnit}
-                                        onChange={(e) => updateConfig({ networkDyLoRAUnit: parseInt(e.target.value) })}
+                                        value={config.networkBlockSize || 4}
+                                        onChange={(e) => updateConfig({ networkBlockSize: parseInt(e.target.value) })}
                                     />
                                 )}
 
                                 {/* LoKr Factor */}
                                 {config.networkAlgo === 'lokr' && (
-                                    <Input
-                                        label="Factor"
-                                        name="network_lokr_factor"
-                                        type="number"
-                                        value={config.networkLoKrFactor}
-                                        onChange={(e) => updateConfig({ networkLoKrFactor: parseInt(e.target.value) })}
-                                        placeholder="-1 for auto"
-                                    />
+                                    <div className={`transition-opacity duration-200 ${config.networkLoKrFullMatrix ? 'opacity-50 pointer-events-none' : ''}`}>
+                                        <Input
+                                            label="Factor"
+                                            name="network_lokr_factor"
+                                            type="number"
+                                            value={config.networkLoKrFactor ?? -1}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                updateConfig({ networkLoKrFactor: isNaN(val) ? -1 : val });
+                                            }}
+                                            placeholder="-1 for auto"
+                                            disabled={config.networkLoKrFullMatrix}
+                                        />
+                                    </div>
                                 )}
 
                                 {/* DIAG-OFT / BOFT - Constraint (Toggle + Input) */}
@@ -238,7 +233,7 @@ export const NetworkNode: React.FC = () => {
                                             onChange={(e) => updateConfig({ networkLoKrFullMatrix: e.target.checked })}
                                         />
                                         <Toggle
-                                            label="Unbalanced"
+                                            label="Unbalanced Factorization"
                                             name="network_lokr_unbalanced"
                                             checked={config.networkLoKrUnbalancedFactorization}
                                             onChange={(e) => updateConfig({ networkLoKrUnbalancedFactorization: e.target.checked })}

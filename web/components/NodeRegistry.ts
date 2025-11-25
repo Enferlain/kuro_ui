@@ -1,8 +1,8 @@
 import { NodeId, NodeConfig, GraphEdge } from '../lib/types';
-import { Database, Sliders, Cpu } from 'lucide-react';
+import { Database, Sliders, Cpu, Settings2 } from 'lucide-react';
 
 import { DataNode } from './nodes/DataNode';
-import { OptimizerNode } from './nodes/OptimizerNode';
+import { TrainingNode } from './nodes/TrainingNode';
 import { GeneralArgsNode } from './nodes/GeneralArgsNode';
 import { NetworkNode } from './nodes/NetworkNode';
 
@@ -21,9 +21,9 @@ export const NODE_REGISTRY: Record<string, NodeConfig> = {
     },
     [NodeId.OPTIMIZER]: {
         id: NodeId.OPTIMIZER,
-        title: 'Optimizer',
-        icon: Cpu,
-        component: OptimizerNode
+        title: 'Training',
+        icon: Settings2,
+        component: TrainingNode
     },
     [NodeId.NETWORK]: {
         id: NodeId.NETWORK,
@@ -34,9 +34,9 @@ export const NODE_REGISTRY: Record<string, NodeConfig> = {
 };
 
 export const GRAPH_EDGES: GraphEdge[] = [
-    { source: NodeId.GENERAL_ARGS, target: NodeId.NETWORK },
-    { source: NodeId.NETWORK, target: NodeId.DATA },
-    { source: NodeId.DATA, target: NodeId.OPTIMIZER },
+    { source: NodeId.GENERAL_ARGS, target: NodeId.DATA },
+    { source: NodeId.DATA, target: NodeId.NETWORK },
+    { source: NodeId.NETWORK, target: NodeId.OPTIMIZER },
 ];
 
 export interface SearchItem {

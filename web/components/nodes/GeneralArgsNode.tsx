@@ -2,30 +2,43 @@ import React from 'react';
 import { useStore } from '../../lib/store';
 import { Input, Select, Toggle, TextArea, FieldWrapper } from '../FormComponents';
 import { NodeSeparator, NodeHeader } from '../NodeStyles';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, FolderOpen } from 'lucide-react';
 
 export const GeneralArgsNode: React.FC = () => {
     const { config, updateConfig, openGemini } = useStore();
+    const [gradAccumEnabled, setGradAccumEnabled] = React.useState(config.gradientAccumulation > 1);
+
+    React.useEffect(() => {
+        if (config.gradientAccumulation > 1) {
+            setGradAccumEnabled(true);
+        }
+    }, [config.gradientAccumulation]);
 
     return (
         <div className="space-y-5">
             {/* Section 1: Model Configuration */}
             <div className="space-y-3">
                 <NodeHeader title="Model Configuration" />
-                <Input
-                    label="Base Model"
-                    name="base_model"
-                    value={config.baseModelPath}
-                    onChange={(e) => updateConfig({ baseModelPath: e.target.value })}
-                    placeholder="Base Model To Train With"
-                />
-                <Input
-                    label="External VAE"
-                    name="vae_path"
-                    value={config.vaePath}
-                    onChange={(e) => updateConfig({ vaePath: e.target.value })}
-                    placeholder="Vae to train with"
-                />
+                <div className="relative group cursor-pointer">
+                    <Input
+                        label="Base Model"
+                        name="base_model"
+                        value={config.baseModelPath}
+                        onChange={(e) => updateConfig({ baseModelPath: e.target.value })}
+                        placeholder="Base Model To Train With"
+                    />
+                    <FolderOpen className="absolute right-3 top-9 w-4 h-4 text-[#484463] group-hover:text-violet-400 transition-colors" />
+                </div>
+                <div className="relative group cursor-pointer">
+                    <Input
+                        label="External VAE"
+                        name="vae_path"
+                        value={config.vaePath}
+                        onChange={(e) => updateConfig({ vaePath: e.target.value })}
+                        placeholder="Vae to train with"
+                    />
+                    <FolderOpen className="absolute right-3 top-9 w-4 h-4 text-[#484463] group-hover:text-violet-400 transition-colors" />
+                </div>
                 <Select
                     label="VAE Padding Mode"
                     name="vae_padding_mode"
@@ -43,8 +56,8 @@ export const GeneralArgsNode: React.FC = () => {
             <NodeSeparator />
 
             <div className="space-y-3">
-                {/* Flags */}
-                <NodeHeader title="Flags" />
+                {/* Run Flags */}
+                <NodeHeader title="Run Flags" />
 
                 {/* Model */}
                 <div className="space-y-2">
@@ -217,13 +230,11 @@ export const GeneralArgsNode: React.FC = () => {
                 </div>
             </div>
 
-
-
             <NodeSeparator />
 
-            {/* Section 2: Training Parameters - 3x3 Grid */}
+            {/* Section 2: Run Configuration (formerly Training Parameters) */}
             <div className="space-y-3">
-                <NodeHeader title="Training Parameters" />
+                <NodeHeader title="Run Configuration" />
                 <div className="grid grid-cols-3 gap-3">
                     <Input
                         label="Seed"
@@ -358,7 +369,7 @@ export const GeneralArgsNode: React.FC = () => {
                     <NodeHeader title="Gradient" />
                     <div className="flex flex-col gap-3">
                         <FieldWrapper label="Gradient Checkpointing" id="grad_checkpointing">
-                            <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm px-3">
+                            <div className="flex items-center h-[42px] px-1">
                                 <Toggle
                                     name="grad_checkpointing"
                                     checked={config.gradientCheckpointing}
@@ -368,20 +379,25 @@ export const GeneralArgsNode: React.FC = () => {
                         </FieldWrapper>
 
                         <FieldWrapper label="Gradient Accumulation" id="grad_accumulation_enable">
-                            <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm overflow-hidden">
-                                <div className="flex items-center justify-center px-3 h-full border-r border-[#3E3B5E]">
+                            <div className="flex items-center h-[42px] border border-[#3E3B5E] rounded-sm overflow-hidden">
+                                <div className="flex items-center justify-center px-3 h-full border-r border-[#3E3B5E] bg-[#181625]">
                                     <Toggle
                                         name="grad_accumulation_enable"
-                                        checked={config.gradientAccumulation > 1}
-                                        onChange={(e) => updateConfig({ gradientAccumulation: e.target.checked ? 2 : 1 })}
+                                        checked={gradAccumEnabled}
+                                        onChange={(e) => {
+                                            setGradAccumEnabled(e.target.checked);
+                                            if (!e.target.checked) {
+                                                updateConfig({ gradientAccumulation: 1 });
+                                            }
+                                        }}
                                     />
                                 </div>
                                 <input
                                     type="number"
                                     value={config.gradientAccumulation}
                                     onChange={(e) => updateConfig({ gradientAccumulation: parseInt(e.target.value) })}
-                                    disabled={config.gradientAccumulation <= 1}
-                                    className="flex-1 bg-transparent px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full"
+                                    disabled={!gradAccumEnabled}
+                                    className={`flex-1 px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full bg-[#181625] transition-opacity duration-200 ${!gradAccumEnabled ? 'opacity-50' : ''}`}
                                 />
                             </div>
                         </FieldWrapper>
@@ -453,6 +469,6 @@ export const GeneralArgsNode: React.FC = () => {
                     className="min-h-[80px]"
                 />
             </div>
-        </div >
+        </div>
     );
 };

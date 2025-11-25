@@ -127,7 +127,8 @@ export interface TrainingConfig {
   learningRate: number;
   unetLr: number;
   textEncoderLr: number;
-  optimizerType: 'AdamW8bit' | 'Adafactor' | 'Prodigy';
+  optimizerType: string;
+  optimizerArgs: Record<string, any>;
   lrScheduler: 'cosine' | 'constant' | 'constant_with_warmup';
   networkDim: number; // LoRA Rank
   networkAlpha: number;
@@ -159,6 +160,7 @@ export interface TrainingConfig {
   networkRescaled: boolean;
   networkConstraint: number;
   networkConstraintEnabled: boolean;
+  networkBlockSize: number;
 }
 
 export interface UIState {

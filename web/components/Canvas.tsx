@@ -432,7 +432,7 @@ export const Canvas: React.FC = () => {
                     const p1 = getOutputHandle(edge.source);
                     const p2 = getInputHandle(edge.target);
                     return <Connection key={`${edge.source}-${edge.target}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} isZoomedOut={isZoomedOut} />;
-                })}
+                })}y
 
                 {/* Nodes (Memoized) */}
                 {nodeElements}
