@@ -9,7 +9,7 @@ import { NetworkNode } from './nodes/NetworkNode';
 export const NODE_REGISTRY: Record<string, NodeConfig> = {
     [NodeId.GENERAL_ARGS]: {
         id: NodeId.GENERAL_ARGS,
-        title: 'General Arguments',
+        title: 'General',
         icon: Sliders,
         component: GeneralArgsNode
     },
@@ -19,8 +19,8 @@ export const NODE_REGISTRY: Record<string, NodeConfig> = {
         icon: Database,
         component: DataNode
     },
-    [NodeId.OPTIMIZER]: {
-        id: NodeId.OPTIMIZER,
+    [NodeId.TRAINING]: {
+        id: NodeId.TRAINING,
         title: 'Training',
         icon: Settings2,
         component: TrainingNode
@@ -36,7 +36,7 @@ export const NODE_REGISTRY: Record<string, NodeConfig> = {
 export const GRAPH_EDGES: GraphEdge[] = [
     { source: NodeId.GENERAL_ARGS, target: NodeId.DATA },
     { source: NodeId.DATA, target: NodeId.NETWORK },
-    { source: NodeId.NETWORK, target: NodeId.OPTIMIZER },
+    { source: NodeId.NETWORK, target: NodeId.TRAINING },
 ];
 
 export interface SearchItem {
@@ -84,12 +84,12 @@ export const SEARCH_INDEX: SearchItem[] = [
     // Data Node
     // Subsets are dynamic, so we don't index them statically for now.
 
-    // Optimizer Node
-    { id: 'optimizer_type', label: 'Optimizer Type', nodeId: NodeId.OPTIMIZER },
-    { id: 'lr_scheduler', label: 'LR Scheduler', nodeId: NodeId.OPTIMIZER },
-    { id: 'learning_rate', label: 'Learning Rate', nodeId: NodeId.OPTIMIZER },
-    { id: 'unet_lr', label: 'UNet Learning Rate', nodeId: NodeId.OPTIMIZER },
-    { id: 'text_encoder_lr', label: 'Text Encoder LR', nodeId: NodeId.OPTIMIZER },
+    // Training Node
+    { id: 'optimizer_type', label: 'Optimizer Type', nodeId: NodeId.TRAINING },
+    { id: 'lr_scheduler', label: 'LR Scheduler', nodeId: NodeId.TRAINING },
+    { id: 'learning_rate', label: 'Learning Rate', nodeId: NodeId.TRAINING },
+    { id: 'unet_lr', label: 'UNet Learning Rate', nodeId: NodeId.TRAINING },
+    { id: 'text_encoder_lr', label: 'Text Encoder LR', nodeId: NodeId.TRAINING },
     { id: 'network_dim', label: 'Network Rank (Dim)', nodeId: NodeId.NETWORK },
     { id: 'network_alpha', label: 'Network Alpha', nodeId: NodeId.NETWORK },
     { id: 'network_algo', label: 'Network Algo', nodeId: NodeId.NETWORK },

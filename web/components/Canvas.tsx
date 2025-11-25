@@ -18,47 +18,92 @@ const BASE_PAN_LIMIT = 5000;
 const CONTENT_CENTER_X = 950;
 const CONTENT_CENTER_Y = 450;
 
-// Connection line component (Animated)
-const Connection: React.FC<{ x1: number, y1: number, x2: number, y2: number, isZoomedOut: boolean }> = React.memo(({ x1, y1, x2, y2, isZoomedOut }) => {
-    const isNodeDragging = useStore(state => state.isNodeDragging);
+// Connection line component (Animated SVG)
+const Connection: React.FC<{
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    isZoomedOut: boolean,
+    sourceId: NodeId,
+    targetId: NodeId,
+    draggedNode: NodeId | null
+}> = React.memo(({ x1, y1, x2, y2, isZoomedOut, sourceId, targetId, draggedNode }) => {
 
     const dx = x2 - x1;
     const dy = y2 - y1;
     const length = Math.sqrt(dx * dx + dy * dy);
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const cx = (x1 + x2) / 2;
+    const cy = (y1 + y2) / 2;
 
     // Visibility check for very zoomed out view
     const opacity = isZoomedOut ? 0.15 : 0.4;
 
-    // Synced transition to match Node movement/resizing
-    const transition = {
-        duration: isNodeDragging ? 0 : 0.3,
+    // Determine transitions for endpoints
+    // If an endpoint is connected to the active (dragged) node, it should snap instantly.
+    // Otherwise, it should animate smoothly to follow the pushed node.
+    const isSourceActive = sourceId === draggedNode;
+    const isTargetActive = targetId === draggedNode;
+
+    const transitionNormal = {
+        duration: 0.3,
         type: "tween" as const,
         ease: "circOut" as const
     };
 
+    const transitionInstant = {
+        duration: 0,
+        type: "tween" as const,
+        ease: "linear" as const
+    };
+
     return (
-        <motion.div
-            className="absolute h-[1px] bg-violet-500 pointer-events-none origin-left shadow-[0_0_8px_rgba(139,92,246,0.4)]"
-            animate={{
-                top: y1,
-                left: x1,
-                width: length,
-                rotate: angle,
-                opacity: opacity
-            }}
-            transition={{
-                top: transition,
-                left: transition,
-                width: transition,
-                rotate: transition,
-                opacity: { duration: 0.5 }
-            }}
-        >
-            <div className="absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-[#181625] border border-violet-500/30 text-[10px] text-violet-400 px-1.5 py-0.5 rounded-full font-mono tracking-widest" style={{ transform: `rotate(${-angle}deg)` }}>
-                LINK
-            </div>
-        </motion.div>
+        <g>
+            <motion.line
+                stroke="#8b5cf6"
+                strokeWidth="1"
+                initial={false}
+                animate={{
+                    x1, y1, x2, y2, opacity
+                }}
+                transition={{
+                    x1: isSourceActive ? transitionInstant : transitionNormal,
+                    y1: isSourceActive ? transitionInstant : transitionNormal,
+                    x2: isTargetActive ? transitionInstant : transitionNormal,
+                    y2: isTargetActive ? transitionInstant : transitionNormal,
+                    opacity: { duration: 0.5 }
+                }}
+                style={{
+                    filter: "drop-shadow(0 0 2px rgba(139,92,246,0.4))"
+                }}
+            />
+            {/* Label */}
+            <motion.g
+                initial={false}
+                animate={{
+                    x: cx,
+                    y: cy,
+                    opacity
+                }}
+                transition={{
+                    x: (isSourceActive || isTargetActive) ? transitionInstant : transitionNormal,
+                    y: (isSourceActive || isTargetActive) ? transitionInstant : transitionNormal,
+                    opacity: { duration: 0.5 }
+                }}
+            >
+                <foreignObject x="-20" y="-10" width="40" height="20" style={{ overflow: 'visible' }}>
+                    <div
+                        className="flex items-center justify-center w-full h-full"
+                        style={{ transform: `rotate(${angle}deg)` }}
+                    >
+                        <div className="bg-[#181625] border border-violet-500/30 text-[10px] text-violet-400 px-1.5 py-0.5 rounded-full font-mono tracking-widest whitespace-nowrap">
+                            LINK
+                        </div>
+                    </div>
+                </foreignObject>
+            </motion.g>
+        </g>
     )
 });
 
@@ -107,10 +152,12 @@ export const Canvas: React.FC = () => {
     const scale = useStore(state => state.scale);
     const nodePositions = useStore(state => state.nodePositions);
     const nodeDimensions = useStore(state => state.nodeDimensions);
+    const nodePorts = useStore(state => state.nodePorts);
 
     const setTranslation = useStore(state => state.setTranslation);
     const setTransform = useStore(state => state.setTransform);
     const activeNode = useStore(state => state.activeNode);
+    const draggedNode = useStore(state => state.draggedNode);
     const lodImmuneNodes = useStore(state => state.lodImmuneNodes);
     const setActiveNode = useStore(state => state.setActiveNode);
     const resetLayout = useStore(state => state.resetLayout);
@@ -313,6 +360,19 @@ export const Canvas: React.FC = () => {
     // Helper to get connection handles (Left and Right edges)
     const getOutputHandle = (id: NodeId) => {
         const pos = nodePositions[id] || DEFAULT_POSITIONS[id] || { x: 0, y: 0 };
+
+        // If we have registered ports, use them (they are offsets from pos)
+        // DISABLED: nodePorts is currently not being updated for performance reasons.
+        // Falling back to dimension-based calculation which is accurate for standard nodes.
+        /*
+        if (nodePorts[id]?.output) {
+            return {
+                x: pos.x + nodePorts[id]!.output.x,
+                y: pos.y + nodePorts[id]!.output.y
+            };
+        }
+        */
+
         const dim = nodeDimensions[id] || DEFAULT_DIMENSIONS[id] || { width: 300, height: 200 };
 
         let effectiveX = pos.x;
@@ -345,6 +405,18 @@ export const Canvas: React.FC = () => {
 
     const getInputHandle = (id: NodeId) => {
         const pos = nodePositions[id] || DEFAULT_POSITIONS[id] || { x: 0, y: 0 };
+
+        // If we have registered ports, use them (they are offsets from pos)
+        // DISABLED: nodePorts is currently not being updated for performance reasons.
+        /*
+        if (nodePorts[id]?.input) {
+            return {
+                x: pos.x + nodePorts[id]!.input.x,
+                y: pos.y + nodePorts[id]!.input.y
+            };
+        }
+        */
+
         const dim = nodeDimensions[id] || DEFAULT_DIMENSIONS[id] || { width: 300, height: 200 };
 
         let effectiveX = pos.x;
@@ -428,11 +500,25 @@ export const Canvas: React.FC = () => {
                 }}
             >
                 {/* Connections (Dynamically Generated) */}
-                {GRAPH_EDGES.map((edge) => {
-                    const p1 = getOutputHandle(edge.source);
-                    const p2 = getInputHandle(edge.target);
-                    return <Connection key={`${edge.source}-${edge.target}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} isZoomedOut={isZoomedOut} />;
-                })}y
+                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                    {GRAPH_EDGES.map((edge) => {
+                        const p1 = getOutputHandle(edge.source);
+                        const p2 = getInputHandle(edge.target);
+                        return (
+                            <Connection
+                                key={`${edge.source}-${edge.target}`}
+                                x1={p1.x}
+                                y1={p1.y}
+                                x2={p2.x}
+                                y2={p2.y}
+                                isZoomedOut={isZoomedOut}
+                                sourceId={edge.source}
+                                targetId={edge.target}
+                                draggedNode={draggedNode}
+                            />
+                        );
+                    })}
+                </svg>
 
                 {/* Nodes (Memoized) */}
                 {nodeElements}

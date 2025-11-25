@@ -17,12 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dynamic UI generation for Training Node based on selected optimizer schema
 - Reference optimizers: AdaBelief, CAME, OCGOpt with full parameter support
 - Python script (`generate_schema.py`) to automate TypeScript schema generation from optimizer source files
+- `draggedNode` state to store for decoupled interaction tracking
+- Hybrid connection anchoring system for smooth drag/resize tracking
 
 ### Changed
 - Optimizer Node renamed to Training Node
 - "Training Parameters" section renamed to "Run Configuration" in General Args Node
 - Gradient Checkpointing toggle now displays without background box
 - Gradient Accumulation input now uses toggle-controlled enable/disable with proper disabled styling
+- Connections now snap instantly when dragging/resizing to prevent visual lag
+- Node resizing now freezes LOD state to prevent flickering
+- Dragging a node no longer triggers auto-selection/expansion
+- Removed redundant store subscriptions in `Node.tsx`
+- Disabled continuous port registration to prevent double-render loops during resize
 
 ## [2025-11-24]
 

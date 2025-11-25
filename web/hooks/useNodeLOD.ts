@@ -1,8 +1,9 @@
+import { useRef } from 'react';
 import { useStore } from '../lib/store';
 import { NodeId } from '../lib/types';
 import { calculateLodState } from '../lib/lod';
 
-export const useNodeLOD = (id: NodeId, dimensions: { width: number, height: number }) => {
+export const useNodeLOD = (id: NodeId, dimensions: { width: number, height: number }, isResizing: boolean = false) => {
     const scale = useStore((state) => state.scale);
     const viewportSize = useStore((state) => state.viewportSize);
     const activeNode = useStore((state) => state.activeNode);
@@ -13,7 +14,7 @@ export const useNodeLOD = (id: NodeId, dimensions: { width: number, height: numb
     const isImmune = lodImmuneNodes.includes(id);
     const isMinimized = minimizedNodes.includes(id);
 
-    return calculateLodState({
+    const currentState = calculateLodState({
         scale,
         viewportSize,
         dimensions,
@@ -21,4 +22,12 @@ export const useNodeLOD = (id: NodeId, dimensions: { width: number, height: numb
         isImmune,
         isMinimized
     });
+
+    // If resizing, return the previous stable state to prevent jarring swaps
+    const lastStableState = useRef(currentState);
+    if (!isResizing) {
+        lastStableState.current = currentState;
+    }
+
+    return isResizing ? lastStableState.current : currentState;
 };

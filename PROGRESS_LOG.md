@@ -269,3 +269,17 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
         - **Enabled State Logic**: Implemented a "toggle + input" pattern. The toggle enables/disables the input field.
         - **Value Preservation**: Toggling OFF resets the value to 1. Toggling ON restores editability without auto-incrementing the value.
         - **Visual Consistency**: Fixed the disabled state styling to match the "Bucketing" section (faded background and text), ensuring a uniform look for disabled inputs across the app.
+
+### 4. Connection & Interaction System Overhaul
+- **Dynamic Port Anchoring**:
+    - **Problem**: Connections were anchoring to static positions, causing visual disconnects during resizing and LOD transitions.
+    - **Solution**: Implemented a hybrid anchoring system. `Canvas` now calculates connection points dynamically based on the node's current visual state (LOD vs Detailed) and dimensions.
+    - **Optimization**: Initially implemented a "push" model where nodes reported port positions to the store, but this caused double-renders. Switched to a "pull" model where `Canvas` calculates positions on-demand using shared logic.
+- **Drag & Resize Physics**:
+    - **Decoupled Selection**: Dragging a node no longer triggers "selection" (which caused auto-expansion). Added `draggedNode` state to track physical manipulation separately from UI focus.
+    - **Instant Snapping**: Connections attached to a node being dragged or resized now snap instantly (0s duration) to track the cursor perfectly, while other connections animate smoothly (0.3s).
+    - **Resize Lag Fix**: Fixed an issue where connections would "lag behind" a resizing node by ensuring the resize action also flags the node as "being manipulated".
+- **LOD Stability**:
+    - **Resize Freeze**: Modified `useNodeLOD` to "freeze" the LOD state while a node is being resized. This prevents the node from flickering between "Card" and "Detailed" views if the user crosses the size threshold mid-drag.
+
+---

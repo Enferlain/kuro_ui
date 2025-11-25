@@ -18,6 +18,8 @@ interface Store extends UIState {
     resizeNode: (id: NodeId, width: number, height: number) => void;
     setActiveNode: (id: NodeId | null) => void;
     setIsNodeDragging: (isDragging: boolean) => void;
+    draggedNode: NodeId | null;
+    setDraggedNode: (id: NodeId | null) => void;
     toggleLodImmunity: (id: NodeId) => void;
     toggleMinimize: (id: NodeId) => void;
     updateConfig: (partial: Partial<TrainingConfig>) => void;
@@ -25,12 +27,16 @@ interface Store extends UIState {
     closeGemini: () => void;
     resetLayout: () => void;
     setHighlightedField: (fieldId: string | null) => void;
+
+    // Port Registration
+    nodePorts: Partial<Record<NodeId, { input: { x: number, y: number }, output: { x: number, y: number } }>>;
+    setNodePorts: (id: NodeId, ports: { input: { x: number, y: number }, output: { x: number, y: number } }) => void;
 }
 
 export const DEFAULT_POSITIONS = {
     [NodeId.GENERAL_ARGS]: { x: 100, y: 400 },
     [NodeId.DATA]: { x: 600, y: 500 },
-    [NodeId.OPTIMIZER]: { x: 1550, y: 150 },
+    [NodeId.TRAINING]: { x: 1550, y: 150 },
     [NodeId.NETWORK]: { x: 100, y: 1100 },
     [NodeId.OUTPUT]: { x: 1900, y: 300 },
 };
@@ -38,7 +44,7 @@ export const DEFAULT_POSITIONS = {
 export const DEFAULT_DIMENSIONS = {
     [NodeId.GENERAL_ARGS]: { width: 400, height: 600 },
     [NodeId.DATA]: { width: 400, height: 500 },
-    [NodeId.OPTIMIZER]: { width: 380, height: 350 },
+    [NodeId.TRAINING]: { width: 380, height: 350 },
     [NodeId.NETWORK]: { width: 400, height: 600 },
     [NodeId.OUTPUT]: { width: 300, height: 200 },
 };
@@ -178,6 +184,8 @@ export const useStore = create<Store>()(
             })),
             setActiveNode: (id) => set({ activeNode: id }),
             setIsNodeDragging: (isDragging) => set({ isNodeDragging: isDragging }),
+            draggedNode: null,
+            setDraggedNode: (id) => set({ draggedNode: id }),
             toggleLodImmunity: (id) => set((state) => {
                 const isImmune = state.lodImmuneNodes.includes(id);
                 return {
@@ -204,6 +212,14 @@ export const useStore = create<Store>()(
                 scale: 0.8
             }),
             setHighlightedField: (fieldId) => set({ highlightedField: fieldId }),
+
+            nodePorts: {},
+            setNodePorts: (id, ports) => set((state) => ({
+                nodePorts: {
+                    ...state.nodePorts,
+                    [id]: ports
+                }
+            })),
         }),
         {
             name: 'kuro-canvas-storage',
@@ -216,6 +232,7 @@ export const useStore = create<Store>()(
                 lodImmuneNodes: state.lodImmuneNodes,
                 minimizedNodes: state.minimizedNodes,
                 config: state.config,
+                nodePorts: state.nodePorts,
             }),
         }
     )

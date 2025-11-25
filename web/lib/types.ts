@@ -4,7 +4,7 @@ import { LucideIcon } from 'lucide-react';
 export enum NodeId {
   GENERAL_ARGS = 'general_args',
   DATA = 'data',
-  OPTIMIZER = 'optimizer',
+  TRAINING = 'training',
   NETWORK = 'network',
   OUTPUT = 'output'
 }

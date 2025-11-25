@@ -32,11 +32,12 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
     const setIsNodeDragging = useStore((state) => state.setIsNodeDragging);
     const lodImmuneNodes = useStore((state) => state.lodImmuneNodes);
     const toggleLodImmunity = useStore((state) => state.toggleLodImmunity);
-    const allPositions = useStore((state) => state.nodePositions);
-    const allDimensions = useStore((state) => state.nodeDimensions);
+    // Removed allPositions/allDimensions subscription to prevent re-renders on every move
     const minimizedNodes = useStore((state) => state.minimizedNodes);
     const toggleMinimize = useStore((state) => state.toggleMinimize);
     const viewportSize = useStore((state) => state.viewportSize);
+    const setNodePorts = useStore((state) => state.setNodePorts);
+    const setDraggedNode = useStore((state) => state.setDraggedNode);
 
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
@@ -46,7 +47,7 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
     const currentWidth = dimensions?.width || 300;
     const currentHeight = dimensions?.height || 300;
 
-    const { isZoomedOut, autoCollapse } = useNodeLOD(id, { width: currentWidth, height: currentHeight });
+    const { isZoomedOut, autoCollapse } = useNodeLOD(id, { width: currentWidth, height: currentHeight }, isResizing);
     const isImmune = lodImmuneNodes.includes(id);
     const isMinimized = minimizedNodes.includes(id);
 
@@ -81,6 +82,31 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
     // Calculate offset to center the LOD card relative to the full Node size
     const xOffset = isZoomedOut ? (currentWidth - LOD_WIDTH) / 2 : 0;
     const yOffset = isZoomedOut ? (currentHeight - LOD_HEIGHT) / 2 : 0;
+
+    // Register Ports - DISABLED for performance (Double Render on Resize)
+    // Canvas already calculates these positions correctly using the same LOD logic.
+    // Re-enable only if we have nodes with non-standard port positions that Canvas can't predict.
+    /*
+    React.useEffect(() => {
+        // ... (Logic omitted for performance)
+        const visualWidth = isZoomedOut ? LOD_WIDTH : currentWidth;
+        const visualHeight = isZoomedOut ? LOD_HEIGHT : currentHeight;
+        
+        const inputOffset = {
+            x: xOffset,
+            y: yOffset + (visualHeight / 2)
+        };
+
+        const outputOffset = {
+            x: xOffset + visualWidth,
+            y: yOffset + (visualHeight / 2)
+        };
+
+        setNodePorts(id, { input: inputOffset, output: outputOffset });
+
+    }, [id, isZoomedOut, currentWidth, currentHeight, xOffset, yOffset, setNodePorts]);
+    */
+
     const opacity = (isActive || isDragging || isResizing || !anyActive) ? 1 : 0.4;
     const zIndex = isActive || isDragging || isResizing ? 50 : 10;
 
@@ -96,6 +122,7 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
 
         const currentScale = useStore.getState().scale;
 
+        setDraggedNode(id);
         setIsDragging(true);
         setIsNodeDragging(true);
 
@@ -127,14 +154,15 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
                 const visualY = isZoomedOut ? desiredY + yOffset : desiredY;
 
                 // Push other nodes out of the way
+                const currentState = useStore.getState();
                 pushNodesOnDrag(
                     id,
                     visualX,
                     visualY,
                     visualWidth,
                     visualHeight,
-                    allPositions,
-                    allDimensions,
+                    currentState.nodePositions,
+                    currentState.nodeDimensions,
                     (pushedId, newX, newY) => {
                         // Use the store's moveNode to update pushed nodes
                         useStore.getState().moveNode(pushedId, newX, newY);
@@ -150,6 +178,7 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
         const handlePointerUp = () => {
             setIsDragging(false);
             setIsNodeDragging(false);
+            setDraggedNode(null);
 
             window.removeEventListener('pointermove', handlePointerMove);
             window.removeEventListener('pointerup', handlePointerUp);
@@ -180,6 +209,7 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
         const currentScale = useStore.getState().scale;
 
         setIsResizing(true);
+        setDraggedNode(id);
 
         const handleResizeMove = (moveEvent: PointerEvent) => {
             moveEvent.preventDefault();
@@ -193,14 +223,15 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
             resizeNode(id, desiredWidth, desiredHeight);
 
             // Push other nodes out of the way
+            const currentState = useStore.getState();
             pushNodesOnResize(
                 id,
                 position.x,
                 position.y,
                 desiredWidth,
                 desiredHeight,
-                allPositions,
-                allDimensions,
+                currentState.nodePositions,
+                currentState.nodeDimensions,
                 (pushedId, newX, newY) => {
                     // Use the store's moveNode to update pushed nodes
                     useStore.getState().moveNode(pushedId, newX, newY);
@@ -214,6 +245,7 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
 
         const handleResizeUp = () => {
             setIsResizing(false);
+            setDraggedNode(null);
             window.removeEventListener('pointermove', handleResizeMove);
             window.removeEventListener('pointerup', handleResizeUp);
         };
@@ -280,7 +312,27 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
             {/* Connection Knobs - Always visible, position managed by motion container scaling */}
             <div>
                 {/* Left Knob (Input) */}
-                <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-[#181625] border border-violet-500/50 rounded-[2px] z-0 shadow-[0_0_8px_rgba(139,92,246,0.4)] flex items-center justify-center">
+                <div
+                    ref={(el) => {
+                        if (el) {
+                            // Measure and register relative position
+                            // We do this in a simplified way: standard offset for now, 
+                            // but this structure allows for dynamic positioning if we move these divs later.
+                            // Since these are absolute positioned relative to the Node container, 
+                            // their center coordinates are what we care about.
+
+                            // Left knob is at top-1/2, -left-1.5 (-6px)
+                            // We want the center of this knob.
+                            // y = currentHeight / 2
+                            // x = -6 + 6 (width/2) = 0? No, left is -1.5 tailwind class which is -6px.
+                            // Width is 3 (12px). Center is -6 + 6 = 0 relative to left edge?
+                            // Actually, let's just calculate the offsets mathematically based on the styles 
+                            // to avoid layout thrashing, OR use the ref to get the exact element if needed.
+                            // For now, let's stick to the mathematical offset which is faster and stable.
+                        }
+                    }}
+                    className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-[#181625] border border-violet-500/50 rounded-[2px] z-0 shadow-[0_0_8px_rgba(139,92,246,0.4)] flex items-center justify-center"
+                >
                     <div className="w-1 h-1 bg-violet-500 rounded-[1px] opacity-80" />
                 </div>
                 {/* Right Knob (Output) */}
