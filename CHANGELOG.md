@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-11-26]
+
+### Added
+- Cascading collision detection: Nodes now propagate push forces recursively (A pushes B, B pushes C).
+- Wave propagation algorithm for smoother multi-node interaction during drag and resize.
+
 ## [2025-11-25]
 
 ### Added

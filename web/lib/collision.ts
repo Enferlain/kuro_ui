@@ -72,6 +72,9 @@ function getVisualNodeRect(
 /**
  * Push nodes out of the way when dragging
  */
+/**
+ * Push nodes out of the way when dragging
+ */
 export function pushNodesOnDrag(
     draggedId: NodeId,
     draggedX: number,
@@ -87,103 +90,139 @@ export function pushNodesOnDrag(
     viewportSize: { width: number; height: number } = { width: 1920, height: 1080 }
 ): void {
     const COLLISION_PADDING = 20;
-    const MAX_ITERATIONS = 5;
+    const MAX_ITERATIONS = 10; // Increased iterations for cascade
 
-    const draggedRect: Rectangle = {
-        x: draggedX,
-        y: draggedY,
-        width: draggedWidth,
-        height: draggedHeight,
-    };
+    // Local state to track positions during the cascade
+    const currentPositions = { ...allPositions };
+    // Update the dragged node's position in our local state
+    currentPositions[draggedId] = { x: draggedX, y: draggedY };
+
+    // Queue of nodes that have moved and need to be checked against others
+    // We store just the ID.
+    let movedNodes: NodeId[] = [draggedId];
+
+    // Set of nodes processed in the current wave to avoid immediate ping-pong
+    // actually, we just need to know who moved.
 
     for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
-        let pushedAny = false;
+        const nextMovedNodes: NodeId[] = [];
+        const processedInThisIteration = new Set<NodeId>();
 
-        for (const [otherId, otherPos] of Object.entries(allPositions)) {
-            if (otherId === draggedId) continue;
+        if (movedNodes.length === 0) break;
 
-            const otherDim = allDimensions[otherId as NodeId];
-            if (!otherDim) continue;
+        for (const sourceId of movedNodes) {
+            const sourcePos = currentPositions[sourceId];
+            // If it's the dragged node, use the passed dimensions. 
+            // Otherwise use stored dimensions.
+            const sourceDim = sourceId === draggedId 
+                ? { width: draggedWidth, height: draggedHeight }
+                : allDimensions[sourceId];
+            
+            if (!sourceDim) continue;
 
-            const otherRect = getVisualNodeRect(
-                otherId as NodeId,
-                otherPos,
-                otherDim,
+            const sourceRect = getVisualNodeRect(
+                sourceId,
+                sourcePos,
+                sourceDim,
                 scale,
                 lodImmuneNodes,
                 minimizedNodes,
                 viewportSize
             );
 
-            if (rectanglesOverlap(draggedRect, otherRect, COLLISION_PADDING)) {
-                const draggedCenterX = draggedRect.x + draggedRect.width / 2;
-                const draggedCenterY = draggedRect.y + draggedRect.height / 2;
-                const otherCenterX = otherRect.x + otherRect.width / 2;
-                const otherCenterY = otherRect.y + otherRect.height / 2;
+            // Check against all other nodes
+            for (const [targetId, targetPos] of Object.entries(currentPositions)) {
+                // Don't check against self
+                if (sourceId === targetId) continue;
+                // Don't push the node currently being dragged by the user
+                if (targetId === draggedId) continue;
+                
+                // Optimization: If we already moved this target in this iteration, skip it 
+                // to prevent it being pushed multiple times by different sources in the same frame?
+                // No, multiple sources might push it further. But let's avoid cycles.
+                
+                const targetDim = allDimensions[targetId as NodeId];
+                if (!targetDim) continue;
 
-                const dx = otherCenterX - draggedCenterX;
-                const dy = otherCenterY - draggedCenterY;
+                const targetRect = getVisualNodeRect(
+                    targetId as NodeId,
+                    targetPos,
+                    targetDim,
+                    scale,
+                    lodImmuneNodes,
+                    minimizedNodes,
+                    viewportSize
+                );
 
-                const absDx = Math.abs(dx);
-                const absDy = Math.abs(dy);
+                if (rectanglesOverlap(sourceRect, targetRect, COLLISION_PADDING)) {
+                    const sourceCenterX = sourceRect.x + sourceRect.width / 2;
+                    const sourceCenterY = sourceRect.y + sourceRect.height / 2;
+                    const targetCenterX = targetRect.x + targetRect.width / 2;
+                    const targetCenterY = targetRect.y + targetRect.height / 2;
 
-                let newX = otherPos.x;
-                let newY = otherPos.y;
+                    const dx = targetCenterX - sourceCenterX;
+                    const dy = targetCenterY - sourceCenterY;
 
-                // Re-calculate offsets for the other Node to map back to real coordinates
-                // We need to know the visual offset of the other Node to update its REAL position correctly
-                // getVisualNodeRect returns the visual rect.
-                // The "real" position is visualRect.x - xOffset.
-                // But we want to calculate the NEW real position.
+                    const absDx = Math.abs(dx);
+                    const absDy = Math.abs(dy);
 
-                // Re-calculate offsets for the other Node to map back to real coordinates
-                const LOD_WIDTH = 200;
-                const LOD_HEIGHT = 128;
+                    let newX = targetPos.x;
+                    let newY = targetPos.y;
 
-                const threshold = Math.min(viewportSize.width, viewportSize.height) * 0.5;
-                const maxDimension = Math.max(otherDim.width, otherDim.height);
-                const visualSize = maxDimension * scale;
-                const isGlobalZoomedOut = scale < 0.3;
+                    // Re-calculate offsets for the target Node to map back to real coordinates
+                    const LOD_WIDTH = 200;
+                    const LOD_HEIGHT = 128;
 
-                const isOtherImmune = lodImmuneNodes.includes(otherId as NodeId);
-                const isOtherMinimized = minimizedNodes.includes(otherId as NodeId);
+                    const threshold = Math.min(viewportSize.width, viewportSize.height) * 0.5;
+                    const maxDimension = Math.max(targetDim.width, targetDim.height);
+                    const visualSize = maxDimension * scale;
+                    const isGlobalZoomedOut = scale < 0.3;
 
-                const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isOtherImmune);
-                const isOtherZoomedOut = isOtherMinimized || autoCollapse;
+                    const isTargetImmune = lodImmuneNodes.includes(targetId as NodeId);
+                    const isTargetMinimized = minimizedNodes.includes(targetId as NodeId);
 
-                const otherXOffset = isOtherZoomedOut ? (otherDim.width - LOD_WIDTH) / 2 : 0;
-                const otherYOffset = isOtherZoomedOut ? (otherDim.height - LOD_HEIGHT) / 2 : 0;
+                    const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isTargetImmune);
+                    const isTargetZoomedOut = isTargetMinimized || autoCollapse;
 
-                if (absDx > absDy) {
-                    if (dx > 0) {
-                        // Push right
-                        // newVisualX = draggedRight + padding
-                        // newRealX = newVisualX - offset
-                        newX = draggedRect.x + draggedRect.width + COLLISION_PADDING - otherXOffset;
+                    const targetXOffset = isTargetZoomedOut ? (targetDim.width - LOD_WIDTH) / 2 : 0;
+                    const targetYOffset = isTargetZoomedOut ? (targetDim.height - LOD_HEIGHT) / 2 : 0;
+
+                    if (absDx > absDy) {
+                        if (dx > 0) {
+                            // Push right
+                            newX = sourceRect.x + sourceRect.width + COLLISION_PADDING - targetXOffset;
+                        } else {
+                            // Push left
+                            newX = sourceRect.x - targetRect.width - COLLISION_PADDING - targetXOffset;
+                        }
                     } else {
-                        // Push left
-                        // newVisualX = draggedLeft - otherVisualWidth - padding
-                        newX = draggedRect.x - otherRect.width - COLLISION_PADDING - otherXOffset;
+                        if (dy > 0) {
+                            // Push down
+                            newY = sourceRect.y + sourceRect.height + COLLISION_PADDING - targetYOffset;
+                        } else {
+                            // Push up
+                            newY = sourceRect.y - targetRect.height - COLLISION_PADDING - targetYOffset;
+                        }
                     }
-                } else {
-                    if (dy > 0) {
-                        // Push down
-                        newY = draggedRect.y + draggedRect.height + COLLISION_PADDING - otherYOffset;
-                    } else {
-                        // Push up
-                        newY = draggedRect.y - otherRect.height - COLLISION_PADDING - otherYOffset;
-                    }
-                }
 
-                if (newX !== otherPos.x || newY !== otherPos.y) {
-                    onPushNode(otherId as NodeId, newX, newY);
-                    pushedAny = true;
-                    allPositions[otherId as NodeId] = { x: newX, y: newY };
+                    if (newX !== targetPos.x || newY !== targetPos.y) {
+                        // Update local state
+                        currentPositions[targetId as NodeId] = { x: newX, y: newY };
+                        
+                        // Notify callback
+                        onPushNode(targetId as NodeId, newX, newY);
+                        
+                        // Add to next wave if not already added
+                        if (!processedInThisIteration.has(targetId as NodeId)) {
+                            nextMovedNodes.push(targetId as NodeId);
+                            processedInThisIteration.add(targetId as NodeId);
+                        }
+                    }
                 }
             }
         }
-
-        if (!pushedAny) break;
+        
+        movedNodes = nextMovedNodes;
     }
 }
 
@@ -204,90 +243,19 @@ export function pushNodesOnResize(
     minimizedNodes: NodeId[] = [],
     viewportSize: { width: number; height: number } = { width: 1920, height: 1080 }
 ): void {
-    const COLLISION_PADDING = 20;
-    const MAX_ITERATIONS = 5;
-
-    const resizedRect: Rectangle = {
-        x: x,
-        y: y,
-        width: newWidth,
-        height: newHeight,
-    };
-
-    for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
-        let pushedAny = false;
-
-        for (const [otherId, otherPos] of Object.entries(allPositions)) {
-            if (otherId === resizedId) continue;
-
-            const otherDim = allDimensions[otherId as NodeId];
-            if (!otherDim) continue;
-
-            const otherRect = getVisualNodeRect(
-                otherId as NodeId,
-                otherPos,
-                otherDim,
-                scale,
-                lodImmuneNodes,
-                minimizedNodes,
-                viewportSize
-            );
-
-            if (rectanglesOverlap(resizedRect, otherRect, COLLISION_PADDING)) {
-                const otherCenterX = otherRect.x + otherRect.width / 2;
-                const otherCenterY = otherRect.y + otherRect.height / 2;
-                const resizedCenterX = resizedRect.x + resizedRect.width / 2;
-                const resizedCenterY = resizedRect.y + resizedRect.height / 2;
-
-                const dx = otherCenterX - resizedCenterX;
-                const dy = otherCenterY - resizedCenterY;
-
-                const absDx = Math.abs(dx);
-                const absDy = Math.abs(dy);
-
-                let newX = otherPos.x;
-                let newY = otherPos.y;
-
-                // Re-calculate offsets for the other Node to map back to real coordinates
-                const LOD_WIDTH = 200;
-                const LOD_HEIGHT = 128;
-
-                const threshold = Math.min(viewportSize.width, viewportSize.height) * 0.5;
-                const maxDimension = Math.max(otherDim.width, otherDim.height);
-                const visualSize = maxDimension * scale;
-                const isGlobalZoomedOut = scale < 0.3;
-
-                const isOtherImmune = lodImmuneNodes.includes(otherId as NodeId);
-                const isOtherMinimized = minimizedNodes.includes(otherId as NodeId);
-
-                const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isOtherImmune);
-                const isOtherZoomedOut = isOtherMinimized || autoCollapse;
-
-                const otherXOffset = isOtherZoomedOut ? (otherDim.width - LOD_WIDTH) / 2 : 0;
-                const otherYOffset = isOtherZoomedOut ? (otherDim.height - LOD_HEIGHT) / 2 : 0;
-
-                if (absDx > absDy) {
-                    if (dx > 0) {
-                        newX = resizedRect.x + resizedRect.width + COLLISION_PADDING - otherXOffset;
-                    } else {
-                        newX = resizedRect.x - otherRect.width - COLLISION_PADDING - otherXOffset;
-                    }
-                } else {
-                    if (dy > 0) {
-                        newY = resizedRect.y + resizedRect.height + COLLISION_PADDING - otherYOffset;
-                    } else {
-                        newY = resizedRect.y - otherRect.height - COLLISION_PADDING - otherYOffset;
-                    }
-                }
-
-                if (newX !== otherPos.x || newY !== otherPos.y) {
-                    onPushNode(otherId as NodeId, newX, newY);
-                    pushedAny = true;
-                    allPositions[otherId as NodeId] = { x: newX, y: newY };
-                }
-            }
-        }
-
-        if (!pushedAny) break;
-    }
+    // Reuse the same logic, treating the resized node as the "dragged" node (source of force)
+    pushNodesOnDrag(
+        resizedId,
+        x,
+        y,
+        newWidth,
+        newHeight,
+        allPositions,
+        allDimensions,
+        onPushNode,
+        scale,
+        lodImmuneNodes,
+        minimizedNodes,
+        viewportSize
+    );
 }

@@ -283,3 +283,14 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
     - **Resize Freeze**: Modified `useNodeLOD` to "freeze" the LOD state while a node is being resized. This prevents the node from flickering between "Card" and "Detailed" views if the user crosses the size threshold mid-drag.
 
 ---
+---
+
+## Entry: November 26, 2025
+
+### 1. Cascading Node Collision
+- **Problem**: Previously, collision detection was limited to a single layer of interaction. Dragging Node A into Node B would push Node B, but if Node B then overlapped with Node C, Node C would remain stationary. This created unnatural overlaps in dense layouts.
+- **Solution**: Implemented a recursive "wave propagation" algorithm for collision detection.
+    - **Logic**: When a node moves (due to drag or push), it is added to a queue. The system iteratively checks if these moved nodes collide with any others, propagating the force through the graph.
+    - **Safety**: Added a `MAX_ITERATIONS` limit (10) to prevent infinite loops or performance degradation in complex cycles.
+    - **Consistency**: Applied the same cascading logic to both drag and resize operations.
+- **Result**: A true "physical" feel where pushing a node into a cluster causes the entire cluster to shuffle and reorganize naturally, maintaining the defined padding between all elements.
