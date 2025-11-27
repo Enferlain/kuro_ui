@@ -24,5 +24,5 @@ References for working on the ui, based on the previous ui, can be found in trai
 
 - Dropout section: network dropout, rank dropout, module dropout to network node
 - Optimizer args order: maybe reorder them so entry fields go first and toggles last in training node
-- Add node cascade collsion: A pushes B (current), B pushes C
-- Investigate animations and how nodes interact with resizing, dragging, zooming, collisions
+- Expanding/minimizing animation instant in some cases, investigate
+- physics collision

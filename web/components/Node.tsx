@@ -59,6 +59,8 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
         if (prevIsZoomedOut.current && !isZoomedOut) {
             const state = useStore.getState();
 
+            // Reverted delay: User reported it looked weird.
+            // Immediate push might look like "teleporting" but it's more responsive.
             pushNodesOnResize(
                 id,
                 position.x,
@@ -73,8 +75,11 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
                 scale,
                 lodImmuneNodes,
                 minimizedNodes,
-                viewportSize
+                viewportSize,
+                state.activeNode // Pass active node ID
             );
+
+
         }
         prevIsZoomedOut.current = isZoomedOut;
     }, [isZoomedOut, id, position.x, position.y, currentWidth, currentHeight, scale, lodImmuneNodes, minimizedNodes, viewportSize]);
@@ -126,6 +131,13 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
         setIsDragging(true);
         setIsNodeDragging(true);
 
+        // Option 2: Deselect any other active node immediately when interacting with a non-active node.
+        // This ensures that dragging a card doesn't leave another node expanded,
+        // but also doesn't auto-expand the dragged card (unless it's a click, handled in pointerUp).
+        if (!isActive) {
+            setActiveNode(null);
+        }
+
         let hasMoved = false;
 
         const handlePointerMove = (moveEvent: PointerEvent) => {
@@ -170,7 +182,8 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
                     scale, // Pass current scale for LOD calculation
                     lodImmuneNodes, // Pass LOD immunity list
                     minimizedNodes, // Pass minimized list
-                    viewportSize // Pass viewport size for accurate LOD calculation
+                    viewportSize, // Pass viewport size for accurate LOD calculation
+                    currentState.activeNode // Pass active node ID
                 );
             }
         };
@@ -239,7 +252,8 @@ export const Node: React.FC<NodeProps> = React.memo(({ id, title, icon: Icon, ch
                 currentScale,
                 lodImmuneNodes,
                 minimizedNodes,
-                viewportSize
+                viewportSize,
+                currentState.activeNode // Pass active node ID
             );
         };
 

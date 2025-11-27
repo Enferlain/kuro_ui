@@ -32,7 +32,8 @@ function getVisualNodeRect(
     scale: number,
     lodImmuneNodes: NodeId[],
     minimizedNodes: NodeId[],
-    viewportSize: { width: number; height: number }
+    viewportSize: { width: number; height: number },
+    activeNodeId: NodeId | null
 ): Rectangle {
     const LOD_WIDTH = 200;
     const LOD_HEIGHT = 128;
@@ -45,10 +46,12 @@ function getVisualNodeRect(
 
     const isImmune = lodImmuneNodes.includes(id);
     const isMinimized = minimizedNodes.includes(id);
+    const isActive = id === activeNodeId;
 
     const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isImmune);
 
-    const isZoomedOut = isMinimized || autoCollapse;
+    // Active nodes are NEVER zoomed out
+    const isZoomedOut = !isActive && (isMinimized || autoCollapse);
 
     if (isZoomedOut) {
         const xOffset = (dim.width - LOD_WIDTH) / 2;
@@ -72,9 +75,6 @@ function getVisualNodeRect(
 /**
  * Push nodes out of the way when dragging
  */
-/**
- * Push nodes out of the way when dragging
- */
 export function pushNodesOnDrag(
     draggedId: NodeId,
     draggedX: number,
@@ -87,7 +87,8 @@ export function pushNodesOnDrag(
     scale: number = 1,
     lodImmuneNodes: NodeId[] = [],
     minimizedNodes: NodeId[] = [],
-    viewportSize: { width: number; height: number } = { width: 1920, height: 1080 }
+    viewportSize: { width: number; height: number } = { width: 1920, height: 1080 },
+    activeNodeId: NodeId | null = null
 ): void {
     const COLLISION_PADDING = 20;
     const MAX_ITERATIONS = 10; // Increased iterations for cascade
@@ -114,10 +115,10 @@ export function pushNodesOnDrag(
             const sourcePos = currentPositions[sourceId];
             // If it's the dragged node, use the passed dimensions. 
             // Otherwise use stored dimensions.
-            const sourceDim = sourceId === draggedId 
+            const sourceDim = sourceId === draggedId
                 ? { width: draggedWidth, height: draggedHeight }
                 : allDimensions[sourceId];
-            
+
             if (!sourceDim) continue;
 
             const sourceRect = getVisualNodeRect(
@@ -127,7 +128,8 @@ export function pushNodesOnDrag(
                 scale,
                 lodImmuneNodes,
                 minimizedNodes,
-                viewportSize
+                viewportSize,
+                activeNodeId
             );
 
             // Check against all other nodes
@@ -136,11 +138,11 @@ export function pushNodesOnDrag(
                 if (sourceId === targetId) continue;
                 // Don't push the node currently being dragged by the user
                 if (targetId === draggedId) continue;
-                
+
                 // Optimization: If we already moved this target in this iteration, skip it 
                 // to prevent it being pushed multiple times by different sources in the same frame?
                 // No, multiple sources might push it further. But let's avoid cycles.
-                
+
                 const targetDim = allDimensions[targetId as NodeId];
                 if (!targetDim) continue;
 
@@ -151,7 +153,8 @@ export function pushNodesOnDrag(
                     scale,
                     lodImmuneNodes,
                     minimizedNodes,
-                    viewportSize
+                    viewportSize,
+                    activeNodeId
                 );
 
                 if (rectanglesOverlap(sourceRect, targetRect, COLLISION_PADDING)) {
@@ -180,9 +183,10 @@ export function pushNodesOnDrag(
 
                     const isTargetImmune = lodImmuneNodes.includes(targetId as NodeId);
                     const isTargetMinimized = minimizedNodes.includes(targetId as NodeId);
+                    const isTargetActive = targetId === activeNodeId;
 
                     const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isTargetImmune);
-                    const isTargetZoomedOut = isTargetMinimized || autoCollapse;
+                    const isTargetZoomedOut = !isTargetActive && (isTargetMinimized || autoCollapse);
 
                     const targetXOffset = isTargetZoomedOut ? (targetDim.width - LOD_WIDTH) / 2 : 0;
                     const targetYOffset = isTargetZoomedOut ? (targetDim.height - LOD_HEIGHT) / 2 : 0;
@@ -208,10 +212,10 @@ export function pushNodesOnDrag(
                     if (newX !== targetPos.x || newY !== targetPos.y) {
                         // Update local state
                         currentPositions[targetId as NodeId] = { x: newX, y: newY };
-                        
+
                         // Notify callback
                         onPushNode(targetId as NodeId, newX, newY);
-                        
+
                         // Add to next wave if not already added
                         if (!processedInThisIteration.has(targetId as NodeId)) {
                             nextMovedNodes.push(targetId as NodeId);
@@ -221,7 +225,7 @@ export function pushNodesOnDrag(
                 }
             }
         }
-        
+
         movedNodes = nextMovedNodes;
     }
 }
@@ -241,7 +245,8 @@ export function pushNodesOnResize(
     scale: number = 1,
     lodImmuneNodes: NodeId[] = [],
     minimizedNodes: NodeId[] = [],
-    viewportSize: { width: number; height: number } = { width: 1920, height: 1080 }
+    viewportSize: { width: number; height: number } = { width: 1920, height: 1080 },
+    activeNodeId: NodeId | null = null
 ): void {
     // Reuse the same logic, treating the resized node as the "dragged" node (source of force)
     pushNodesOnDrag(
@@ -256,6 +261,7 @@ export function pushNodesOnResize(
         scale,
         lodImmuneNodes,
         minimizedNodes,
-        viewportSize
+        viewportSize,
+        activeNodeId
     );
 }
