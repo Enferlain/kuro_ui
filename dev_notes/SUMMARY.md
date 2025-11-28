@@ -20,6 +20,12 @@ References for working on the ui, based on the previous ui, can be found in trai
 
 ---
 
+## Developer Guides
+- [Node Creation Guide](./NODE_CREATION_GUIDE.md)
+- [Physics & Interaction Guide](./PHYSICS_GUIDE.md)
+
+---
+
 # TODOs and Notes
 
 - Dropout section: network dropout, rank dropout, module dropout to network node

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { TrainingConfig, UIState, NodeId } from './types';
+import { TrainingConfig, UIState, NodeId, NodeState, NodeConfig } from './types';
 
 interface Store extends UIState {
     config: TrainingConfig;
@@ -14,8 +14,14 @@ interface Store extends UIState {
     setTranslation: (x: number, y: number) => void;
     setScale: (s: number) => void;
     setTransform: (x: number, y: number, scale: number) => void;
-    moveNode: (id: NodeId, x: number, y: number) => void;
-    resizeNode: (id: NodeId, width: number, height: number) => void;
+    
+    // [Shiro] New Consolidated Update Action
+    updateNode: (id: string, updates: Partial<NodeState>) => void;
+    
+    // [Shiro] Lifecycle Actions
+    initNodes: (registry: Record<string, NodeConfig>) => void;
+    resetLayout: (registry: Record<string, NodeConfig>) => void;
+
     setActiveNode: (id: NodeId | null) => void;
     setIsNodeDragging: (isDragging: boolean) => void;
     draggedNode: NodeId | null;
@@ -25,35 +31,22 @@ interface Store extends UIState {
     updateConfig: (partial: Partial<TrainingConfig>) => void;
     openGemini: (context: string) => void;
     closeGemini: () => void;
-    resetLayout: () => void;
     setHighlightedField: (fieldId: string | null) => void;
 
     // Port Registration
     nodePorts: Partial<Record<NodeId, { input: { x: number, y: number }, output: { x: number, y: number } }>>;
     setNodePorts: (id: NodeId, ports: { input: { x: number, y: number }, output: { x: number, y: number } }) => void;
+
+    // Hydration
+    hasHydrated: boolean;
+    setHasHydrated: (state: boolean) => void;
 }
-
-export const DEFAULT_POSITIONS = {
-    [NodeId.GENERAL_ARGS]: { x: 100, y: 400 },
-    [NodeId.DATA]: { x: 600, y: 500 },
-    [NodeId.TRAINING]: { x: 1550, y: 150 },
-    [NodeId.NETWORK]: { x: 100, y: 1100 },
-    [NodeId.OUTPUT]: { x: 1900, y: 300 },
-};
-
-export const DEFAULT_DIMENSIONS = {
-    [NodeId.GENERAL_ARGS]: { width: 400, height: 600 },
-    [NodeId.DATA]: { width: 400, height: 500 },
-    [NodeId.TRAINING]: { width: 380, height: 350 },
-    [NodeId.NETWORK]: { width: 400, height: 600 },
-    [NodeId.OUTPUT]: { width: 300, height: 200 },
-};
 
 export const useStore = create<Store>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             // Initial UI State
-            scale: 0.8, // Zoom out a bit to fit the larger graph
+            scale: 0.8,
             translation: { x: 0, y: 0 },
             activeNode: null,
             geminiContext: null,
@@ -61,16 +54,12 @@ export const useStore = create<Store>()(
             isNodeDragging: false,
             highlightedField: null,
 
-            // Initial Positions
-            nodePositions: { ...DEFAULT_POSITIONS },
-            nodeDimensions: { ...DEFAULT_DIMENSIONS },
+            // [Shiro] Empty by default. Populated by initNodes on mount.
+            nodes: {},
 
-            // Initial Config State
+            // Config State
             config: {
-                // Global
                 trainMode: 'lora',
-
-                // Base Args
                 seed: 23,
                 clipSkip: 2,
                 priorLossWeight: 1.0,
@@ -79,12 +68,8 @@ export const useStore = create<Store>()(
                 cacheLatentsToDisk: false,
                 useXformers: false,
                 useSdpa: true,
-
-                // Resolution
                 width: 512,
                 height: 512,
-
-                // Training
                 batchSize: 1,
                 maxTokenLength: '225',
                 mixedPrecision: 'fp16',
@@ -93,15 +78,11 @@ export const useStore = create<Store>()(
                 keepTokensSeparator: '',
                 gradientAccumulation: 1,
                 gradientCheckpointing: true,
-
-                // Bucketing
                 enableBucket: false,
                 minBucketReso: 256,
                 maxBucketReso: 1024,
                 bucketResoSteps: 64,
                 bucketNoUpscale: false,
-
-                // Model
                 baseModelPath: 'runwayml/stable-diffusion-v1-5',
                 modelType: 'sd15',
                 v_parameterization: false,
@@ -116,12 +97,8 @@ export const useStore = create<Store>()(
                 vaePath: '',
                 vaePaddingMode: 'zeros',
                 comment: '',
-
-                // Data
                 subsets: [],
                 outputDir: '/content/output',
-
-                // Optimizer
                 learningRate: 0.0001,
                 unetLr: 0.0001,
                 textEncoderLr: 0.00005,
@@ -130,15 +107,11 @@ export const useStore = create<Store>()(
                 lrScheduler: 'cosine',
                 networkDim: 32,
                 networkAlpha: 16,
-
-                // Network
                 networkAlgo: 'lora',
                 networkPreset: '',
                 networkConvDim: 32,
                 networkConvAlpha: 16,
                 networkArgs: [],
-
-                // Network Algo Specific
                 networkLoConType: 'kohya',
                 networkDyLoRAType: 'lycoris',
                 networkWeightDecomposition: false,
@@ -162,7 +135,7 @@ export const useStore = create<Store>()(
             },
 
             // Viewport State
-            viewportSize: { width: 1920, height: 1080 }, // Default to 1080p until hydrated/resized
+            viewportSize: { width: 1920, height: 1080 },
             setViewportSize: (width, height) => set({ viewportSize: { width, height } }),
             lodImmuneNodes: [],
             minimizedNodes: [],
@@ -170,22 +143,59 @@ export const useStore = create<Store>()(
             setTranslation: (x, y) => set({ translation: { x, y } }),
             setScale: (s) => set({ scale: s }),
             setTransform: (x, y, scale) => set({ translation: { x, y }, scale }),
-            moveNode: (id, x, y) => set((state) => ({
-                nodePositions: {
-                    ...state.nodePositions,
-                    [id]: { x, y }
+
+            updateNode: (id, updates) => set((state) => ({
+                nodes: {
+                    ...state.nodes,
+                    [id]: { ...state.nodes[id], ...updates }
                 }
             })),
-            resizeNode: (id, width, height) => set((state) => ({
-                nodeDimensions: {
-                    ...state.nodeDimensions,
-                    [id]: { width, height }
-                }
-            })),
+
+            // [Shiro] Dynamic Initialization
+            initNodes: (registry) => set((state) => {
+                const newNodes = { ...state.nodes };
+                let hasChanges = false;
+
+                Object.values(registry).forEach((conf) => {
+                    if (!newNodes[conf.id]) {
+                        newNodes[conf.id] = {
+                            id: conf.id,
+                            // Convert Top-Left (Registry) -> Center (Store)
+                            cx: conf.defaultPosition.x + conf.defaultDimensions.width / 2,
+                            cy: conf.defaultPosition.y + conf.defaultDimensions.height / 2,
+                            width: conf.defaultDimensions.width,
+                            height: conf.defaultDimensions.height
+                        };
+                        hasChanges = true;
+                    }
+                });
+
+                return hasChanges ? { nodes: newNodes } : {};
+            }),
+
+            resetLayout: (registry) => {
+                const newNodes: Record<string, any> = {};
+                Object.values(registry).forEach((conf) => {
+                    newNodes[conf.id] = {
+                        id: conf.id,
+                        cx: conf.defaultPosition.x + conf.defaultDimensions.width / 2,
+                        cy: conf.defaultPosition.y + conf.defaultDimensions.height / 2,
+                        width: conf.defaultDimensions.width,
+                        height: conf.defaultDimensions.height
+                    };
+                });
+                set({
+                    nodes: newNodes,
+                    translation: { x: 0, y: 0 },
+                    scale: 0.8
+                });
+            },
+
             setActiveNode: (id) => set({ activeNode: id }),
             setIsNodeDragging: (isDragging) => set({ isNodeDragging: isDragging }),
             draggedNode: null,
             setDraggedNode: (id) => set({ draggedNode: id }),
+            
             toggleLodImmunity: (id) => set((state) => {
                 const isImmune = state.lodImmuneNodes.includes(id);
                 return {
@@ -205,12 +215,6 @@ export const useStore = create<Store>()(
             updateConfig: (partial) => set((state) => ({ config: { ...state.config, ...partial } })),
             openGemini: (context) => set({ geminiContext: context, isGeminiOpen: true }),
             closeGemini: () => set({ isGeminiOpen: false, geminiContext: null }),
-            resetLayout: () => set({
-                nodePositions: { ...DEFAULT_POSITIONS },
-                nodeDimensions: { ...DEFAULT_DIMENSIONS },
-                translation: { x: 0, y: 0 },
-                scale: 0.8
-            }),
             setHighlightedField: (fieldId) => set({ highlightedField: fieldId }),
 
             nodePorts: {},
@@ -220,20 +224,26 @@ export const useStore = create<Store>()(
                     [id]: ports
                 }
             })),
+
+            hasHydrated: false,
+            setHasHydrated: (state) => set({ hasHydrated: state }),
         }),
         {
-            name: 'kuro-canvas-storage',
-            // Only persist canvas state, not transient UI state
+            // [Shiro] Version Bump to invalidate old data
+            name: 'kuro-canvas-v2',
             partialize: (state) => ({
                 translation: state.translation,
                 scale: state.scale,
-                nodePositions: state.nodePositions,
-                nodeDimensions: state.nodeDimensions,
+                nodes: state.nodes, 
                 lodImmuneNodes: state.lodImmuneNodes,
                 minimizedNodes: state.minimizedNodes,
                 config: state.config,
                 nodePorts: state.nodePorts,
             }),
+            onRehydrateStorage: () => (state) => {
+                console.log('[Store] Rehydration complete', state);
+                state?.setHasHydrated(true);
+            },
         }
     )
 );

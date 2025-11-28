@@ -2,14 +2,15 @@
 
 import { Sidebar } from './Sidebar';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useStore, DEFAULT_POSITIONS, DEFAULT_DIMENSIONS } from '../lib/store';
+import { motion, AnimatePresence, useTransform, MotionValue } from 'framer-motion';
+import { useStore } from '../lib/store';
 import { NodeId } from '../lib/types';
 import { Node, LOD_WIDTH, LOD_HEIGHT } from './Node';
 import { calculateLodState } from '../lib/lod';
 import { NODE_REGISTRY, GRAPH_EDGES, SEARCH_INDEX, SearchItem } from './NodeRegistry';
 import { Save, MousePointer2, ZoomIn, ZoomOut, Activity, LayoutGrid, Search, X, CornerDownRight } from 'lucide-react';
 import { VoidIcon } from './VoidIcon';
+import { usePhysicsEngine } from '../hooks/usePhysicsEngine';
 
 // Base limit for panning. This will be scaled dynamically.
 const BASE_PAN_LIMIT = 5000;
@@ -20,87 +21,88 @@ const CONTENT_CENTER_Y = 450;
 
 // Connection line component (Animated SVG)
 const Connection: React.FC<{
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
+    sourcePos: { x: MotionValue<number>, y: MotionValue<number> },
+    targetPos: { x: MotionValue<number>, y: MotionValue<number> },
+    sourceDim: { width: number, height: number },
+    targetDim: { width: number, height: number },
+    isSourceLOD: boolean,
+    isTargetLOD: boolean,
+    isSourceMinimized: boolean,
+    isTargetMinimized: boolean,
     isZoomedOut: boolean,
     sourceId: NodeId,
     targetId: NodeId,
     draggedNode: NodeId | null
-}> = React.memo(({ x1, y1, x2, y2, isZoomedOut, sourceId, targetId, draggedNode }) => {
+}> = React.memo(({ sourcePos, targetPos, sourceDim, targetDim, isSourceLOD, isTargetLOD, isSourceMinimized, isTargetMinimized, isZoomedOut, sourceId, targetId, draggedNode }) => {
 
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    const cx = (x1 + x2) / 2;
-    const cy = (y1 + y2) / 2;
+    // Calculate Handles based on LOD/Minimized state
+    // POSITIONS ARE NOW CENTERS (Physics Engine)
+
+    const x1 = useTransform(sourcePos.x, x => {
+        let effectiveWidth = sourceDim.width;
+        if (isSourceLOD || isSourceMinimized) {
+            effectiveWidth = LOD_WIDTH;
+        }
+        // [Shiro] CENTER LOGIC: Right side = Center + Width/2
+        return x + effectiveWidth / 2;
+    });
+
+    const y1 = useTransform(sourcePos.y, y => y); // Center Y is just Y
+
+    const x2 = useTransform(targetPos.x, x => {
+        let effectiveWidth = targetDim.width;
+        if (isTargetLOD || isTargetMinimized) {
+            effectiveWidth = LOD_WIDTH;
+        }
+        // [Shiro] CENTER LOGIC: Left side = Center - Width/2
+        return x - effectiveWidth / 2;
+    });
+
+    const y2 = useTransform(targetPos.y, y => {
+        return y;
+    });
+
+    // Derived values for Label
+    const cx = useTransform([x1, x2], ([v1, v2]: number[]) => (v1 + v2) / 2);
+    const cy = useTransform([y1, y2], ([v1, v2]: number[]) => (v1 + v2) / 2);
+    const angle = useTransform([x1, y1, x2, y2], ([lx1, ly1, lx2, ly2]: number[]) => {
+        const dx = lx2 - lx1;
+        const dy = ly2 - ly1;
+        return Math.atan2(dy, dx) * 180 / Math.PI;
+    });
 
     // Visibility check for very zoomed out view
     const opacity = isZoomedOut ? 0.15 : 0.4;
-
-    // Determine transitions for endpoints
-    // If an endpoint is connected to the active (dragged) node, it should snap instantly.
-    // Otherwise, it should animate smoothly to follow the pushed node.
-    const isSourceActive = sourceId === draggedNode;
-    const isTargetActive = targetId === draggedNode;
-
-    const transitionNormal = {
-        duration: 0.3,
-        type: "tween" as const,
-        ease: "circOut" as const
-    };
-
-    const transitionInstant = {
-        duration: 0,
-        type: "tween" as const,
-        ease: "linear" as const
-    };
 
     return (
         <g>
             <motion.line
                 stroke="#8b5cf6"
                 strokeWidth="1"
-                initial={false}
-                animate={{
-                    x1, y1, x2, y2, opacity
-                }}
-                transition={{
-                    x1: isSourceActive ? transitionInstant : transitionNormal,
-                    y1: isSourceActive ? transitionInstant : transitionNormal,
-                    x2: isTargetActive ? transitionInstant : transitionNormal,
-                    y2: isTargetActive ? transitionInstant : transitionNormal,
-                    opacity: { duration: 0.5 }
-                }}
                 style={{
+                    x1, y1, x2, y2,
                     filter: "drop-shadow(0 0 2px rgba(139,92,246,0.4))"
-                }}
+                } as any}
+                initial={false}
+                animate={{ opacity }}
+                transition={{ duration: 0.5 }}
             />
             {/* Label */}
             <motion.g
+                style={{ x: cx, y: cy }}
                 initial={false}
-                animate={{
-                    x: cx,
-                    y: cy,
-                    opacity
-                }}
-                transition={{
-                    x: (isSourceActive || isTargetActive) ? transitionInstant : transitionNormal,
-                    y: (isSourceActive || isTargetActive) ? transitionInstant : transitionNormal,
-                    opacity: { duration: 0.5 }
-                }}
+                animate={{ opacity }}
+                transition={{ duration: 0.5 }}
             >
                 <foreignObject x="-20" y="-10" width="40" height="20" style={{ overflow: 'visible' }}>
-                    <div
+                    <motion.div
                         className="flex items-center justify-center w-full h-full"
-                        style={{ transform: `rotate(${angle}deg)` }}
+                        style={{ rotate: angle }}
                     >
                         <div className="bg-[#181625] border border-violet-500/30 text-[10px] text-violet-400 px-1.5 py-0.5 rounded-full font-mono tracking-widest whitespace-nowrap">
                             LINK
                         </div>
-                    </div>
+                    </motion.div>
                 </foreignObject>
             </motion.g>
         </g>
@@ -147,23 +149,77 @@ const FPSCounter: React.FC = () => {
 export const Canvas: React.FC = () => {
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Optimized Selectors
+    // [Shiro] New Selectors
     const translation = useStore(state => state.translation);
     const scale = useStore(state => state.scale);
-    const nodePositions = useStore(state => state.nodePositions);
-    const nodeDimensions = useStore(state => state.nodeDimensions);
-    const nodePorts = useStore(state => state.nodePorts);
+    const nodes = useStore(state => state.nodes); // New Map
 
+    // Actions
     const setTranslation = useStore(state => state.setTranslation);
     const setTransform = useStore(state => state.setTransform);
     const activeNode = useStore(state => state.activeNode);
     const draggedNode = useStore(state => state.draggedNode);
     const lodImmuneNodes = useStore(state => state.lodImmuneNodes);
+    const minimizedNodes = useStore(state => state.minimizedNodes);
     const setActiveNode = useStore(state => state.setActiveNode);
     const resetLayout = useStore(state => state.resetLayout);
     const setHighlightedField = useStore(state => state.setHighlightedField);
     const setViewportSize = useStore(state => state.setViewportSize);
     const viewportSize = useStore(state => state.viewportSize);
+    const hasHydrated = useStore(state => state.hasHydrated);
+    const initNodes = useStore(state => state.initNodes); // New
+
+    // [Shiro] Optimization: Create stable hashes to prevent re-init on simple position updates
+    const nodesHash = Object.keys(nodes).sort().join(',');
+    const minHash = minimizedNodes.sort().join(',');
+    const immuneHash = lodImmuneNodes.sort().join(',');
+
+    // [Shiro] Prevent render until nodes are ready
+    const isReady = hasHydrated && Object.keys(nodes).length > 0;
+
+    const { initPhysics, getMotionValues, dragStart, dragMove, dragEnd, notifyResize } = usePhysicsEngine();
+
+    // [Shiro] Initialize Store Nodes from Registry
+    useEffect(() => {
+        if (hasHydrated) {
+            initNodes(NODE_REGISTRY);
+        }
+    }, [hasHydrated, initNodes]);
+
+    // [Shiro] Optimization: Only re-init if the *existence* of nodes changes (Added/Removed).
+    // We do NOT listen to minimize/immune/scale here. The Node component handles those updates via onResize.
+
+    // [Shiro] Initialize Physics
+    useEffect(() => {
+        if (!hasHydrated) return;
+
+        // Wait for nodes to be populated
+        if (Object.keys(nodes).length === 0) return;
+
+        const initialNodes = Object.values(NODE_REGISTRY).map(conf => {
+            const nodeState = nodes[conf.id];
+            if (!nodeState) return null;
+
+            // Initial calculation only. Subsequent updates happen via notifyResize.
+            const dim = { width: nodeState.width, height: nodeState.height };
+
+            // We default to the stored dimensions. 
+            // The Node component will immediately report the correct visual size (LOD/Minimized) on mount.
+            return {
+                id: conf.id,
+                cx: nodeState.cx,
+                cy: nodeState.cy,
+                width: dim.width,
+                height: dim.height
+            };
+        }).filter(Boolean) as any[];
+
+        console.log('[Canvas] Initializing Physics with nodes:', initialNodes);
+        initPhysics(initialNodes);
+
+        // [Shiro] CRITICAL FIX: Only run on hydration or structural changes (adding/removing nodes).
+        // Removing 'minHash', 'activeNode', 'scale' prevents the engine from resetting during interaction.
+    }, [hasHydrated, nodesHash, initPhysics]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -210,14 +266,13 @@ export const Canvas: React.FC = () => {
     }, [searchQuery]);
 
     const handleSearchResultClick = (item: SearchItem) => {
-        const nodePos = nodePositions[item.nodeId] || DEFAULT_POSITIONS[item.nodeId];
-        const nodeDim = nodeDimensions[item.nodeId] || DEFAULT_DIMENSIONS[item.nodeId] || { width: 300, height: 200 };
+        const node = nodes[item.nodeId];
         const rect = containerRef.current?.getBoundingClientRect();
 
-        if (nodePos && rect) {
+        if (node && rect) {
             // Calculate center of the target Node
-            const targetX = nodePos.x + nodeDim.width / 2;
-            const targetY = nodePos.y + nodeDim.height / 2;
+            const targetX = node.cx;
+            const targetY = node.cy;
 
             // Center of the screen
             const screenCX = rect.width / 2;
@@ -355,36 +410,17 @@ export const Canvas: React.FC = () => {
         setTransform(newTx, newTy, newScale);
     };
 
-    const minimizedNodes = useStore(state => state.minimizedNodes);
+    // Helper to determine LOD state for a node (used for connections)
+    const getNodeLODState = (id: NodeId) => {
+        const node = nodes[id];
+        if (!node) return false;
 
-    // Helper to get connection handles (Left and Right edges)
-    const getOutputHandle = (id: NodeId) => {
-        const pos = nodePositions[id] || DEFAULT_POSITIONS[id] || { x: 0, y: 0 };
-
-        // If we have registered ports, use them (they are offsets from pos)
-        // DISABLED: nodePorts is currently not being updated for performance reasons.
-        // Falling back to dimension-based calculation which is accurate for standard nodes.
-        /*
-        if (nodePorts[id]?.output) {
-            return {
-                x: pos.x + nodePorts[id]!.output.x,
-                y: pos.y + nodePorts[id]!.output.y
-            };
-        }
-        */
-
-        const dim = nodeDimensions[id] || DEFAULT_DIMENSIONS[id] || { width: 300, height: 200 };
-
-        let effectiveX = pos.x;
-        let effectiveY = pos.y;
-        let effectiveWidth = dim.width;
-        let effectiveHeight = dim.height;
-
+        const dim = { width: node.width, height: node.height };
         const isActive = id === activeNode;
         const isImmune = lodImmuneNodes.includes(id);
         const isMinimized = minimizedNodes.includes(id);
 
-        const { isZoomedOut: isNodeLOD } = calculateLodState({
+        const { isZoomedOut } = calculateLodState({
             scale,
             viewportSize,
             dimensions: dim,
@@ -392,75 +428,32 @@ export const Canvas: React.FC = () => {
             isImmune,
             isMinimized
         });
-
-        if (isNodeLOD) {
-            effectiveWidth = LOD_WIDTH;
-            effectiveHeight = LOD_HEIGHT;
-            effectiveX += (dim.width - LOD_WIDTH) / 2;
-            effectiveY += (dim.height - LOD_HEIGHT) / 2;
-        }
-
-        return { x: effectiveX + effectiveWidth, y: effectiveY + effectiveHeight / 2 };
-    };
-
-    const getInputHandle = (id: NodeId) => {
-        const pos = nodePositions[id] || DEFAULT_POSITIONS[id] || { x: 0, y: 0 };
-
-        // If we have registered ports, use them (they are offsets from pos)
-        // DISABLED: nodePorts is currently not being updated for performance reasons.
-        /*
-        if (nodePorts[id]?.input) {
-            return {
-                x: pos.x + nodePorts[id]!.input.x,
-                y: pos.y + nodePorts[id]!.input.y
-            };
-        }
-        */
-
-        const dim = nodeDimensions[id] || DEFAULT_DIMENSIONS[id] || { width: 300, height: 200 };
-
-        let effectiveX = pos.x;
-        let effectiveY = pos.y;
-        // let effectiveWidth = dim.width; 
-        let effectiveHeight = dim.height;
-
-        const isActive = id === activeNode;
-        const isImmune = lodImmuneNodes.includes(id);
-        const isMinimized = minimizedNodes.includes(id);
-
-        const { isZoomedOut: isNodeLOD } = calculateLodState({
-            scale,
-            viewportSize,
-            dimensions: dim,
-            isActive,
-            isImmune,
-            isMinimized
-        });
-
-        if (isNodeLOD) {
-            // effectiveWidth = LOD_WIDTH;
-            effectiveHeight = LOD_HEIGHT;
-            effectiveX += (dim.width - LOD_WIDTH) / 2;
-            effectiveY += (dim.height - LOD_HEIGHT) / 2;
-        }
-
-        return { x: effectiveX, y: effectiveY + effectiveHeight / 2 };
+        return isZoomedOut;
     };
 
     // Dynamic Grid Opacity
     // Fade from 0.2 (at scale 0.5) down to 0 (at scale 0.1)
     const gridOpacity = Math.max(0, Math.min(0.2, (scale - 0.1) * 0.5));
 
-    // Memoize Node elements to prevent re-rendering them when Canvas re-renders (e.g. during drag)
-    // unless the registry itself changes (which it doesn't).
-    // The Node components themselves are React.memo'd and subscribe to the store for their own updates.
+    // Memoize Node elements
     const nodeElements = useMemo(() => {
         return Object.values(NODE_REGISTRY).map((config) => (
-            <Node key={config.id} id={config.id} title={config.title} icon={config.icon}>
+            <Node
+                key={config.id}
+                id={config.id}
+                title={config.title}
+                icon={config.icon}
+                // PHYSICS PROPS
+                motionValues={getMotionValues(config.id)}
+                onDragStart={(x, y) => dragStart(config.id, x, y)}
+                onDragMove={(x, y) => dragMove(config.id, x, y)}
+                onDragEnd={() => dragEnd(config.id)}
+                onResize={(w, h, anchor) => notifyResize(config.id, w, h, anchor)}
+            >
                 <config.component />
             </Node>
         ));
-    }, []);
+    }, [getMotionValues, dragStart, dragMove, dragEnd, notifyResize]); // Dependencies are stable from hook
 
     return (
         <div
@@ -502,15 +495,27 @@ export const Canvas: React.FC = () => {
                 {/* Connections (Dynamically Generated) */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
                     {GRAPH_EDGES.map((edge) => {
-                        const p1 = getOutputHandle(edge.source);
-                        const p2 = getInputHandle(edge.target);
+                        const sourceNode = nodes[edge.source];
+                        const targetNode = nodes[edge.target];
+
+                        if (!sourceNode || !targetNode) return null;
+
+                        const isSourceLOD = getNodeLODState(edge.source);
+                        const isTargetLOD = getNodeLODState(edge.target);
+                        const isSourceMinimized = minimizedNodes.includes(edge.source);
+                        const isTargetMinimized = minimizedNodes.includes(edge.target);
+
                         return (
                             <Connection
                                 key={`${edge.source}-${edge.target}`}
-                                x1={p1.x}
-                                y1={p1.y}
-                                x2={p2.x}
-                                y2={p2.y}
+                                sourcePos={getMotionValues(edge.source)}
+                                targetPos={getMotionValues(edge.target)}
+                                sourceDim={{ width: sourceNode.width, height: sourceNode.height }}
+                                targetDim={{ width: targetNode.width, height: targetNode.height }}
+                                isSourceLOD={isSourceLOD}
+                                isTargetLOD={isTargetLOD}
+                                isSourceMinimized={isSourceMinimized}
+                                isTargetMinimized={isTargetMinimized}
                                 isZoomedOut={isZoomedOut}
                                 sourceId={edge.source}
                                 targetId={edge.target}
@@ -521,7 +526,7 @@ export const Canvas: React.FC = () => {
                 </svg>
 
                 {/* Nodes (Memoized) */}
-                {nodeElements}
+                {isReady && nodeElements}
             </motion.div>
 
             {/* HUD / Overlay UI */}
@@ -582,7 +587,7 @@ export const Canvas: React.FC = () => {
 
                 <div className="flex items-center gap-2 bg-[#232034]/80 backdrop-blur-md border border-[#3E3B5E] p-1 rounded-lg shadow-2xl">
                     <button
-                        onClick={resetLayout}
+                        onClick={() => resetLayout(NODE_REGISTRY)}
                         className="p-2 hover:bg-[#3E3B5E] rounded text-[#948FB2] hover:text-white transition"
                         title="Reset Layout"
                     >

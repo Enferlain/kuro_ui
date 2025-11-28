@@ -11,25 +11,33 @@ export const NODE_REGISTRY: Record<string, NodeConfig> = {
         id: NodeId.GENERAL_ARGS,
         title: 'General',
         icon: Sliders,
-        component: GeneralArgsNode
+        component: GeneralArgsNode,
+        defaultPosition: { x: 100, y: 400 },
+        defaultDimensions: { width: 400, height: 600 }
     },
     [NodeId.DATA]: {
         id: NodeId.DATA,
         title: 'Dataset',
         icon: Database,
-        component: DataNode
+        component: DataNode,
+        defaultPosition: { x: 600, y: 500 },
+        defaultDimensions: { width: 400, height: 500 }
     },
     [NodeId.TRAINING]: {
         id: NodeId.TRAINING,
         title: 'Training',
         icon: Settings2,
-        component: TrainingNode
+        component: TrainingNode,
+        defaultPosition: { x: 1550, y: 150 },
+        defaultDimensions: { width: 380, height: 350 }
     },
     [NodeId.NETWORK]: {
         id: NodeId.NETWORK,
         title: 'Network',
-        icon: Database, // Using Database icon as placeholder, maybe change later
-        component: NetworkNode
+        icon: Database,
+        component: NetworkNode,
+        defaultPosition: { x: 100, y: 1100 },
+        defaultDimensions: { width: 400, height: 600 }
     },
 };
 

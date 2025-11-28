@@ -1,4 +1,3 @@
-
 import { LucideIcon } from 'lucide-react';
 
 export enum NodeId {
@@ -14,15 +13,16 @@ export interface Coordinates {
   y: number;
 }
 
-export interface NodePosition {
-  x: number;
-  y: number;
+// [Shiro] NEW: Unified Node State (Center-based)
+export interface NodeState {
+  id: string;
+  cx: number;        // Center X (Physics Native)
+  cy: number;        // Center Y (Physics Native)
+  width: number;     // Logical Full Width
+  height: number;    // Logical Full Height
 }
 
-export interface NodeDimensions {
-  width: number;
-  height: number;
-}
+// [Shiro] DELETED: NodePosition, NodeDimensions (No longer used)
 
 export interface SubsetConfig {
   id: string;
@@ -166,12 +166,11 @@ export interface TrainingConfig {
 export interface UIState {
   scale: number;
   translation: Coordinates;
-  nodePositions: Record<NodeId, NodePosition>;
-  nodeDimensions: Record<NodeId, NodeDimensions>;
+  nodes: Record<string, NodeState>; // [Shiro] Replaces nodePositions/nodeDimensions
   activeNode: NodeId | null;
-  geminiContext: string | null; // The parameter user wants help with
+  geminiContext: string | null;
   isGeminiOpen: boolean;
-  highlightedField: string | null; // For search result highlighting
+  highlightedField: string | null;
 }
 
 export interface NodeConfig {
@@ -179,6 +178,9 @@ export interface NodeConfig {
   title: string;
   icon: LucideIcon;
   component: React.FC;
+  // [Shiro] Layout Defaults controlled by Registry
+  defaultPosition: { x: number, y: number };
+  defaultDimensions: { width: number, height: number };
 }
 
 export interface GraphEdge {
