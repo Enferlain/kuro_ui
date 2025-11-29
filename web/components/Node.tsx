@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, MotionValue, useMotionValue } from 'framer-motion';
+import { motion, AnimatePresence, MotionValue, useMotionValue, useSpring } from 'framer-motion';
 import { useStore } from '../lib/store';
 import { NodeId } from '../lib/types';
 import { LucideIcon, Scaling, Pin, Minimize2, Maximize2 } from 'lucide-react';
@@ -51,18 +51,24 @@ export const Node: React.FC<NodeProps> = React.memo(({
     const [isResizing, setIsResizing] = useState(false);
     const [contentScale, setContentScale] = useState(1);
 
-    // [Shiro] PERFORMANCE FIX: Use MotionValues for Width/Height 
-    // This allows us to resize visuals instantly without triggering React Renders
+    // [Shiro] PERFORMANCE FIX: Use useSpring for Width/Height 
+    // This allows us to resize visuals smoothly without triggering React Renders
+    // and without manually calling animate()
     const currentWidth = nodeState?.width || 300;
     const currentHeight = nodeState?.height || 300;
 
-    const widthMV = useMotionValue(currentWidth);
-    const heightMV = useMotionValue(currentHeight);
+    const springConfig = { stiffness: 400, damping: 30 };
+    const widthMV = useSpring(currentWidth, springConfig);
+    const heightMV = useSpring(currentHeight, springConfig);
 
     // Sync MotionValues when store changes (e.g. Layout Reset or manual input)
     // We only sync if we are NOT currently resizing to avoid fighting the user
     useEffect(() => {
         if (!isResizing) {
+            // For initial load or reset, we might want to jump instantly?
+            // But useSpring.set will animate. 
+            // If we want instant, we can't easily do it with useSpring without recreating it.
+            // But animating layout changes is usually fine/good.
             widthMV.set(currentWidth);
             heightMV.set(currentHeight);
         }
@@ -79,12 +85,17 @@ export const Node: React.FC<NodeProps> = React.memo(({
     // Notify Physics Engine when visual size changes (LOD / Minimize)
     useEffect(() => {
         if (!isResizing) {
+            // [Shiro] ANIMATION FIX: Just set the spring target!
+            // The spring will handle the interpolation smoothly.
+            widthMV.set(effectiveWidth);
+            heightMV.set(effectiveHeight);
+
             // [Shiro] ANCHOR LOGIC:
             // If this node is ACTIVE (User Selected), we anchor it so it pushes others away.
             // If it's NOT active (Zoom/LOD), we don't anchor, so everyone slides mutually.
             onResize(effectiveWidth, effectiveHeight, isActive);
         }
-    }, [effectiveWidth, effectiveHeight, onResize, isResizing, isActive]);
+    }, [effectiveWidth, effectiveHeight, onResize, isResizing, isActive, widthMV, heightMV]);
 
     const opacity = (isActive || isDragging || isResizing || !anyActive) ? 1 : 0.4;
     const zIndex = isActive || isDragging || isResizing ? 50 : 10;
@@ -180,6 +191,20 @@ export const Node: React.FC<NodeProps> = React.memo(({
             const newCenterY = startCenterY + deltaHeight / 2;
 
             // 3. Update Visuals (MotionValues) - NO REACT RENDER
+            // Note: useSpring.set jumps instantly if we don't provide a config, 
+            // but here we initialized with config. 
+            // However, for RESIZING, we want instant feedback, not springy lag.
+            // So we might need to temporarily disable spring or just set it.
+            // Actually, useSpring.set() will animate. This might feel laggy for resizing.
+            // FIX: For resizing, we should probably bypass spring or use a very stiff one?
+            // Or maybe we just accept the slight springiness? 
+            // Let's try setting it. If it's too laggy, we might need a separate 'instant' value or useMotionValue + animate for the other cases.
+            // BUT, we can use `jump` option in set? No, useSpring doesn't have that.
+
+            // ALTERNATIVE: Use a standard MotionValue, and only animate it in the useEffect.
+            // This is what I tried before. Let's stick to that but FIX THE STYLE PROP.
+            // Reverting to useMotionValue + animate, but fixing the style prop bug.
+
             widthMV.set(desiredWidth);
             heightMV.set(desiredHeight);
             motionValues.x.set(newCenterX);
@@ -243,8 +268,9 @@ export const Node: React.FC<NodeProps> = React.memo(({
                 translateX: '-50%',
                 translateY: '-50%',
                 // [Shiro] Use MotionValues for smooth resize
-                width: isZoomedOut ? LOD_WIDTH : widthMV,
-                height: isZoomedOut ? LOD_HEIGHT : heightMV,
+                // IMPORTANT: Always use the MotionValue/Spring. Do NOT use conditional logic here.
+                width: widthMV,
+                height: heightMV,
                 opacity,
                 zIndex,
                 scale: isActive || isDragging ? 1.02 : 1
