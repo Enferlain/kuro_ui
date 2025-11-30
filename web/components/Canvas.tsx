@@ -2,7 +2,7 @@
 
 import { Sidebar } from './Sidebar';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence, useTransform, MotionValue } from 'framer-motion';
+import { motion, AnimatePresence, useTransform, MotionValue, useSpring } from 'framer-motion';
 import { useStore } from '../lib/store';
 import { NodeId } from '../lib/types';
 import { Node, LOD_WIDTH, LOD_HEIGHT } from './Node';
@@ -38,24 +38,30 @@ const Connection: React.FC<{
     // Calculate Handles based on LOD/Minimized state
     // POSITIONS ARE NOW CENTERS (Physics Engine)
 
-    const x1 = useTransform(sourcePos.x, x => {
-        let effectiveWidth = sourceDim.width;
-        if (isSourceLOD || isSourceMinimized) {
-            effectiveWidth = LOD_WIDTH;
-        }
+    // [Shiro] ANIMATION FIX: Use springs for the width to match Node animation
+    const targetSourceWidth = (isSourceLOD || isSourceMinimized) ? LOD_WIDTH : sourceDim.width;
+    const targetTargetWidth = (isTargetLOD || isTargetMinimized) ? LOD_WIDTH : targetDim.width;
+
+    const springConfig = { stiffness: 400, damping: 30 };
+    const animatedSourceWidth = useSpring(targetSourceWidth, springConfig);
+    const animatedTargetWidth = useSpring(targetTargetWidth, springConfig);
+
+    // Sync springs when targets change
+    useEffect(() => {
+        animatedSourceWidth.set(targetSourceWidth);
+        animatedTargetWidth.set(targetTargetWidth);
+    }, [targetSourceWidth, targetTargetWidth, animatedSourceWidth, animatedTargetWidth]);
+
+    const x1 = useTransform([sourcePos.x, animatedSourceWidth], ([x, w]) => {
         // [Shiro] CENTER LOGIC: Right side = Center + Width/2
-        return x + effectiveWidth / 2;
+        return x + w / 2;
     });
 
     const y1 = useTransform(sourcePos.y, y => y); // Center Y is just Y
 
-    const x2 = useTransform(targetPos.x, x => {
-        let effectiveWidth = targetDim.width;
-        if (isTargetLOD || isTargetMinimized) {
-            effectiveWidth = LOD_WIDTH;
-        }
+    const x2 = useTransform([targetPos.x, animatedTargetWidth], ([x, w]) => {
         // [Shiro] CENTER LOGIC: Left side = Center - Width/2
-        return x - effectiveWidth / 2;
+        return x - w / 2;
     });
 
     const y2 = useTransform(targetPos.y, y => {

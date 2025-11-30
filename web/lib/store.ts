@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { TrainingConfig, UIState, NodeId, NodeState, NodeConfig } from './types';
+import { LOD_WIDTH, LOD_HEIGHT } from '../components/Node';
 
 interface Store extends UIState {
     config: TrainingConfig;
@@ -14,10 +15,10 @@ interface Store extends UIState {
     setTranslation: (x: number, y: number) => void;
     setScale: (s: number) => void;
     setTransform: (x: number, y: number, scale: number) => void;
-    
+
     // [Shiro] New Consolidated Update Action
     updateNode: (id: string, updates: Partial<NodeState>) => void;
-    
+
     // [Shiro] Lifecycle Actions
     initNodes: (registry: Record<string, NodeConfig>) => void;
     resetLayout: (registry: Record<string, NodeConfig>) => void;
@@ -167,6 +168,20 @@ export const useStore = create<Store>()(
                             height: conf.defaultDimensions.height
                         };
                         hasChanges = true;
+                    } else {
+                        // [Shiro] PERSISTENCE FIX:
+                        // If node exists, check if it's minimized. If so, ensure dimensions match LOD size.
+                        // This prevents "ballooning" where a minimized node loads with full size then shrinks.
+                        const node = newNodes[conf.id];
+                        const isMinimized = state.minimizedNodes.includes(conf.id);
+                        if (isMinimized && (node.width !== LOD_WIDTH || node.height !== LOD_HEIGHT)) {
+                            newNodes[conf.id] = {
+                                ...node,
+                                width: LOD_WIDTH,
+                                height: LOD_HEIGHT
+                            };
+                            hasChanges = true;
+                        }
                     }
                 });
 
@@ -195,7 +210,7 @@ export const useStore = create<Store>()(
             setIsNodeDragging: (isDragging) => set({ isNodeDragging: isDragging }),
             draggedNode: null,
             setDraggedNode: (id) => set({ draggedNode: id }),
-            
+
             toggleLodImmunity: (id) => set((state) => {
                 const isImmune = state.lodImmuneNodes.includes(id);
                 return {
@@ -234,7 +249,7 @@ export const useStore = create<Store>()(
             partialize: (state) => ({
                 translation: state.translation,
                 scale: state.scale,
-                nodes: state.nodes, 
+                nodes: state.nodes,
                 lodImmuneNodes: state.lodImmuneNodes,
                 minimizedNodes: state.minimizedNodes,
                 config: state.config,
