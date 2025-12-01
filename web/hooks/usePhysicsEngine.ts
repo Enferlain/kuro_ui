@@ -38,6 +38,9 @@ export const usePhysicsEngine = () => {
     // Track if user is currently interacting to prevent auto-save conflicts
     const isInteracting = useRef(false);
 
+    // [Shiro] Track nodes being manually resized to prevent physics fighting
+    const resizingNodes = useRef<Set<NodeId>>(new Set());
+
     // [Shiro] New Update Action
     const updateNode = useStore.getState().updateNode;
 
@@ -106,37 +109,44 @@ export const usePhysicsEngine = () => {
                 Matter.Body.setAngle(body, 0);
                 Matter.Body.setAngularVelocity(body, 0);
 
-                const target = targetSizes.current.get(id);
-                if (target) {
-                    // Current bounds width/height
-                    const currentWidth = body.bounds.max.x - body.bounds.min.x;
-                    const currentHeight = body.bounds.max.y - body.bounds.min.y;
+                // [Shiro] Skip size lerping if node is being manually resized
+                if (!resizingNodes.current.has(id)) {
+                    const target = targetSizes.current.get(id);
+                    if (target) {
+                        // Current bounds width/height
+                        const currentWidth = body.bounds.max.x - body.bounds.min.x;
+                        const currentHeight = body.bounds.max.y - body.bounds.min.y;
 
-                    // Check if we need to resize
-                    if (Math.abs(currentWidth - target.width) > 1 || Math.abs(currentHeight - target.height) > 1) {
-                        // Calculate scale factor needed
-                        // We want to lerp towards target, but Matter.Body.scale is multiplicative.
-                        // So we calculate the desired size for this frame.
-                        const lerpFactor = 0.1;
-                        const newWidth = currentWidth + (target.width - currentWidth) * lerpFactor;
-                        const newHeight = currentHeight + (target.height - currentHeight) * lerpFactor;
+                        // Check if we need to resize
+                        if (Math.abs(currentWidth - target.width) > 1 || Math.abs(currentHeight - target.height) > 1) {
+                            // Calculate scale factor needed
+                            // We want to lerp towards target, but Matter.Body.scale is multiplicative.
+                            // So we calculate the desired size for this frame.
+                            const lerpFactor = 0.1;
+                            const newWidth = currentWidth + (target.width - currentWidth) * lerpFactor;
+                            const newHeight = currentHeight + (target.height - currentHeight) * lerpFactor;
 
-                        // Apply scale
-                        const scaleX = newWidth / currentWidth;
-                        const scaleY = newHeight / currentHeight;
+                            // Apply scale
+                            const scaleX = newWidth / currentWidth;
+                            const scaleY = newHeight / currentHeight;
 
-                        Matter.Body.scale(body, scaleX, scaleY);
+                            Matter.Body.scale(body, scaleX, scaleY);
 
-                        // [Shiro] Re-lock properties just in case
-                        Matter.Body.setInertia(body, Infinity);
+                            // [Shiro] Re-lock properties just in case
+                            Matter.Body.setInertia(body, Infinity);
+                        }
                     }
                 }
 
                 // B. Sync Position to MotionValues
-                const mv = motionValues.current.get(id);
-                if (mv) {
-                    mv.x.set(body.position.x);
-                    mv.y.set(body.position.y);
+                // [Shiro] JITTER FIX: Do NOT sync position if we are manually resizing.
+                // The mouse controls the position 100%. Physics should not fight back.
+                if (!resizingNodes.current.has(id)) {
+                    const mv = motionValues.current.get(id);
+                    if (mv) {
+                        mv.x.set(body.position.x);
+                        mv.y.set(body.position.y);
+                    }
                 }
 
                 // C. Persistence Check (Only when resting and not interacting)
@@ -211,6 +221,10 @@ export const usePhysicsEngine = () => {
 
     const dragEnd = useCallback((id: NodeId) => {
         isInteracting.current = false;
+
+        // [Shiro] Stop tracking resize
+        resizingNodes.current.delete(id);
+
         if (dragConstraint.current && engine.current) {
             Matter.World.remove(engine.current.world, dragConstraint.current);
             dragConstraint.current = null;
@@ -229,6 +243,9 @@ export const usePhysicsEngine = () => {
             // [Shiro] IMMEDIATE UPDATE for manual interactions
             // If we are anchoring (manual resize), apply scale immediately to match cursor
             if (anchor) {
+                // [Shiro] Mark as resizing to prevent physics loop from fighting back
+                resizingNodes.current.add(id);
+
                 // Reset angle for safe scaling
                 Matter.Body.setAngle(body, 0);
                 Matter.Body.setAngularVelocity(body, 0);

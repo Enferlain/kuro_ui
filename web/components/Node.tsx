@@ -77,9 +77,15 @@ export const Node: React.FC<NodeProps> = React.memo(({
     const initialWidth = initialLodState.isZoomedOut ? LOD_WIDTH : currentWidth;
     const initialHeight = initialLodState.isZoomedOut ? LOD_HEIGHT : currentHeight;
 
+    // [Shiro] JELLY FIX: Separate Source from Spring
+    // We update 'Source' immediately. 'Spring' follows 'Source'.
+    // During manual resize, we use 'Source' directly to avoid lag.
+    const widthSource = useMotionValue(initialWidth);
+    const heightSource = useMotionValue(initialHeight);
+
     const springConfig = { stiffness: 400, damping: 30 };
-    const widthMV = useSpring(initialWidth, springConfig);
-    const heightMV = useSpring(initialHeight, springConfig);
+    const widthSpring = useSpring(widthSource, springConfig);
+    const heightSpring = useSpring(heightSource, springConfig);
 
     // The problematic useEffect that fought LOD logic has been removed.
     // The useEffect below that uses `effectiveWidth` is now the single source of truth for size updates.
@@ -95,15 +101,15 @@ export const Node: React.FC<NodeProps> = React.memo(({
         if (!isResizing) {
             // [Shiro] ANIMATION FIX: Just set the spring target!
             // The spring will handle the interpolation smoothly.
-            widthMV.set(effectiveWidth);
-            heightMV.set(effectiveHeight);
+            widthSource.set(effectiveWidth);
+            heightSource.set(effectiveHeight);
 
             // [Shiro] ANCHOR LOGIC:
             // If this node is ACTIVE (User Selected), we anchor it so it pushes others away.
             // If it's NOT active (Zoom/LOD), we don't anchor, so everyone slides mutually.
             onResize(effectiveWidth, effectiveHeight, isActive);
         }
-    }, [effectiveWidth, effectiveHeight, onResize, isResizing, isActive, widthMV, heightMV]);
+    }, [effectiveWidth, effectiveHeight, onResize, isResizing, isActive, widthSource, heightSource]);
 
     const opacity = (isActive || isDragging || isResizing || !anyActive) ? 1 : 0.4;
     const zIndex = isActive || isDragging || isResizing ? 50 : 10;
@@ -172,8 +178,12 @@ export const Node: React.FC<NodeProps> = React.memo(({
         const startMouseY = e.clientY;
 
         // Capture starting values
-        const startWidth = widthMV.get();
-        const startHeight = heightMV.get();
+        // [Shiro] JELLY FIX: Sync source to current spring value to prevent jump
+        widthSource.set(widthSpring.get());
+        heightSource.set(heightSpring.get());
+
+        const startWidth = widthSource.get();
+        const startHeight = heightSource.get();
         const currentScale = useStore.getState().scale;
         const startCenterX = motionValues.x.get();
         const startCenterY = motionValues.y.get();
@@ -205,8 +215,10 @@ export const Node: React.FC<NodeProps> = React.memo(({
             const newCenterY = startCenterY + deltaHeight / 2;
 
             // 3. Update Visuals
-            widthMV.set(desiredWidth);
-            heightMV.set(desiredHeight);
+            // [Shiro] JELLY FIX: Update Source directly!
+            widthSource.set(desiredWidth);
+            heightSource.set(desiredHeight);
+
             motionValues.x.set(newCenterX);
             motionValues.y.set(newCenterY);
 
@@ -223,8 +235,8 @@ export const Node: React.FC<NodeProps> = React.memo(({
 
             // 5. SAVE TO STORE (Persistence) - Triggers Render
             updateNode(id, {
-                width: widthMV.get(),
-                height: heightMV.get(),
+                width: widthSource.get(),
+                height: heightSource.get(),
                 cx: motionValues.x.get(),
                 cy: motionValues.y.get()
             });
@@ -270,8 +282,9 @@ export const Node: React.FC<NodeProps> = React.memo(({
                 translateY: '-50%',
                 // [Shiro] Use MotionValues for smooth resize
                 // IMPORTANT: Always use the MotionValue/Spring. Do NOT use conditional logic here.
-                width: widthMV,
-                height: heightMV,
+                // [Shiro] JELLY FIX: Use Source when resizing, Spring when not!
+                width: isResizing ? widthSource : widthSpring,
+                height: isResizing ? heightSource : heightSpring,
                 opacity,
                 zIndex,
                 scale: isActive || isDragging ? 1.02 : 1
