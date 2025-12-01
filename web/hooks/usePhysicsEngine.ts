@@ -187,18 +187,25 @@ export const usePhysicsEngine = () => {
     }, []);
 
     const dragMove = useCallback((id: NodeId, x: number, y: number) => {
-        // Just update the constraint anchor. 
-        // The physics engine will solve the movement and collisions.
+        const body = bodies.current.get(id);
+
+        // If we have a drag constraint, we're dragging. Update the constraint's anchor point.
         if (dragConstraint.current) {
             dragConstraint.current.pointA = { x, y };
-        }
 
-        // Sync MotionValues immediately for visual responsiveness
-        // (Optional: might be jittery if physics lags, but usually fine)
-        const body = bodies.current.get(id);
-        if (body) {
-            const mv = motionValues.current.get(id);
-            if (mv) { mv.x.set(body.position.x); mv.y.set(body.position.y); }
+            // Sync MotionValues from physics for visual responsiveness during drag
+            if (body) {
+                const mv = motionValues.current.get(id);
+                if (mv) {
+                    mv.x.set(body.position.x);
+                    mv.y.set(body.position.y);
+                }
+            }
+        }
+        // If there's no constraint, this call is coming from a resize operation.
+        // In this case, we need to directly set the physics body's position.
+        else if (body) {
+            Matter.Body.setPosition(body, { x, y });
         }
     }, []);
 
@@ -219,22 +226,31 @@ export const usePhysicsEngine = () => {
     const notifyResize = (id: NodeId, width: number, height: number, anchor: boolean = false) => {
         const body = bodies.current.get(id);
         if (body) {
-            // Update target size for the Lerp loop (Include Buffer)
-            targetSizes.current.set(id, { width: width + PHYSICS_BUFFER, height: height + PHYSICS_BUFFER });
-
-            // Wake up the body so the loop runs
-            Matter.Sleeping.set(body, false);
-
-            // [Shiro] ANCHOR LOGIC:
+            // [Shiro] IMMEDIATE UPDATE for manual interactions
+            // If we are anchoring (manual resize), apply scale immediately to match cursor
             if (anchor) {
-                // Make it an immovable object while resizing
-                Matter.Body.setMass(body, 100000);
+                // Reset angle for safe scaling
+                Matter.Body.setAngle(body, 0);
+                Matter.Body.setAngularVelocity(body, 0);
+
+                const currentWidth = body.bounds.max.x - body.bounds.min.x;
+                const currentHeight = body.bounds.max.y - body.bounds.min.y;
+
+                const scaleX = width / currentWidth;
+                const scaleY = height / currentHeight;
+
+                Matter.Body.scale(body, scaleX, scaleY);
+
+                // Make static-like during resize
                 Matter.Body.setInertia(body, Infinity);
+                Matter.Body.setMass(body, 100000);
+
+                // Also update targetSizes so the lerp loop doesn't fight us later
+                targetSizes.current.set(id, { width: width + PHYSICS_BUFFER, height: height + PHYSICS_BUFFER });
             } else {
-                // Reset to normal when not anchoring
-                // Standard rectangle mass is roughly area * density (0.001)
-                Matter.Body.setMass(body, (width + PHYSICS_BUFFER) * (height + PHYSICS_BUFFER) * 0.001);
-                Matter.Body.setInertia(body, Infinity); // Keep rotation locked!
+                // Standard logic for LOD/Zoom (keep using Lerp)
+                targetSizes.current.set(id, { width: width + PHYSICS_BUFFER, height: height + PHYSICS_BUFFER });
+                Matter.Sleeping.set(body, false);
             }
         }
     };

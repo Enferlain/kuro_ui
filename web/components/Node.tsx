@@ -6,6 +6,7 @@ import { useStore } from '../lib/store';
 import { NodeId } from '../lib/types';
 import { LucideIcon, Scaling, Pin, Minimize2, Maximize2 } from 'lucide-react';
 import { useNodeLOD } from '../hooks/useNodeLOD';
+import { calculateLodState } from '../lib/lod';
 
 interface NodeProps {
     id: NodeId;
@@ -47,6 +48,10 @@ export const Node: React.FC<NodeProps> = React.memo(({
     const toggleMinimize = useStore((state) => state.toggleMinimize);
     const setDraggedNode = useStore((state) => state.setDraggedNode);
 
+    // [Shiro] INITIAL LOAD FIX: Add selectors for initial LOD calculation
+    const scale = useStore((state) => state.scale);
+    const viewportSize = useStore((state) => state.viewportSize);
+
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
     const [contentScale, setContentScale] = useState(1);
@@ -57,27 +62,30 @@ export const Node: React.FC<NodeProps> = React.memo(({
     const currentWidth = nodeState?.width || 300;
     const currentHeight = nodeState?.height || 300;
 
-    const springConfig = { stiffness: 400, damping: 30 };
-    const widthMV = useSpring(currentWidth, springConfig);
-    const heightMV = useSpring(currentHeight, springConfig);
+    // [Shiro] INITIAL LOAD FIX: Calculate LOD-aware size before initializing springs
+    // This prevents the node from initializing at full size and then shrinking.
+    const isImmune = lodImmuneNodes.includes(id);
+    const isMinimized = minimizedNodes.includes(id);
+    const initialLodState = calculateLodState({
+        scale,
+        viewportSize,
+        dimensions: { width: currentWidth, height: currentHeight },
+        isActive,
+        isImmune,
+        isMinimized,
+    });
+    const initialWidth = initialLodState.isZoomedOut ? LOD_WIDTH : currentWidth;
+    const initialHeight = initialLodState.isZoomedOut ? LOD_HEIGHT : currentHeight;
 
-    // Sync MotionValues when store changes (e.g. Layout Reset or manual input)
-    // We only sync if we are NOT currently resizing to avoid fighting the user
-    useEffect(() => {
-        if (!isResizing) {
-            // For initial load or reset, we might want to jump instantly?
-            // But useSpring.set will animate. 
-            // If we want instant, we can't easily do it with useSpring without recreating it.
-            // But animating layout changes is usually fine/good.
-            widthMV.set(currentWidth);
-            heightMV.set(currentHeight);
-        }
-    }, [currentWidth, currentHeight, isResizing, widthMV, heightMV]);
+    const springConfig = { stiffness: 400, damping: 30 };
+    const widthMV = useSpring(initialWidth, springConfig);
+    const heightMV = useSpring(initialHeight, springConfig);
+
+    // The problematic useEffect that fought LOD logic has been removed.
+    // The useEffect below that uses `effectiveWidth` is now the single source of truth for size updates.
 
     // LOD Logic
     const { isZoomedOut, autoCollapse } = useNodeLOD(id, { width: currentWidth, height: currentHeight }, isResizing);
-    const isImmune = lodImmuneNodes.includes(id);
-    const isMinimized = minimizedNodes.includes(id);
 
     const effectiveWidth = isZoomedOut ? LOD_WIDTH : currentWidth;
     const effectiveHeight = isZoomedOut ? LOD_HEIGHT : currentHeight;
@@ -175,6 +183,7 @@ export const Node: React.FC<NodeProps> = React.memo(({
 
         const handleResizeMove = (moveEvent: PointerEvent) => {
             moveEvent.preventDefault();
+
             const rawDx = moveEvent.clientX - startMouseX;
             const rawDy = moveEvent.clientY - startMouseY;
 
@@ -185,34 +194,26 @@ export const Node: React.FC<NodeProps> = React.memo(({
             const deltaWidth = desiredWidth - startWidth;
             const deltaHeight = desiredHeight - startHeight;
 
-            // 2. Calculate New Center (Right/Bottom resize only)
-            // To keep Top-Left fixed, the center must move by half the delta
+            // 2. Calculate New Center (Right/Bottom resize ONLY)
+            // Logic: To keep Top-Left fixed, we must shift the center by +delta/2
+            // If we grew by 100px, center moves +50px right.
+            // Old Top-Left: (Cx - W/2)
+            // New Top-Left: (Cx + dW/2) - (W + dW)/2 
+            //             = Cx + dW/2 - W/2 - dW/2 
+            //             = Cx - W/2  <-- STAYS SAME!
             const newCenterX = startCenterX + deltaWidth / 2;
             const newCenterY = startCenterY + deltaHeight / 2;
 
-            // 3. Update Visuals (MotionValues) - NO REACT RENDER
-            // Note: useSpring.set jumps instantly if we don't provide a config, 
-            // but here we initialized with config. 
-            // However, for RESIZING, we want instant feedback, not springy lag.
-            // So we might need to temporarily disable spring or just set it.
-            // Actually, useSpring.set() will animate. This might feel laggy for resizing.
-            // FIX: For resizing, we should probably bypass spring or use a very stiff one?
-            // Or maybe we just accept the slight springiness? 
-            // Let's try setting it. If it's too laggy, we might need a separate 'instant' value or useMotionValue + animate for the other cases.
-            // BUT, we can use `jump` option in set? No, useSpring doesn't have that.
-
-            // ALTERNATIVE: Use a standard MotionValue, and only animate it in the useEffect.
-            // This is what I tried before. Let's stick to that but FIX THE STYLE PROP.
-            // Reverting to useMotionValue + animate, but fixing the style prop bug.
-
+            // 3. Update Visuals
             widthMV.set(desiredWidth);
             heightMV.set(desiredHeight);
             motionValues.x.set(newCenterX);
             motionValues.y.set(newCenterY);
 
-            // 4. Update Physics - NO REACT RENDER
-            onDragMove(newCenterX, newCenterY); // Move body
-            onResize(desiredWidth, desiredHeight); // Update collider
+            // 4. Update Physics
+            // We pass the new center explicitly so physics body moves WITH the expansion
+            onDragMove(newCenterX, newCenterY);
+            onResize(desiredWidth, desiredHeight, true); // anchor=true ensures mass is locked
         };
 
         const handleResizeUp = () => {

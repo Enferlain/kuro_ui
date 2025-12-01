@@ -52,14 +52,14 @@ const Connection: React.FC<{
         animatedTargetWidth.set(targetTargetWidth);
     }, [targetSourceWidth, targetTargetWidth, animatedSourceWidth, animatedTargetWidth]);
 
-    const x1 = useTransform([sourcePos.x, animatedSourceWidth], ([x, w]) => {
+    const x1 = useTransform([sourcePos.x, animatedSourceWidth], ([x, w]: number[]) => {
         // [Shiro] CENTER LOGIC: Right side = Center + Width/2
         return x + w / 2;
     });
 
     const y1 = useTransform(sourcePos.y, y => y); // Center Y is just Y
 
-    const x2 = useTransform([targetPos.x, animatedTargetWidth], ([x, w]) => {
+    const x2 = useTransform([targetPos.x, animatedTargetWidth], ([x, w]: number[]) => {
         // [Shiro] CENTER LOGIC: Left side = Center - Width/2
         return x - w / 2;
     });
@@ -206,17 +206,26 @@ export const Canvas: React.FC = () => {
             const nodeState = nodes[conf.id];
             if (!nodeState) return null;
 
-            // Initial calculation only. Subsequent updates happen via notifyResize.
-            const dim = { width: nodeState.width, height: nodeState.height };
+            // [Shiro] INITIAL LOAD FIX: Calculate LOD-aware size from the start
+            // This prevents the node from initializing at full size and then shrinking.
+            const { isZoomedOut } = calculateLodState({
+                scale,
+                viewportSize,
+                dimensions: { width: nodeState.width, height: nodeState.height },
+                isActive: conf.id === activeNode,
+                isImmune: lodImmuneNodes.includes(conf.id),
+                isMinimized: minimizedNodes.includes(conf.id),
+            });
 
-            // We default to the stored dimensions. 
-            // The Node component will immediately report the correct visual size (LOD/Minimized) on mount.
+            const initialWidth = isZoomedOut ? LOD_WIDTH : nodeState.width;
+            const initialHeight = isZoomedOut ? LOD_HEIGHT : nodeState.height;
+
             return {
                 id: conf.id,
                 cx: nodeState.cx,
                 cy: nodeState.cy,
-                width: dim.width,
-                height: dim.height
+                width: initialWidth,
+                height: initialHeight
             };
         }).filter(Boolean) as any[];
 
