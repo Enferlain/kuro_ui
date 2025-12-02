@@ -602,7 +602,19 @@ export const Canvas: React.FC = () => {
 
                 <div className="flex items-center gap-2 bg-[#232034]/80 backdrop-blur-md border border-[#3E3B5E] p-1 rounded-lg shadow-2xl">
                     <button
-                        onClick={() => resetLayout(NODE_REGISTRY)}
+                        onClick={() => {
+                            resetLayout(NODE_REGISTRY);
+                            // [Shiro] RESET FIX: Force Physics Engine to re-initialize with default positions
+                            // This ensures the physics bodies snap back to their original places.
+                            const defaultNodes = Object.values(NODE_REGISTRY).map(conf => ({
+                                id: conf.id,
+                                cx: conf.defaultPosition.x + conf.defaultDimensions.width / 2,
+                                cy: conf.defaultPosition.y + conf.defaultDimensions.height / 2,
+                                width: conf.defaultDimensions.width,
+                                height: conf.defaultDimensions.height
+                            }));
+                            initPhysics(defaultNodes);
+                        }}
                         className="p-2 hover:bg-[#3E3B5E] rounded text-[#948FB2] hover:text-white transition"
                         title="Reset Layout"
                     >
