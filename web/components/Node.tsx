@@ -18,7 +18,7 @@ interface NodeProps {
     onDragStart: (x: number, y: number) => void;
     onDragMove: (x: number, y: number) => void;
     onDragEnd: () => void;
-    onResize: (w: number, h: number, anchor?: boolean) => void;
+    onResize: (w: number, h: number, anchor?: boolean, isManual?: boolean) => void;
 }
 
 export const LOD_WIDTH = 200;
@@ -107,7 +107,9 @@ export const Node: React.FC<NodeProps> = React.memo(({
             // [Shiro] ANCHOR LOGIC:
             // If this node is ACTIVE (User Selected), we anchor it so it pushes others away.
             // If it's NOT active (Zoom/LOD), we don't anchor, so everyone slides mutually.
-            onResize(effectiveWidth, effectiveHeight, isActive);
+            // anchor = isActive (If active, be heavy)
+            // isManual = false (Let physics handle the expansion)
+            onResize(effectiveWidth, effectiveHeight, isActive, false);
         }
     }, [effectiveWidth, effectiveHeight, onResize, isResizing, isActive, widthSource, heightSource]);
 
@@ -225,7 +227,9 @@ export const Node: React.FC<NodeProps> = React.memo(({
             // 4. Update Physics
             // We pass the new center explicitly so physics body moves WITH the expansion
             onDragMove(newCenterX, newCenterY);
-            onResize(desiredWidth, desiredHeight, true); // anchor=true ensures mass is locked
+            // anchor = true (Always heavy when dragging)
+            // isManual = true (Instant updates)
+            onResize(desiredWidth, desiredHeight, true, true);
         };
 
         const handleResizeUp = () => {

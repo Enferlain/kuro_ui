@@ -237,40 +237,53 @@ export const usePhysicsEngine = () => {
         }
     }, []);
 
-    const notifyResize = (id: NodeId, width: number, height: number, anchor: boolean = false) => {
-        const body = bodies.current.get(id);
-        if (body) {
-            // [Shiro] IMMEDIATE UPDATE for manual interactions
-            // If we are anchoring (manual resize), apply scale immediately to match cursor
-            if (anchor) {
-                // [Shiro] Mark as resizing to prevent physics loop from fighting back
-                resizingNodes.current.add(id);
+const notifyResize = (id: NodeId, width: number, height: number, anchor: boolean = false, isManual: boolean = false) => {
+  const body = bodies.current.get(id);
+  if (!body) return;
 
-                // Reset angle for safe scaling
-                Matter.Body.setAngle(body, 0);
-                Matter.Body.setAngularVelocity(body, 0);
+  // 1. UPDATE TARGET SIZE (Always needed for the physics loop)
+  targetSizes.current.set(id, { width: width + PHYSICS_BUFFER, height: height + PHYSICS_BUFFER });
 
-                const currentWidth = body.bounds.max.x - body.bounds.min.x;
-                const currentHeight = body.bounds.max.y - body.bounds.min.y;
+  // 2. MASS LOGIC (Who pushes who?)
+  if (anchor) {
+    // Active or Resizing: BE THE ANCHOR.
+    // High mass ensures this node barely moves when colliding with others.
+    // We use a fixed high mass (e.g. 5000) rather than Infinity so it's "very heavy" but valid physics.
+    Matter.Body.setMass(body, 5000);
+    Matter.Body.setInertia(body, Infinity);
+  } else {
+    // Inactive: BE THE PAWN.
+    // Reset density to default (0.001) to return to normal, light weight.
+    Matter.Body.setDensity(body, 0.001);
+    // Ensure inertia is still locked to prevent rotation
+    Matter.Body.setInertia(body, Infinity);
+  }
 
-                const scaleX = width / currentWidth;
-                const scaleY = height / currentHeight;
-
-                Matter.Body.scale(body, scaleX, scaleY);
-
-                // Make static-like during resize
-                Matter.Body.setInertia(body, Infinity);
-                Matter.Body.setMass(body, 100000);
-
-                // Also update targetSizes so the lerp loop doesn't fight us later
-                targetSizes.current.set(id, { width: width + PHYSICS_BUFFER, height: height + PHYSICS_BUFFER });
-            } else {
-                // Standard logic for LOD/Zoom (keep using Lerp)
-                targetSizes.current.set(id, { width: width + PHYSICS_BUFFER, height: height + PHYSICS_BUFFER });
-                Matter.Sleeping.set(body, false);
-            }
-        }
-    };
+  // 3. UPDATE LOGIC (How do we change size?)
+  if (isManual) {
+    // MANUAL: Instant update to follow mouse cursor perfectly
+    resizingNodes.current.add(id); // Pause physics lerp for this node
+    
+    Matter.Body.setAngle(body, 0);
+    Matter.Body.setAngularVelocity(body, 0);
+    const currentWidth = body.bounds.max.x - body.bounds.min.x;
+    const currentHeight = body.bounds.max.y - body.bounds.min.y;
+    
+    // Protect against zero-division or invalid bounds
+    if (currentWidth > 0 && currentHeight > 0) {
+       const scaleX = width / currentWidth;
+       const scaleY = height / currentHeight;
+       Matter.Body.scale(body, scaleX, scaleY);
+    }
+  } else {
+    // AUTOMATIC: Let the physics loop handle the resize (Lerp)
+    // This allows the engine to push neighbors away frame-by-frame as we grow.
+    resizingNodes.current.delete(id); // Resume physics lerp
+    
+    // Wake up this body and neighbors to ensure they react to the expansion
+    Matter.Sleeping.set(body, false);
+  }
+};
 
     const getMotionValues = (id: NodeId) => {
         if (!motionValues.current.has(id)) {
