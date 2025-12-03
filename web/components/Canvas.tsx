@@ -463,12 +463,18 @@ export const Canvas: React.FC = () => {
                 onDragStart={(x, y) => dragStart(config.id, x, y)}
                 onDragMove={(x, y) => dragMove(config.id, x, y)}
                 onDragEnd={() => dragEnd(config.id)}
-                onResize={(w, h, anchor) => notifyResize(config.id, w, h, anchor)}
+                onResize={(
+                    w,
+                    h,
+                    anchor = false,
+                    isManual = false,
+                    position?: { x: number; y: number }
+                ) => notifyResize(config.id, w, h, anchor, isManual, position)}
             >
                 <config.component />
             </Node>
         ));
-    }, [getMotionValues, dragStart, dragMove, dragEnd, notifyResize]); // Dependencies are stable from hook
+    }, [getMotionValues, dragStart, dragMove, dragEnd, notifyResize]);
 
     return (
         <div

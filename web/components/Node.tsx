@@ -18,7 +18,7 @@ interface NodeProps {
     onDragStart: (x: number, y: number) => void;
     onDragMove: (x: number, y: number) => void;
     onDragEnd: () => void;
-    onResize: (w: number, h: number, anchor?: boolean, isManual?: boolean) => void;
+    onResize: (w: number, h: number, anchor?: boolean, isManual?: boolean, position?: { x: number, y: number }) => void;
 }
 
 export const LOD_WIDTH = 200;
@@ -226,10 +226,13 @@ export const Node: React.FC<NodeProps> = React.memo(({
 
             // 4. Update Physics
             // We pass the new center explicitly so physics body moves WITH the expansion
-            onDragMove(newCenterX, newCenterY);
-            // anchor = true (Always heavy when dragging)
-            // isManual = true (Instant updates)
-            onResize(desiredWidth, desiredHeight, true, true);
+            onResize(
+              desiredWidth,
+              desiredHeight,
+              true,
+              true,
+              { x: newCenterX, y: newCenterY } // Pass position here!
+            );
         };
 
         const handleResizeUp = () => {
@@ -284,9 +287,7 @@ export const Node: React.FC<NodeProps> = React.memo(({
                 y: motionValues.y,
                 translateX: '-50%',
                 translateY: '-50%',
-                // [Shiro] Use MotionValues for smooth resize
-                // IMPORTANT: Always use the MotionValue/Spring. Do NOT use conditional logic here.
-                // [Shiro] JELLY FIX: Use Source when resizing, Spring when not!
+                // If resizing, use the raw 'Source' (instant). Otherwise, use 'Spring' (smooth).
                 width: isResizing ? widthSource : widthSpring,
                 height: isResizing ? heightSource : heightSpring,
                 opacity,
