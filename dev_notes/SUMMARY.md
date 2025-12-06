@@ -28,7 +28,11 @@ References for working on the ui, based on the previous ui, can be found in trai
 
 # TODOs and Notes
 
-- Dropout section: network dropout, rank dropout, module dropout to network node
-- Optimizer args order: maybe reorder them so entry fields go first and toggles last in training node
-- Expanding/minimizing animation instant in some cases, investigate
-- physics collision
+- Dropout section: network dropout, rank dropout, module dropout to network node, non algo specific
+- low prio Optimizer args order: maybe reorder them so entry fields go first and toggles last in training node
+- Expansion animation doesn't invoke proper collision physics
+- Timestep and other noise related stuff to training node
+- Greyed out effect on keep tokens separator entry field
+- Check why physics feel glued for nearby nodes when expanding
+- Clip skip greyed out for sdxl
+- Check why dropdowns are white for a brief moment before style applying instead from the start

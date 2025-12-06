@@ -39,8 +39,8 @@ const Connection: React.FC<{
     // POSITIONS ARE NOW CENTERS (Physics Engine)
 
     // [Shiro] ANIMATION FIX: Use springs for the width to match Node animation
-    const targetSourceWidth = (isSourceLOD || isSourceMinimized) ? LOD_WIDTH : sourceDim.width;
-    const targetTargetWidth = (isTargetLOD || isTargetMinimized) ? LOD_WIDTH : targetDim.width;
+    const targetSourceWidth = (isSourceLOD) ? LOD_WIDTH : sourceDim.width;
+    const targetTargetWidth = (isTargetLOD) ? LOD_WIDTH : targetDim.width;
 
     const springConfig = { stiffness: 400, damping: 30 };
     const animatedSourceWidth = useSpring(targetSourceWidth, springConfig);
@@ -229,7 +229,6 @@ export const Canvas: React.FC = () => {
             };
         }).filter(Boolean) as any[];
 
-        console.log('[Canvas] Initializing Physics with nodes:', initialNodes);
         initPhysics(initialNodes);
 
         // [Shiro] CRITICAL FIX: Only run on hydration or structural changes (adding/removing nodes).

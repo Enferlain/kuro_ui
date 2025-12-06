@@ -294,3 +294,27 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
     - **Safety**: Added a `MAX_ITERATIONS` limit (10) to prevent infinite loops or performance degradation in complex cycles.
     - **Consistency**: Applied the same cascading logic to both drag and resize operations.
 - **Result**: A true "physical" feel where pushing a node into a cluster causes the entire cluster to shuffle and reorganize naturally, maintaining the defined padding between all elements.
+
+---
+
+## Entry: December 6, 2025
+
+### 1. Physics Engine Tuning
+- **Documentation Update**: Rewrote `PHYSICS_GUIDE.md` to accurately reflect the `Matter.js` implementation, documenting the hybrid loop, interaction models (Drag/Resize/Expand), and critical constants.
+- **Responsiveness**:
+    - **Expansion Speed**: Increased `lerpFactor` from 0.1 to 0.4 to make nodes expand faster visually, reducing the feeling of "lag" when activating a node.
+    - **Wake Neighbors**: Fixed a physics sleeping issue where neighboring nodes would ignore an expanding node until deep overlap occurred. Added logic to explicitly wake up all neighbors (`Matter.Sleeping.set(b, false)`) the moment an expansion starts, ensuring immediate and forceful repulsion.
+
+### 2. State Persistence & Initialization Fixes
+- **Active Node Persistence**: Fixed an issue where the currently active (expanded) node would collapse upon page refresh.
+    - **Root Cause**: The `activeNode` ID was not being persisted to `localStorage`.
+    - **Fix**: Added `activeNode` to the persistence whitelist in `store.ts`.
+- **Viewport Stability**: Fixed a "popping" animation on page load.
+    - **Root Cause**: The app initialized with a default 1920x1080 viewport, calculated LOD state based on that, and then snapped to the actual screen size frames later, causing nodes to shrink/grow unexpectedly.
+    - **Fix**: Persisted `viewportSize` so correct LOD calculations happen on the very first render frame.
+- **Animation Glitch**: Fixed an issue where an active node would "animate" open from 0px on refresh.
+    - **Fix**: Modified `Node.tsx` to detect if a node is active on mount and force the animation spring to `jump()` instantly to its target size, bypassing the transition.
+
+### 3. Connection Link Logic
+- **Minimized State Fix**: Fixed a visual bug where connection lines would point to the "minimized" center of a node even if that node was currently active and expanded.
+- **Logic Update**: Updated `Canvas.tsx` to rely solely on the `isSourceLOD` / `isTargetLOD` flags. These flags correctly account that an **Active** node is never in LOD mode, regardless of its minimized setting in the store.

@@ -174,7 +174,10 @@ export const useStore = create<Store>()(
                         // This prevents "ballooning" where a minimized node loads with full size then shrinks.
                         const node = newNodes[conf.id];
                         const isMinimized = state.minimizedNodes.includes(conf.id);
-                        if (isMinimized && (node.width !== LOD_WIDTH || node.height !== LOD_HEIGHT)) {
+                        const isActive = state.activeNode === conf.id;
+
+                        // [Shiro] ACTIVE CHECK: Don't squash if it's the active node!
+                        if (isMinimized && !isActive && (node.width !== LOD_WIDTH || node.height !== LOD_HEIGHT)) {
                             newNodes[conf.id] = {
                                 ...node,
                                 width: LOD_WIDTH,
@@ -249,6 +252,8 @@ export const useStore = create<Store>()(
             partialize: (state) => ({
                 translation: state.translation,
                 scale: state.scale,
+                viewportSize: state.viewportSize, // [Shiro] Persist Viewport to prevent LOD pop
+                activeNode: state.activeNode, // [Shiro] Persist Activated Node
                 nodes: state.nodes,
                 lodImmuneNodes: state.lodImmuneNodes,
                 minimizedNodes: state.minimizedNodes,

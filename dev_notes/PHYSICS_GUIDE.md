@@ -4,79 +4,103 @@ This document outlines the architecture, logic, and considerations for the node-
 
 ## Core Architecture
 
-The system uses a hybrid approach combining **d3-force** for physics simulation and **Framer Motion** for performant rendering.
+The system uses a hybrid approach combining **Matter.js** for rigid body physics simulation and **Framer Motion** for performant rendering.
 
 ### Key Components
 
-1.  **`usePhysicsEngine.ts`**: The brain. Manages the `d3-force` simulation, collision detection, and position updates.
-2.  **`Node.tsx`**: The body. Handles user interaction (drag, resize, click) and reports visual state changes to the engine.
-3.  **`Canvas.tsx`**: The world. Orchestrates the initialization and renders the nodes/connections.
+1.  **`usePhysicsEngine.ts`**: The brain. Manages the `Matter.js` Engine, World, and Runner. Handles collision detection, constraints, and synchronizes physics state to visual state.
+2.  **`Node.tsx`**: The body. Handles user interaction (drag, resize) and reports intent to the engine. Uses `MotionValues` for smooth 60fps updates without React renders.
+3.  **`Canvas.tsx`**: The world. Orchestrates initialization, manages the global store, and renders the scene.
 
 ### The "Hybrid" Loop
-To achieve 60fps performance even with many nodes, we bypass React's render cycle for position updates:
-1.  **Physics Tick**: `d3-force` updates internal `x/y` coordinates.
-2.  **MotionValues**: The engine directly updates `framer-motion` `MotionValues` (`mv.x.set(node.x)`).
-3.  **GPU Render**: Framer Motion updates the DOM transform directly. React **does not re-render** during physics movement.
+To achieve high performance, we decouple the physics loop from React's render cycle:
+
+1.  **Physics Tick**: `Matter.Runner` steps the simulation (default 60Hz).
+2.  **MotionValues**: In the `afterUpdate` event, the engine directly updates `framer-motion` `MotionValues` (`mv.x.set(body.position.x)`).
+3.  **GPU Render**: Framer Motion updates the DOM transform directly. **React does not re-render** during physics movement.
 
 ---
 
 ## Interaction Models
 
-We distinguish between two types of node expansion, each with distinct physics behaviors.
+We use distinct physics strategies for different user interactions to ensure the UI feels "solid" but responsive.
 
-### 1. Manual Expansion (The "Push")
-**Trigger**: User clicks a minimized node to activate it.
-**Goal**: The selected node stays put; neighbors get out of the way.
+### 1. Dragging (The "Rubber Band")
+**Goal**: Nodes should have weight and collide with others while being dragged, but feel responsive to the mouse.
 
-*   **Mechanism**: **Anchoring**.
+*   **Mechanism**: **Constraint Dragging**.
 *   **Logic**:
-    *   `Node.tsx` detects `isActive` is true.
-    *   Calls `onResize(w, h, anchor=true)`.
-    *   `usePhysicsEngine` sets `node.fx = currentX` and `node.fy = currentY`.
-    *   The node becomes an immovable object (infinite mass) for 500ms.
-    *   Collision forces push all other nodes away from this anchor.
+    *   When `dragStart` is called, we create a `Matter.Constraint` (a stiff spring) connecting the mouse position to the body's center.
+    *   **Stiffness (0.8)**: High stiffness makes it feel 1:1 with the mouse.
+    *   **Damping (0.1)**: Reduces oscillation.
+    *   **Benefit**: This allows the physics engine to resolve collisions naturally. If you drag a node into another, the constraint stretches, and the node slides around the obstacle rather than clipping through it.
 
-### 2. Zoom Expansion (The "Slide")
-**Trigger**: User zooms in, causing nodes to switch from LOD (minimized) to Detail view.
-**Goal**: All nodes expand simultaneously and slide apart gently. No single node dominates.
+### 2. Manual Resize (The "Hand of God")
+**Goal**: When a user manually resizes a node, they expect absolute control. Physics should not fight back.
 
-*   **Mechanism**: **Mutual Displacement**.
+*   **Mechanism**: **Static Body**.
 *   **Logic**:
-    *   `Node.tsx` detects `isActive` is false (passive expansion).
-    *   Calls `onResize(w, h, anchor=false)`.
-    *   `usePhysicsEngine` ensures `fx/fy` are null.
-    *   Collision forces apply equally to all overlapping nodes.
-    *   **Force Clamping** (`MAX_FORCE = 2.0`) prevents violent "explosions" when multiple nodes expand at once.
+    *   `Node.tsx` calls `notifyResize(..., isManual=true)`.
+    *   The body is set to **Static** (`Matter.Body.setStatic(body, true)`). It becomes an immovable object.
+    *   Position and Scale are updated directly based on mouse movement.
+    *   **Wake Neighbors**: We explicitly wake up surrounding bodies so they can be pushed away by the expanding static body.
+
+### 3. Auto Expansion / Activation (The "Anchor")
+**Goal**: When a node becomes active (e.g., clicked), it expands. It should stay roughly in place while pushing neighbors away.
+
+*   **Mechanism**: **Variable Mass**.
+*   **Logic**:
+    *   `Node.tsx` calls `notifyResize(..., anchor=true)`.
+    *   The body remains **Dynamic**.
+    *   **Mass**: We set the body's mass to a very high value (`5000`). It becomes a "Heavy King".
+    *   **Result**: When it expands and collides with neighbors (standard "Light Pawns"), the neighbors are pushed away, but the heavy node barely moves.
+
+### 4. Zoom / LOD Expansion (The "Pawn")
+**Goal**: When zooming in, all nodes expand from LOD size to full size. They should mutually displace each other.
+
+*   **Mechanism**: **Low Density**.
+*   **Logic**:
+    *   `Node.tsx` calls `notifyResize(..., anchor=false)`.
+    *   **Density**: We set the density low (`0.001`).
+    *   **Result**: All nodes have similar low mass. When they expand and overlap, the physics engine resolves the overlap by pushing *both* nodes apart equally.
 
 ---
 
-## Key Physics Parameters
+## Physics Tuning
 
-Located in `usePhysicsEngine.ts`:
+Key constants in `usePhysicsEngine.ts`:
 
-*   **`MAX_FORCE` (2.0)**: Critical for stability. Limits how hard nodes can shove each other per tick. Without this, zoom expansion causes nodes to fly off screen.
-*   **`velocityDecay` (0.15)**: Friction. Lower values (0.15) make nodes "slide" like they are on ice. Higher values (0.6) make them stop instantly like in mud. We use 0.15 to allow organic settling.
-*   **`strength` (0.5)**: Collision stiffness. 1.0 is rigid, 0.5 is soft/bouncy.
-*   **`alpha` (0.5)**: Simulation "heat". When restarting (e.g., on resize), we use `alpha(0.5)` instead of `1.0` to avoid jarring jumps.
+*   **`INERTIA` (Infinity)**: **CRITICAL**. Prevents nodes from rotating. We want 2D AABB interaction, not tumbling boxes.
+*   **`FRICTION_AIR` (0.069)**: Simulates air resistance. Higher values prevent nodes from gliding forever after a collision.
+*   **`PHYSICS_BUFFER` (15px)**: An invisible margin added to the physics body size. This ensures nodes maintain a visual gap and don't look "glued" together.
+*   **`SLOP` (0.05)**: Collision tolerance.
+*   **`lerpFactor` (0.4)**: Controls how fast the physics body size tracks the visual target size. Increased from 0.1 to 0.4 to ensure the physics body expands fast enough to push neighbors away before the visual overlap becomes too severe.
 
 ---
 
 ## Gotchas & Considerations
 
-### 1. MotionValues vs State
-*   **Never** use `useState` for `x/y` coordinates. It triggers re-renders and kills performance.
-*   Always use `MotionValues` for position and `d3-force` for calculation.
-*   Only sync to the Zustand store (persistence) when interaction **ends** (`onDragEnd` or simulation `on('end')`).
+### 1. The "Fighting" Problem
+*   **Issue**: If you try to set a body's position manually (`Body.setPosition`) every frame while it's also colliding, the physics engine will fight you, causing jitter.
+*   **Solution**:
+    *   For **Dragging**: Use Constraints, don't set position directly.
+    *   For **Resizing**: Make the body Static.
 
-### 2. Hydration Order
-*   Physics must not initialize until the store has **Hydrated**.
-*   If physics runs on empty/default data, nodes will teleport to (0,0) and then explode outward.
-*   Check `hasHydrated` in `Canvas.tsx` before initializing `usePhysicsEngine`.
+### 2. Sleeping Neighbors
+*   **Issue**: When a node expands automatically (e.g., via activation), neighbors might be "sleeping" (optimization) and won't react until the collision is deep.
+*   **Solution**: We explicitly wake up all neighbors (`Matter.Sleeping.set(b, false)`) in `notifyResize` to ensure immediate repulsion.
 
-### 3. The "Jumping to Narnia" Bug
-*   **Symptom**: Nodes fly off to infinity during zoom.
-*   **Cause**: Multiple nodes expanding 10x in size simultaneously create massive overlap. `d3-force` tries to resolve this in one tick, generating huge velocity vectors.
-*   **Fix**: `MAX_FORCE` clamping in `forceRectCollide`.
+### 2. Synchronization Direction
+*   **Physics -> Visuals**: Happens every frame in `afterUpdate`.
+*   **Visuals -> Physics**: Happens only on specific events (`onResize`, `initPhysics`).
+*   **Store -> Visuals**: Happens on Hydration or "Reset Layout".
 
-### 4. Anchoring Timing
-*   The anchor (`fx/fy`) must be released after a short delay (e.g., 500ms). If released too soon, the node gets pushed back by the momentum of neighbors. If held too long, it feels stuck.
+### 3. Hydration
+*   Physics **must not** initialize until the Zustand store has hydrated.
+*   If initialized with default/empty values, nodes will spawn at (0,0) and violently explode outward when the correct positions load.
+*   We use a `nodesHash` to detect structural changes (add/remove) and only re-init physics then.
+
+### 4. Scale & Zoom
+*   The physics simulation runs in "World Space" (unscaled coordinates).
+*   Visual rendering applies the `scale` transform.
+*   Input events (mouse drag) must be converted from Screen Space to World Space before being passed to the physics engine.

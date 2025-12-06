@@ -125,7 +125,8 @@ export const usePhysicsEngine = () => {
                             // Calculate scale factor needed
                             // We want to lerp towards target, but Matter.Body.scale is multiplicative.
                             // So we calculate the desired size for this frame.
-                            const lerpFactor = 0.1;
+                            // [Shiro] INCREASED LERP: 0.1 -> 0.4
+                            const lerpFactor = 0.4;
                             const newWidth = currentWidth + (target.width - currentWidth) * lerpFactor;
                             const newHeight = currentHeight + (target.height - currentHeight) * lerpFactor;
 
@@ -240,66 +241,72 @@ export const usePhysicsEngine = () => {
         }
     }, []);
 
-const notifyResize = (
-  id: NodeId,
-  width: number,
-  height: number,
-  anchor: boolean = false,
-  isManual: boolean = false,
-  // Add optional position override
-  position?: { x: number, y: number }
-) => {
-  const body = bodies.current.get(id);
-  if (!body) return;
+    const notifyResize = (
+        id: NodeId,
+        width: number,
+        height: number,
+        anchor: boolean = false,
+        isManual: boolean = false,
+        // Add optional position override
+        position?: { x: number, y: number }
+    ) => {
+        const body = bodies.current.get(id);
+        if (!body) return;
 
-  targetSizes.current.set(id, { width: width + PHYSICS_BUFFER, height: height + PHYSICS_BUFFER });
+        targetSizes.current.set(id, { width: width + PHYSICS_BUFFER, height: height + PHYSICS_BUFFER });
 
-  if (isManual) {
-    resizingNodes.current.add(id);
-    
-    // 1. Make Static (Hand of God)
-    Matter.Body.setStatic(body, true);
-    
-    // 2. ATOMIC UPDATE: Position THEN Scale
-    // If we have a new position from the resize logic, apply it here.
-    // This replaces the need to call onDragMove() separately during resize.
-    if (position) {
-       Matter.Body.setPosition(body, position);
-    }
+        if (isManual) {
+            resizingNodes.current.add(id);
 
-    Matter.Body.setAngle(body, 0);
-    
-    // Scale logic...
-    const currentWidth = body.bounds.max.x - body.bounds.min.x;
-    const currentHeight = body.bounds.max.y - body.bounds.min.y;
-    if (currentWidth > 0 && currentHeight > 0) {
-       const scaleX = width / currentWidth;
-       const scaleY = height / currentHeight;
-       Matter.Body.scale(body, scaleX, scaleY);
-    }
+            // 1. Make Static (Hand of God)
+            Matter.Body.setStatic(body, true);
 
-    // 3. Wake Neighbors
-    bodies.current.forEach(b => {
-       if (b.label !== id) Matter.Sleeping.set(b, false);
-    });
+            // 2. ATOMIC UPDATE: Position THEN Scale
+            // If we have a new position from the resize logic, apply it here.
+            // This replaces the need to call onDragMove() separately during resize.
+            if (position) {
+                Matter.Body.setPosition(body, position);
+            }
 
-  } else {
-    // --- AUTOMATIC MODE: DYNAMIC (PHYSICS) ---
-    resizingNodes.current.delete(id);
-    
-    // 1. MAKE DYNAMIC.
-    Matter.Body.setStatic(body, false);
+            Matter.Body.setAngle(body, 0);
 
-    // 2. Set Mass/Density based on Anchor/Pawn state
-    if (anchor) {
-       Matter.Body.setMass(body, 5000); // Heavy King
-    } else {
-       Matter.Body.setDensity(body, 0.001); // Light Pawn
-    }
-    Matter.Body.setInertia(body, Infinity);
-    Matter.Sleeping.set(body, false);
-  }
-};
+            // Scale logic...
+            const currentWidth = body.bounds.max.x - body.bounds.min.x;
+            const currentHeight = body.bounds.max.y - body.bounds.min.y;
+            if (currentWidth > 0 && currentHeight > 0) {
+                const scaleX = width / currentWidth;
+                const scaleY = height / currentHeight;
+                Matter.Body.scale(body, scaleX, scaleY);
+            }
+
+            // 3. Wake Neighbors
+            bodies.current.forEach(b => {
+                if (b.label !== id) Matter.Sleeping.set(b, false);
+            });
+
+        } else {
+            // --- AUTOMATIC MODE: DYNAMIC (PHYSICS) ---
+            resizingNodes.current.delete(id);
+
+            // 1. MAKE DYNAMIC.
+            Matter.Body.setStatic(body, false);
+
+            // 2. Set Mass/Density based on Anchor/Pawn state
+            if (anchor) {
+                Matter.Body.setMass(body, 5000); // Heavy King
+            } else {
+                Matter.Body.setDensity(body, 0.001); // Light Pawn
+            }
+            Matter.Body.setInertia(body, Infinity);
+            Matter.Sleeping.set(body, false);
+
+            // [Shiro] WAKE NEIGHBORS!
+            // If we expand, we need everyone to wake up and move immediately.
+            bodies.current.forEach(b => {
+                if (b.label !== id) Matter.Sleeping.set(b, false);
+            });
+        }
+    };
 
     const getMotionValues = (id: NodeId) => {
         if (!motionValues.current.has(id)) {

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-12-06]
+
+### Changed
+- Replaced `d3-force` documentation with `Matter.js` details in `PHYSICS_GUIDE.md`
+- Increased physics expansion speed (`lerpFactor` 0.4) for snappier feedback
+- Implemented "Wake Neighbors" logic to ensure immediate repulsion during node expansion
+- Persisted `activeNode` and `viewportSize` to store to fix initialization glitches
+- Updated `Connection` links to track active node expansion even when minimized
+
+### Fixed
+- Nodes no longer reset to minimized state on browser refresh
+- Fixed "popping" animation on load by initializing springs correctly
+- Connection links no longer lag behind or detach when expanding a minimized node
+- Eliminated split-second layout shift caused by viewport size mismatches on load
+
 ## [2025-11-26]
 
 ### Added

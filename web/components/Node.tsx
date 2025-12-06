@@ -113,6 +113,14 @@ export const Node: React.FC<NodeProps> = React.memo(({
         }
     }, [effectiveWidth, effectiveHeight, onResize, isResizing, isActive, widthSource, heightSource]);
 
+    // [Shiro] JUMP FIX: If initializing as active, jump the spring immediately to avoid "expanding" animation.
+    useEffect(() => {
+        if (isActive) {
+            widthSpring.jump(currentWidth);
+            heightSpring.jump(currentHeight);
+        }
+    }, []);
+
     const opacity = (isActive || isDragging || isResizing || !anyActive) ? 1 : 0.4;
     const zIndex = isActive || isDragging || isResizing ? 50 : 10;
 
@@ -227,11 +235,11 @@ export const Node: React.FC<NodeProps> = React.memo(({
             // 4. Update Physics
             // We pass the new center explicitly so physics body moves WITH the expansion
             onResize(
-              desiredWidth,
-              desiredHeight,
-              true,
-              true,
-              { x: newCenterX, y: newCenterY } // Pass position here!
+                desiredWidth,
+                desiredHeight,
+                true,
+                true,
+                { x: newCenterX, y: newCenterY } // Pass position here!
             );
         };
 
