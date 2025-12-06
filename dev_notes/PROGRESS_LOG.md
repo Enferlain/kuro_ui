@@ -318,3 +318,18 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 ### 3. Connection Link Logic
 - **Minimized State Fix**: Fixed a visual bug where connection lines would point to the "minimized" center of a node even if that node was currently active and expanded.
 - **Logic Update**: Updated `Canvas.tsx` to rely solely on the `isSourceLOD` / `isTargetLOD` flags. These flags correctly account that an **Active** node is never in LOD mode, regardless of its minimized setting in the store.
+
+### 4. Network Node Enhancements
+- **Dropout Section**:
+    - **New Fields**: Added `networkDropout`, `rankDropout`, and `moduleDropout` to the configuration and UI.
+    - **UI Pattern**: Implemented a "Toggle + Input" pattern mimicking the Gradient Accumulation field.
+        - **Persistence**: Input value is preserved locally even when the toggle is OFF.
+        - **Visuals**: Disabled inputs have a dimmed background (opacity 50%) to clearly indicate their inactive state while keeping the last value visible.
+    - **Layout**: Added a dedicated 3-column grid section for dropout settings.
+- **Organization**:
+    - **Section Headers**: Added visible `NodeHeader` components to structure the Network Node into logical groups:
+        1. **Network Selection**: Algo and Preset.
+        2. **Network Architecture**: Dimensions and Alpha.
+        3. **Regularization**: Dropout settings.
+        4. **Algorithm Specifics**: Dynamic settings for complex algorithms.
+    - **Consistency**: The Network Node structure now matches the polished look of the `GeneralArgsNode`.

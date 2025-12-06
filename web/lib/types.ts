@@ -139,6 +139,9 @@ export interface TrainingConfig {
   networkConvDim: number;
   networkConvAlpha: number;
   networkArgs: Array<{ key: string; value: string }>;
+  networkDropout?: number;
+  rankDropout?: number;
+  moduleDropout?: number;
 
   // Network Algo Specific
   networkLoConType: 'kohya' | 'lycoris';

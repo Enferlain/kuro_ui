@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persisted `activeNode` and `viewportSize` to store to fix initialization glitches
 - Updated `Connection` links to track active node expansion even when minimized
 
+### Added
+- **Dropout Section**: Added `networkDropout`, `rankDropout`, and `moduleDropout` to Network Node
+- **Section Headers**: Added visual section headers to Network Node (Network Selection, Architecture, Regularization, Algo Specifics)
+
 ### Fixed
 - Nodes no longer reset to minimized state on browser refresh
 - Fixed "popping" animation on load by initializing springs correctly
