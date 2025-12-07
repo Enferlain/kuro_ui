@@ -43,7 +43,7 @@ const DropoutInput = ({ label, name, value, onChange }: { label: string, name: s
                         }
                     }}
                     disabled={value === undefined}
-                    className={`flex-1 px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full min-w-0 bg-[#181625] transition-opacity ${value === undefined ? 'opacity-50' : ''}`}
+                    className={`flex-1 px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full min-w-0 bg-[#181625] transition-opacity ${value === undefined ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
             </div>
         </FieldWrapper>
@@ -156,7 +156,7 @@ export const NetworkNode: React.FC = () => {
                             />
 
                             {/* Preset Field - Always visible but disabled for LoRA (Kohya) */}
-                            <div className={`relative group cursor-pointer transition-opacity duration-200 ${config.networkAlgo === 'lora' ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <div className={`relative group cursor-pointer transition-opacity duration-200 ${config.networkAlgo === 'lora' ? 'opacity-50' : ''}`}>
                                 <Input
                                     label="LyCORIS Preset"
                                     name="network_preset"
@@ -286,7 +286,7 @@ export const NetworkNode: React.FC = () => {
 
                                     {/* LoKr Factor */}
                                     {config.networkAlgo === 'lokr' && (
-                                        <div className={`transition-opacity duration-200 ${config.networkLoKrFullMatrix ? 'opacity-50 pointer-events-none' : ''}`}>
+                                        <div className={`transition-opacity duration-200 ${config.networkLoKrFullMatrix ? 'opacity-50' : ''}`}>
                                             <Input
                                                 label="Factor"
                                                 name="network_lokr_factor"

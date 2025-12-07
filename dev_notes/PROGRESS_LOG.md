@@ -333,3 +333,19 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
         3. **Regularization**: Dropout settings.
         4. **Algorithm Specifics**: Dynamic settings for complex algorithms.
     - **Consistency**: The Network Node structure now matches the polished look of the `GeneralArgsNode`.
+
+---
+
+## Entry: December 7, 2025
+
+### 1. UI Polish & Component Refinement
+- **Optimization of Dynamic Layouts**:
+    - Addressed a layout issue in the **Training Node** where dynamic optimizer arguments (inputs vs toggles) were intermixed haphazardly.
+    - **Sorting Logic**: Implemented a sorting pass to render all "entry fields" (inputs/selects) first, followed by "toggles" (booleans).
+    - **Grid Alignment**: Added intelligent spacer logic to detect if the number of inputs is odd. If so, a hidden spacer div is inserted before the first toggle to ensure the toggles start on a fresh row, maintaining a clean 2-column grid.
+- **Improved Disabled Interactions**:
+    - **Problem**: Several disabled fields used `pointer-events-none` on their containers, which completely blocked mouse events. This prevented the standardized `cursor-not-allowed` style from appearing on hover, confusing users.
+    - **Fix**: Removed `pointer-events-none` from "Bucketing" and "Network Preset" sections. Relying on the `disabled` attribute + `opacity` handles functionality and visuals while allowing proper cursor feedback.
+    - **Cursor consistency**: Manually added `cursor-not-allowed` to custom composite inputs (Gradient Accumulation, Dropout, Keep Tokens Separator) to ensure 100% coverage of the disabled styling.
+- **Smart Toggle Persistence**:
+    - **Gradient Accumulation**: When toggling this off (setting value to 1), the previous user-entered value (e.g., 4) is now cached. Re-enabling the toggle restores the value "4" instead of resetting to "1", preventing data loss.

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-12-07]
+
+### Changed
+- **Optimized Form Layout**: Reordered dynamic optimizer arguments in Training Node to prioritizing entry fields over toggles, with smart spacing to ensure toggles always start on a new row.
+- **Improved Disabled States**:
+    - Removed `pointer-events-none` from multiple disabled sections (Bucketing, Network) to restore hover interactions.
+    - Added `cursor-not-allowed` to disabled inputs for "Gradient Accumulation", "Keep Tokens Separator", and "Dropout", providing consistent feedback across the app.
+- **UX Refinements**:
+    - Gradient Accumulation toggle now preserves the user's input value when disabled/re-enabled (cached).
+    - "Clip Skip" input and "Keep Tokens Separator" now properly reflect disabled state when applicable.
+
 ## [2025-12-06]
 
 ### Changed

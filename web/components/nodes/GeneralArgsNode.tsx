@@ -7,10 +7,14 @@ import { HelpCircle, FolderOpen } from 'lucide-react';
 export const GeneralArgsNode: React.FC = () => {
     const { config, updateConfig, openGemini } = useStore();
     const [gradAccumEnabled, setGradAccumEnabled] = React.useState(config.gradientAccumulation > 1);
+    const [cachedGradAccum, setCachedGradAccum] = React.useState(config.gradientAccumulation > 1 ? config.gradientAccumulation : 4);
 
     React.useEffect(() => {
         if (config.gradientAccumulation > 1) {
             setGradAccumEnabled(true);
+            setCachedGradAccum(config.gradientAccumulation);
+        } else {
+            setGradAccumEnabled(false);
         }
     }, [config.gradientAccumulation]);
 
@@ -256,6 +260,8 @@ export const GeneralArgsNode: React.FC = () => {
                         type="number"
                         value={config.clipSkip}
                         onChange={(e) => updateConfig({ clipSkip: parseInt(e.target.value) })}
+                        disabled={config.modelType === 'sdxl'}
+                        className={config.modelType === 'sdxl' ? 'opacity-50 cursor-not-allowed' : ''}
                     />
                     <Select
                         label="Max Token Length"
@@ -331,7 +337,7 @@ export const GeneralArgsNode: React.FC = () => {
                                 value={config.keepTokensSeparator}
                                 onChange={(e) => updateConfig({ keepTokensSeparator: e.target.value })}
                                 disabled={!config.keepTokensSeparator}
-                                className="flex-1 bg-transparent px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full min-w-0"
+                                className={`flex-1 bg-transparent px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full min-w-0 ${!config.keepTokensSeparator ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 placeholder="Separator"
                             />
                         </div>
@@ -386,7 +392,10 @@ export const GeneralArgsNode: React.FC = () => {
                                         checked={gradAccumEnabled}
                                         onChange={(e) => {
                                             setGradAccumEnabled(e.target.checked);
-                                            if (!e.target.checked) {
+                                            if (e.target.checked) {
+                                                updateConfig({ gradientAccumulation: cachedGradAccum });
+                                            } else {
+                                                setCachedGradAccum(config.gradientAccumulation > 1 ? config.gradientAccumulation : cachedGradAccum);
                                                 updateConfig({ gradientAccumulation: 1 });
                                             }
                                         }}
@@ -394,10 +403,10 @@ export const GeneralArgsNode: React.FC = () => {
                                 </div>
                                 <input
                                     type="number"
-                                    value={config.gradientAccumulation}
+                                    value={gradAccumEnabled ? config.gradientAccumulation : cachedGradAccum}
                                     onChange={(e) => updateConfig({ gradientAccumulation: parseInt(e.target.value) })}
                                     disabled={!gradAccumEnabled}
-                                    className={`flex-1 px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full bg-[#181625] transition-opacity duration-200 ${!gradAccumEnabled ? 'opacity-50' : ''}`}
+                                    className={`flex-1 px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full bg-[#181625] transition-opacity duration-200 ${!gradAccumEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 />
                             </div>
                         </FieldWrapper>
@@ -418,7 +427,7 @@ export const GeneralArgsNode: React.FC = () => {
                             onChange={(e) => updateConfig({ enableBucket: e.target.checked })}
                         />
                     </div>
-                    <div className={`flex items-center gap-2 transition-opacity duration-200 ${!config.enableBucket ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className={`flex items-center gap-2 transition-opacity duration-200 ${!config.enableBucket ? 'opacity-50' : ''}`}>
                         <span className="text-xs text-[#7B77A0] font-medium">Don't Upscale Images</span>
                         <Toggle
                             name="bucket_no_upscale"
@@ -428,7 +437,7 @@ export const GeneralArgsNode: React.FC = () => {
                         />
                     </div>
                 </div>
-                <div className={`grid grid-cols-3 gap-3 transition-opacity duration-200 ${!config.enableBucket ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className={`grid grid-cols-3 gap-3 transition-opacity duration-200 ${!config.enableBucket ? 'opacity-50' : ''}`}>
                     <Input
                         label="Min Bucket Reso"
                         name="min_bucket_reso"

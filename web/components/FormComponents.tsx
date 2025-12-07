@@ -54,7 +54,7 @@ export const Input: React.FC<InputProps> = ({ label, name, className = '', ...pr
     return (
         <FieldWrapper label={label} id={name}>
             <input
-                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all font-mono w-full ${className}`}
+                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all font-mono w-full disabled:cursor-not-allowed ${className}`}
                 {...props}
             />
         </FieldWrapper>
@@ -71,11 +71,11 @@ export const Select: React.FC<SelectProps> = ({ label, name, options, className 
     return (
         <FieldWrapper label={label} id={name}>
             <select
-                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all appearance-none font-mono w-full ${className}`}
+                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all appearance-none font-mono w-full disabled:cursor-not-allowed ${className}`}
                 {...props}
             >
                 {options.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value} className="bg-[#1E1B2E] text-[#E2E0EC]">{opt.label}</option>
                 ))}
             </select>
         </FieldWrapper>
@@ -93,10 +93,10 @@ export const Checkbox: React.FC<CheckboxProps> = ({ label, name, className = '',
             <input
                 type="checkbox"
                 id={name}
-                className={`w-4 h-4 rounded-sm border-[#3E3B5E] text-violet-600 focus:ring-violet-500 bg-[#181625] ${className}`}
+                className={`w-4 h-4 rounded-sm border-[#3E3B5E] text-violet-600 focus:ring-violet-500 bg-[#181625] disabled:cursor-not-allowed ${className}`}
                 {...props}
             />
-            <label htmlFor={name} className="text-sm text-[#948FB2] select-none cursor-pointer font-mono">{label}</label>
+            <label htmlFor={name} className={`text-sm text-[#948FB2] select-none font-mono ${props.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>{label}</label>
         </div>
     );
 };
@@ -109,11 +109,11 @@ interface ToggleProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const Toggle: React.FC<ToggleProps> = ({ label, name, className = '', ...props }) => {
     return (
         <div className={`flex items-center gap-3 ${className}`}>
-            <label htmlFor={name} className="relative inline-flex items-center cursor-pointer shrink-0">
+            <label htmlFor={name} className={`relative inline-flex items-center shrink-0 ${props.disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                 <input type="checkbox" id={name} className="sr-only peer" {...props} />
-                <div className="w-9 h-5 bg-[#2A273F] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#948FB2] after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-violet-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+                <div className={`w-9 h-5 bg-[#2A273F] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#948FB2] after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-violet-600 peer-checked:after:bg-white peer-checked:after:border-white ${props.disabled ? 'opacity-50' : ''}`}></div>
             </label>
-            {label && <span className="text-sm text-[#948FB2] select-none cursor-pointer font-mono" onClick={() => document.getElementById(name)?.click()}>{label}</span>}
+            {label && <span className={`text-sm text-[#948FB2] select-none font-mono ${props.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`} onClick={() => !props.disabled && document.getElementById(name)?.click()}>{label}</span>}
         </div>
     );
 };
@@ -127,7 +127,7 @@ export const TextArea: React.FC<TextAreaProps> = ({ label, name, className = '',
     return (
         <FieldWrapper label={label} id={name}>
             <textarea
-                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all font-mono w-full min-h-[100px] resize-y ${className}`}
+                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all font-mono w-full min-h-[100px] resize-y disabled:cursor-not-allowed ${className}`}
                 {...props}
             />
         </FieldWrapper>

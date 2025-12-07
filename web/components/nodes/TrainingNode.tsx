@@ -68,6 +68,27 @@ export const TrainingNode: React.FC = () => {
         }
     };
 
+    // Sort args: non-bools first, bools last
+    const sortedArgs = React.useMemo(() => {
+        if (!currentOptimizerSchema) return [];
+        return [...currentOptimizerSchema.args].sort((a, b) => {
+            const aIsToggle = a.type === 'bool';
+            const bIsToggle = b.type === 'bool';
+            if (aIsToggle && !bIsToggle) return 1;
+            if (!aIsToggle && bIsToggle) return -1;
+            return 0;
+        });
+    }, [currentOptimizerSchema]);
+
+    // Calculate if we need a spacer
+    const needsSpacer = React.useMemo(() => {
+        if (!currentOptimizerSchema) return false;
+        const nonBoolCount = currentOptimizerSchema.args.filter(a => a.type !== 'bool').length;
+        // If odd number of inputs/selects, the next item (first toggle) would be on the right.
+        // We want it to be on the next row (left), so we need to fill the right slot.
+        return nonBoolCount % 2 !== 0;
+    }, [currentOptimizerSchema]);
+
     return (
         <div className="space-y-5">
             {/* Optimizer Selection */}
@@ -88,7 +109,18 @@ export const TrainingNode: React.FC = () => {
                 {/* Dynamic Optimizer Args */}
                 {currentOptimizerSchema && (
                     <div className="grid grid-cols-2 gap-3 p-3 bg-[#181625]/50 rounded-lg border border-[#2A273F]">
-                        {currentOptimizerSchema.args.map(arg => renderDynamicInput(arg))}
+                        {sortedArgs.map((arg, i) => {
+                            // Insert spacer before the first bool if needed
+                            if (arg.type === 'bool' && needsSpacer && i > 0 && sortedArgs[i - 1].type !== 'bool') {
+                                return (
+                                    <React.Fragment key="spacer">
+                                        <div className="hidden md:block" /> {/* Fill the gap */}
+                                        {renderDynamicInput(arg)}
+                                    </React.Fragment>
+                                );
+                            }
+                            return renderDynamicInput(arg);
+                        })}
                     </div>
                 )}
             </div>
