@@ -308,12 +308,12 @@ export const usePhysicsEngine = () => {
         }
     };
 
-    const getMotionValues = (id: NodeId) => {
+    const getMotionValues = useCallback((id: NodeId) => {
         if (!motionValues.current.has(id)) {
             motionValues.current.set(id, { x: motionValue(0), y: motionValue(0) });
         }
         return motionValues.current.get(id)!;
-    };
+    }, []);
 
     return { initPhysics, dragStart, dragMove, dragEnd, notifyResize, getMotionValues };
 };

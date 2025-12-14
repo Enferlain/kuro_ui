@@ -1,7 +1,7 @@
 'use client';
 
 import { Sidebar } from './Sidebar';
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence, useTransform, MotionValue, useSpring } from 'framer-motion';
 import { useStore } from '../lib/store';
 import { NodeId } from '../lib/types';
@@ -83,7 +83,7 @@ const Connection: React.FC<{
     return (
         <g>
             <motion.line
-                stroke="#8b5cf6"
+                className="stroke-brand-primary"
                 strokeWidth="1"
                 style={{
                     x1, y1, x2, y2,
@@ -105,7 +105,7 @@ const Connection: React.FC<{
                         className="flex items-center justify-center w-full h-full"
                         style={{ rotate: angle }}
                     >
-                        <div className="bg-[#181625] border border-violet-500/30 text-[10px] text-violet-400 px-1.5 py-0.5 rounded-full font-mono tracking-widest whitespace-nowrap">
+                        <div className="bg-canvas-bg border border-brand-primary/30 text-[10px] text-brand-primary px-1.5 py-0.5 rounded-full font-mono tracking-widest whitespace-nowrap">
                             LINK
                         </div>
                     </motion.div>
@@ -144,9 +144,9 @@ const FPSCounter: React.FC = () => {
 
     return (
         <div className="absolute top-6 right-6 z-50 pointer-events-none select-none">
-            <div className="bg-[#232034]/80 backdrop-blur-sm border border-[#3E3B5E] text-[#948FB2] font-mono text-[10px] px-3 py-1 rounded-full flex items-center gap-2">
+            <div className="bg-node-bg/80 backdrop-blur-sm border border-node-border text-node-dim font-mono text-[10px] px-3 py-1 rounded-full flex items-center gap-2">
                 <Activity size={10} className={fps < 30 ? "text-red-500" : "text-emerald-500"} />
-                <span className={fps < 30 ? "text-red-400" : "text-[#948FB2]"}>{fps} FPS</span>
+                <span className={fps < 30 ? "text-red-400" : "text-node-dim"}>{fps} FPS</span>
             </div>
         </div>
     );
@@ -425,7 +425,7 @@ export const Canvas: React.FC = () => {
     };
 
     // Helper to determine LOD state for a node (used for connections)
-    const getNodeLODState = (id: NodeId) => {
+    const getNodeLODState = useCallback((id: NodeId) => {
         const node = nodes[id];
         if (!node) return false;
 
@@ -443,7 +443,7 @@ export const Canvas: React.FC = () => {
             isMinimized
         });
         return isZoomedOut;
-    };
+    }, [nodes, activeNode, lodImmuneNodes, minimizedNodes, scale, viewportSize]);
 
     // Dynamic Grid Opacity
     // Fade from 0.2 (at scale 0.5) down to 0 (at scale 0.1)
@@ -478,7 +478,7 @@ export const Canvas: React.FC = () => {
     return (
         <div
             ref={containerRef}
-            className={`w-full h-screen overflow-hidden bg-[#181625] relative select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            className={`w-full h-screen overflow-hidden bg-canvas-bg relative select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
             onPointerDown={handlePointerDown}
             onWheel={handleWheel}
         >
@@ -514,7 +514,7 @@ export const Canvas: React.FC = () => {
             >
                 {/* Connections (Dynamically Generated) */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
-                    {GRAPH_EDGES.map((edge) => {
+                    {useMemo(() => GRAPH_EDGES.map((edge) => {
                         const sourceNode = nodes[edge.source];
                         const targetNode = nodes[edge.target];
 
@@ -542,7 +542,7 @@ export const Canvas: React.FC = () => {
                                 draggedNode={draggedNode}
                             />
                         );
-                    })}
+                    }), [nodes, getNodeLODState, minimizedNodes, getMotionValues, isZoomedOut, draggedNode])}
                 </svg>
 
                 {/* Nodes (Memoized) */}
@@ -551,7 +551,7 @@ export const Canvas: React.FC = () => {
 
             {/* HUD / Overlay UI */}
             <div className="absolute top-6 left-6 pointer-events-none select-none">
-                <h1 className="text-4xl font-bold text-[#E2E0EC] tracking-tighter drop-shadow-xl flex items-center gap-2">
+                <h1 className="text-4xl font-bold text-node-text tracking-tighter drop-shadow-xl flex items-center gap-2">
                     KURO
                     <VoidIcon className="w-10 h-10" />
                 </h1>
@@ -569,15 +569,14 @@ export const Canvas: React.FC = () => {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="w-64 bg-[#232034]/95 backdrop-blur-xl border border-[#3E3B5E] rounded-sm shadow-2xl overflow-hidden mb-2"
+                            className="w-64 bg-node-bg-active backdrop-blur-xl border border-node-border rounded-sm shadow-2xl overflow-hidden mb-2"
                         >
-                            <div className="p-2 border-b border-[#3E3B5E] flex items-center gap-2">
-                                <Search size={14} className="text-[#5B5680]" />
+                            <div className="p-2 border-b border-node-border flex items-center gap-2">
+                                <Search size={14} className="text-node-header" />
                                 <input
-                                    ref={searchInputRef}
                                     type="text"
                                     placeholder="Search parameters..."
-                                    className="bg-transparent border-none outline-none text-sm text-[#E2E0EC] placeholder-[#5B5680] w-full font-mono"
+                                    className="bg-transparent border-none outline-none text-sm text-node-text placeholder-node-header w-full font-mono"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -590,22 +589,22 @@ export const Canvas: React.FC = () => {
                                     {searchResults.map((item) => (
                                         <div
                                             key={item.id}
-                                            className="px-3 py-2 hover:bg-[#3E3B5E]/50 cursor-pointer flex items-center justify-between group"
+                                            className="px-3 py-2 hover:bg-node-border/50 cursor-pointer flex items-center justify-between group"
                                             onClick={() => handleSearchResultClick(item)}
                                         >
-                                            <span className="text-xs text-[#E2E0EC] font-mono">{item.label}</span>
-                                            <CornerDownRight size={12} className="text-[#5B5680] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <span className="text-xs text-node-text font-mono">{item.label}</span>
+                                            <CornerDownRight size={12} className="text-node-header opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
                                     ))}
                                 </div>
                             ) : searchQuery ? (
-                                <div className="p-3 text-center text-[10px] text-[#5B5680] font-mono uppercase">No matches found</div>
+                                <div className="p-3 text-center text-[10px] text-node-header font-mono uppercase">No matches found</div>
                             ) : null}
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                <div className="flex items-center gap-2 bg-[#232034]/80 backdrop-blur-md border border-[#3E3B5E] p-1 rounded-lg shadow-2xl">
+                <div className="flex items-center gap-2 bg-node-bg/80 backdrop-blur-md border border-node-border p-1 rounded-lg shadow-2xl">
                     <button
                         onClick={() => {
                             resetLayout(NODE_REGISTRY);
@@ -620,33 +619,31 @@ export const Canvas: React.FC = () => {
                             }));
                             initPhysics(defaultNodes);
                         }}
-                        className="p-2 hover:bg-[#3E3B5E] rounded text-[#948FB2] hover:text-white transition"
+                        className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition"
                         title="Reset Layout"
                     >
                         <LayoutGrid size={18} />
                     </button>
-                    <button onClick={() => manualZoom(1)} className="p-2 hover:bg-[#3E3B5E] rounded text-[#948FB2] hover:text-white transition">
+                    <button onClick={() => manualZoom(1)} className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition">
                         <ZoomIn size={18} />
                     </button>
-                    <button onClick={() => manualZoom(-1)} className="p-2 hover:bg-[#3E3B5E] rounded text-[#948FB2] hover:text-white transition">
+                    <button onClick={() => manualZoom(-1)} className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition">
                         <ZoomOut size={18} />
                     </button>
                     <button
                         onClick={() => setIsSearchOpen(!isSearchOpen)}
-                        className={`p-2 rounded transition ${isSearchOpen ? 'bg-[#3E3B5E] text-white' : 'hover:bg-[#3E3B5E] text-[#948FB2] hover:text-white'}`}
+                        className={`p-2 rounded transition ${isSearchOpen ? 'bg-node-border text-white' : 'hover:bg-node-border text-node-dim hover:text-white'}`}
                         title="Search Nodes"
                     >
                         <Search size={18} />
                     </button>
                 </div>
-
-                <div className="bg-[#232034]/80 backdrop-blur-md text-[#948FB2] text-[10px] uppercase tracking-wider px-3 py-2 rounded-lg border border-[#3E3B5E] flex items-center gap-2 shadow-xl">
+                <div className="bg-node-bg/80 backdrop-blur-md text-node-dim text-[10px] uppercase tracking-wider px-3 py-2 rounded-lg border border-node-border flex items-center gap-2 shadow-xl">
                     <MousePointer2 size={10} />
                     <span>Nav: Drag & Scroll</span>
                 </div>
             </div>
-
-
         </div>
     );
 };
+

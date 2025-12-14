@@ -4,6 +4,9 @@ import React from 'react';
 import { HelpCircle } from 'lucide-react';
 import { useStore } from '../lib/store';
 
+// Re-export Select
+export { Select } from './Select';
+
 interface FieldProps {
     label: string;
     id: string; // acts as context for AI
@@ -54,33 +57,14 @@ export const Input: React.FC<InputProps> = ({ label, name, className = '', ...pr
     return (
         <FieldWrapper label={label} id={name}>
             <input
-                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all font-mono w-full disabled:cursor-not-allowed ${className}`}
+                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-colors font-mono w-full disabled:cursor-not-allowed ${className}`}
                 {...props}
             />
         </FieldWrapper>
     );
 };
 
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-    label: string;
-    name: string;
-    options: { value: string; label: string }[];
-}
 
-export const Select: React.FC<SelectProps> = ({ label, name, options, className = '', ...props }) => {
-    return (
-        <FieldWrapper label={label} id={name}>
-            <select
-                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all appearance-none font-mono w-full disabled:cursor-not-allowed ${className}`}
-                {...props}
-            >
-                {options.map(opt => (
-                    <option key={opt.value} value={opt.value} className="bg-[#1E1B2E] text-[#E2E0EC]">{opt.label}</option>
-                ))}
-            </select>
-        </FieldWrapper>
-    );
-};
 
 interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label: string;
@@ -127,7 +111,7 @@ export const TextArea: React.FC<TextAreaProps> = ({ label, name, className = '',
     return (
         <FieldWrapper label={label} id={name}>
             <textarea
-                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-all font-mono w-full min-h-[100px] resize-y disabled:cursor-not-allowed ${className}`}
+                className={`bg-[#181625] border border-[#3E3B5E] rounded-sm px-3 py-2.5 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none focus:border-violet-600 focus:ring-0 transition-colors font-mono w-full min-h-[100px] resize-y disabled:cursor-not-allowed ${className}`}
                 {...props}
             />
         </FieldWrapper>

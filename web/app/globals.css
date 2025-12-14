@@ -3,15 +3,17 @@
 @tailwind utilities;
 
 :root {
+  /* Kept for compatibility if needed, but updated to match config */
   --background: #181625;
   --foreground: #E2E0EC;
+  color-scheme: dark;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  @apply text-node-text bg-canvas-bg;
   font-family: 'Inter', sans-serif;
-  overflow: hidden; /* Prevent body scroll */
+  overflow: hidden;
+  /* Prevent body scroll */
 }
 
 /* Custom Scrollbar */
@@ -21,14 +23,14 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #232034; 
+  background: #232034;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #3E3B5E; 
+  background: #3E3B5E;
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #5B5680; 
+  background: #5B5680;
 }

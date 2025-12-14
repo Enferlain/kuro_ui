@@ -313,11 +313,11 @@ export const Node: React.FC<NodeProps> = React.memo(({
         >
             {/* Connection Knobs */}
             <div>
-                <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-[#181625] border border-violet-500/50 rounded-[2px] z-0 shadow-[0_0_8px_rgba(139,92,246,0.4)] flex items-center justify-center">
-                    <div className="w-1 h-1 bg-violet-500 rounded-[1px] opacity-80" />
+                <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-canvas-bg border border-brand-primary/50 rounded-[2px] z-0 shadow-[0_0_8px_rgba(139,92,246,0.4)] flex items-center justify-center">
+                    <div className="w-1 h-1 bg-brand-primary rounded-[1px] opacity-80" />
                 </div>
-                <div className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-3 bg-[#181625] border border-violet-500/50 rounded-[2px] z-0 shadow-[0_0_8px_rgba(139,92,246,0.4)] flex items-center justify-center">
-                    <div className="w-1 h-1 bg-violet-500 rounded-[1px] opacity-80" />
+                <div className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-3 bg-canvas-bg border border-brand-primary/50 rounded-[2px] z-0 shadow-[0_0_8px_rgba(139,92,246,0.4)] flex items-center justify-center">
+                    <div className="w-1 h-1 bg-brand-primary rounded-[1px] opacity-80" />
                 </div>
             </div>
 
@@ -328,10 +328,10 @@ export const Node: React.FC<NodeProps> = React.memo(({
             rounded-sm backdrop-blur-2xl 
             border transition-colors duration-500
             ${isActive
-                        ? 'bg-[#232034]/95 border-violet-500/50 shadow-[0_0_50px_rgba(139,92,246,0.1)]'
+                        ? 'bg-node-bg-active border-brand-primary/50 shadow-[0_0_50px_rgba(139,92,246,0.1)]'
                         : isZoomedOut
-                            ? 'bg-[#232034]/60 border-[#3E3B5E] hover:bg-[#232034]/80 hover:border-[#565275]'
-                            : 'bg-[#232034]/90 border-[#3E3B5E] hover:border-[#565275]'
+                            ? 'bg-node-bg/60 border-node-border hover:bg-node-bg/80 hover:border-node-border-hover'
+                            : 'bg-node-bg/90 border-node-border hover:border-node-border-hover'
                     }
         `}
             >
@@ -346,12 +346,12 @@ export const Node: React.FC<NodeProps> = React.memo(({
                             onPointerDown={handlePointerDown}
                             className="absolute inset-0 flex flex-col items-center justify-center gap-3 cursor-grab active:cursor-grabbing select-none p-4"
                         >
-                            <Icon size={32} className="text-violet-500" />
-                            <h2 className="text-lg font-bold text-[#E2E0EC] tracking-widest uppercase text-center leading-none font-mono">
+                            <Icon size={32} className="text-brand-primary" />
+                            <h2 className="text-lg font-bold text-node-text tracking-widest uppercase text-center leading-none font-mono">
                                 {title}
                             </h2>
                             {isMinimized && (
-                                <div className="absolute top-2 right-2 text-[#5B5680]" title="Manually Minimized">
+                                <div className="absolute top-2 right-2 text-node-header" title="Manually Minimized">
                                     <Minimize2 size={16} />
                                 </div>
                             )}
@@ -365,15 +365,15 @@ export const Node: React.FC<NodeProps> = React.memo(({
                             transition={{ duration: 0.2 }}
                             className="h-full flex flex-col"
                         >
-                            <div className={`flex items-center justify-between p-3 border-b select-none touch-none shrink-0 ${isActive ? 'border-violet-500/20 bg-violet-500/5' : 'border-[#3E3B5E] bg-[#3E3B5E]/10'}`}>
+                            <div className={`flex items-center justify-between p-3 border-b select-none touch-none shrink-0 ${isActive ? 'border-brand-primary/20 bg-brand-primary/5' : 'border-node-border bg-node-border/10'}`}>
                                 <div className="flex items-center gap-3 flex-1 cursor-grab active:cursor-grabbing" onPointerDown={handlePointerDown}>
-                                    <div className={`p-1.5 rounded-sm ${isActive ? 'bg-violet-600 text-white' : 'bg-[#3E3B5E] text-[#948FB2]'}`}>
+                                    <div className={`p-1.5 rounded-sm ${isActive ? 'bg-brand-primary text-white' : 'bg-node-border text-node-dim'}`}>
                                         <Icon size={16} />
                                     </div>
-                                    <h2 className={`text-sm font-bold tracking-widest uppercase font-mono ${isActive ? 'text-white' : 'text-[#948FB2]'}`}>{title}</h2>
+                                    <h2 className={`text-sm font-bold tracking-widest uppercase font-mono ${isActive ? 'text-white' : 'text-node-dim'}`}>{title}</h2>
                                 </div>
                                 <div className="flex items-center gap-1 pl-2">
-                                    <div className={`p-1.5 rounded-md cursor-pointer transition-colors ${isImmune ? 'opacity-30 cursor-not-allowed text-[#5B5680]' : (isMinimized && !isActive) ? 'text-violet-400 hover:text-violet-300' : 'text-[#5B5680] hover:text-white'}`}
+                                    <div className={`p-1.5 rounded-md cursor-pointer transition-colors ${isImmune ? 'opacity-30 cursor-not-allowed text-node-header' : (isMinimized && !isActive) ? 'text-brand-primary hover:text-brand-primary/80' : 'text-node-header hover:text-white'}`}
                                         onPointerDown={(e) => {
                                             e.stopPropagation();
                                             if (isImmune) return;
@@ -381,11 +381,11 @@ export const Node: React.FC<NodeProps> = React.memo(({
                                         }}>
                                         {(isMinimized && !isActive) ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
                                     </div>
-                                    <div className={`p-1.5 rounded-md cursor-pointer transition-colors ${isImmune ? 'text-violet-400 hover:text-violet-300' : 'text-[#5B5680] hover:text-white'}`}
+                                    <div className={`p-1.5 rounded-md cursor-pointer transition-colors ${isImmune ? 'text-violet-400 hover:text-violet-300' : 'text-node-header hover:text-white'}`}
                                         onPointerDown={(e) => { e.stopPropagation(); if (!isImmune && isMinimized) { toggleMinimize(id); } toggleLodImmunity(id); }}>
                                         <Pin size={14} className={isImmune ? "fill-current" : ""} />
                                     </div>
-                                    <div className="p-1.5 rounded-md hover:bg-[#3E3B5E] cursor-ns-resize text-[#5B5680] hover:text-white transition-colors" onPointerDown={handleScaleDrag}>
+                                    <div className="p-1.5 rounded-md hover:bg-node-border cursor-ns-resize text-node-header hover:text-white transition-colors" onPointerDown={handleScaleDrag}>
                                         <Scaling size={14} />
                                     </div>
                                 </div>
@@ -396,7 +396,7 @@ export const Node: React.FC<NodeProps> = React.memo(({
                                     {children}
                                 </div>
                             </div>
-                            <div className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize flex items-center justify-center text-[#5B5680] hover:text-violet-500 transition-colors z-20" onPointerDown={handleResizeDown}>
+                            <div className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize flex items-center justify-center text-node-header hover:text-brand-primary transition-colors z-20" onPointerDown={handleResizeDown}>
                                 <svg width="6" height="6" viewBox="0 0 6 6" fill="currentColor"><path d="M6 6L6 0L0 6H6Z" /></svg>
                             </div>
                         </motion.div>
