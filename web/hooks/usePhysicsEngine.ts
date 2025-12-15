@@ -3,6 +3,7 @@ import Matter from 'matter-js';
 import { motionValue, MotionValue } from 'framer-motion';
 import { useStore } from '../lib/store';
 import { NodeId } from '../lib/types';
+import { CANVAS_BOUNDS } from '../lib/constants';
 
 // Data stored for each node in the physics world
 interface PhysicsNode {
@@ -95,6 +96,26 @@ export const usePhysicsEngine = () => {
             Matter.World.add(world, body);
         });
 
+        // 3. Create Bounds (Walls)
+        const wallThickness = 1000;
+        const width = CANVAS_BOUNDS.maxX - CANVAS_BOUNDS.minX;
+        const height = CANVAS_BOUNDS.maxY - CANVAS_BOUNDS.minY;
+        const centerX = (CANVAS_BOUNDS.minX + CANVAS_BOUNDS.maxX) / 2;
+        const centerY = (CANVAS_BOUNDS.minY + CANVAS_BOUNDS.maxY) / 2;
+
+        const walls = [
+            // Top
+            Matter.Bodies.rectangle(centerX, CANVAS_BOUNDS.minY - wallThickness / 2, width + wallThickness * 2, wallThickness, { isStatic: true, label: 'WALL_TOP', restitution: 0.5 }),
+            // Bottom
+            Matter.Bodies.rectangle(centerX, CANVAS_BOUNDS.maxY + wallThickness / 2, width + wallThickness * 2, wallThickness, { isStatic: true, label: 'WALL_BOTTOM', restitution: 0.5 }),
+            // Left
+            Matter.Bodies.rectangle(CANVAS_BOUNDS.minX - wallThickness / 2, centerY, wallThickness, height + wallThickness * 2, { isStatic: true, label: 'WALL_LEFT', restitution: 0.5 }),
+            // Right
+            Matter.Bodies.rectangle(CANVAS_BOUNDS.maxX + wallThickness / 2, centerY, wallThickness, height + wallThickness * 2, { isStatic: true, label: 'WALL_RIGHT', restitution: 0.5 })
+        ];
+
+        Matter.World.add(world, walls);
+
         // 3. Start Runner (The "God Tier" Loop)
         if (!runner.current) {
             runner.current = Matter.Runner.create();
@@ -183,12 +204,20 @@ export const usePhysicsEngine = () => {
         if (body && engine.current) {
             Matter.Sleeping.set(body, false);
 
+            // Calculate Half-Dimensions for Edge Clamping
+            const bounds = body.bounds;
+            const hw = (bounds.max.x - bounds.min.x) / 2;
+            const hh = (bounds.max.y - bounds.min.y) / 2;
+
             // [Shiro] Constraint Dragging
             // We create a stiff spring connecting the mouse to the body center.
             // This allows the physics engine to solve collisions naturally.
             dragConstraint.current = Matter.Constraint.create({
                 label: 'dragConstraint',
-                pointA: { x, y },
+                pointA: {
+                    x: Math.max(CANVAS_BOUNDS.minX + hw, Math.min(CANVAS_BOUNDS.maxX - hw, x)),
+                    y: Math.max(CANVAS_BOUNDS.minY + hh, Math.min(CANVAS_BOUNDS.maxY - hh, y))
+                },
                 bodyB: body,
                 pointB: { x: 0, y: 0 }, // Grab at center
                 stiffness: 0.8,  // High stiffness for responsive drag
@@ -209,7 +238,27 @@ export const usePhysicsEngine = () => {
 
         // If we have a drag constraint, we're dragging. Update the constraint's anchor point.
         if (dragConstraint.current) {
-            dragConstraint.current.pointA = { x, y };
+
+            // Calculate edge bounds if body exists
+            let minX = CANVAS_BOUNDS.minX;
+            let maxX = CANVAS_BOUNDS.maxX;
+            let minY = CANVAS_BOUNDS.minY;
+            let maxY = CANVAS_BOUNDS.maxY;
+
+            if (body) {
+                const bounds = body.bounds;
+                const hw = (bounds.max.x - bounds.min.x) / 2;
+                const hh = (bounds.max.y - bounds.min.y) / 2;
+                minX += hw;
+                maxX -= hw;
+                minY += hh;
+                maxY -= hh;
+            }
+
+            dragConstraint.current.pointA = {
+                x: Math.max(minX, Math.min(maxX, x)),
+                y: Math.max(minY, Math.min(maxY, y))
+            };
 
             // Sync MotionValues from physics for visual responsiveness during drag
             if (body) {
@@ -328,11 +377,18 @@ export const usePhysicsEngine = () => {
 
     const getMotionValues = useCallback((id: NodeId) => {
         if (!motionValues.current.has(id)) {
+            // [Shiro] FLASH FIX: Try to get initial position from store to prevent 0,0 render
+            const nodeState = useStore.getState().nodes[id];
+            const initialX = nodeState?.cx ?? 0;
+            const initialY = nodeState?.cy ?? 0;
+            const initialW = nodeState?.width ?? 300;
+            const initialH = nodeState?.height ?? 300;
+
             motionValues.current.set(id, {
-                x: motionValue(0),
-                y: motionValue(0),
-                width: motionValue(300), // Default, will be overwritten by init or notify
-                height: motionValue(300)
+                x: motionValue(initialX),
+                y: motionValue(initialY),
+                width: motionValue(initialW),
+                height: motionValue(initialH)
             });
         }
         return motionValues.current.get(id)!;

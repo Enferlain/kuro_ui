@@ -11,13 +11,7 @@ import { NODE_REGISTRY, GRAPH_EDGES, SEARCH_INDEX, SearchItem } from './NodeRegi
 import { Save, MousePointer2, ZoomIn, ZoomOut, Activity, LayoutGrid, Search, X, CornerDownRight } from 'lucide-react';
 import { VoidIcon } from './VoidIcon';
 import { usePhysicsEngine } from '../hooks/usePhysicsEngine';
-
-// Base limit for panning. This will be scaled dynamically.
-const BASE_PAN_LIMIT = 5000;
-
-// Approximate geometric center of the initial layout (MinX: 100, MaxX: 1800, MinY: 100, MaxY: 800)
-const CONTENT_CENTER_X = 950;
-const CONTENT_CENTER_Y = 450;
+import { CANVAS_BOUNDS } from '../lib/constants';
 
 // Connection line component (Animated SVG)
 const Connection: React.FC<{
@@ -85,14 +79,14 @@ const Connection: React.FC<{
                     x1, y1, x2, y2,
                     filter: "drop-shadow(0 0 2px rgba(139,92,246,0.4))"
                 } as any}
-                initial={false}
+                initial={{ opacity: 0 }}
                 animate={{ opacity }}
                 transition={{ duration: 0.5 }}
             />
             {/* Label */}
             <motion.g
                 style={{ x: cx, y: cy }}
-                initial={false}
+                initial={{ opacity: 0 }}
                 animate={{ opacity }}
                 transition={{ duration: 0.5 }}
             >
@@ -229,7 +223,7 @@ export const Canvas: React.FC = () => {
 
         // [Shiro] CRITICAL FIX: Only run on hydration or structural changes (adding/removing nodes).
         // Removing 'minHash', 'activeNode', 'scale' prevents the engine from resetting during interaction.
-    }, [hasHydrated, nodesHash, initPhysics]);
+    }, [hasHydrated, nodesHash, initPhysics, 'boundary-v2']);
 
     useEffect(() => {
         const handleResize = () => {
@@ -319,6 +313,36 @@ export const Canvas: React.FC = () => {
         }, 150);
     };
 
+    // [Shiro] Viewport Clamp Helper
+    const getClampedTranslation = (tx: number, ty: number, s: number) => {
+        const { width: vw, height: vh } = viewportSize;
+
+        // X Axis
+        const minTx = vw - CANVAS_BOUNDS.maxX * s;
+        const maxTx = -CANVAS_BOUNDS.minX * s;
+        let finalTx = tx;
+
+        if (minTx > maxTx) {
+            // Viewport larger than world: Center it
+            finalTx = (minTx + maxTx) / 2;
+        } else {
+            finalTx = Math.max(minTx, Math.min(maxTx, tx));
+        }
+
+        // Y Axis
+        const minTy = vh - CANVAS_BOUNDS.maxY * s;
+        const maxTy = -CANVAS_BOUNDS.minY * s;
+        let finalTy = ty;
+
+        if (minTy > maxTy) {
+            finalTy = (minTy + maxTy) / 2;
+        } else {
+            finalTy = Math.max(minTy, Math.min(maxTy, ty));
+        }
+
+        return { x: finalTx, y: finalTy };
+    };
+
     const handlePointerDown = (e: React.PointerEvent) => {
         // Blur any active input when clicking the canvas
         if (document.activeElement instanceof HTMLElement) {
@@ -348,18 +372,8 @@ export const Canvas: React.FC = () => {
             const newX = startTransX + dx;
             const newY = startTransY + dy;
 
-            // Dynamic Clamping
-            const dynamicRadius = BASE_PAN_LIMIT * currentScale;
-            const centerOffsetX = CONTENT_CENTER_X * (1 - currentScale);
-            const centerOffsetY = CONTENT_CENTER_Y * (1 - currentScale);
-
-            const minX = centerOffsetX - dynamicRadius;
-            const maxX = centerOffsetX + dynamicRadius;
-            const minY = centerOffsetY - dynamicRadius;
-            const maxY = centerOffsetY + dynamicRadius;
-
-            const clampedX = Math.max(minX, Math.min(maxX, newX));
-            const clampedY = Math.max(minY, Math.min(maxY, newY));
+            // [Shiro] Apply Boundary Clamp using CANVAS_BOUNDS
+            const { x: clampedX, y: clampedY } = getClampedTranslation(newX, newY, currentScale);
 
             setTranslation(clampedX, clampedY);
         };
@@ -395,7 +409,9 @@ export const Canvas: React.FC = () => {
         const newTx = mx - worldX * newScale;
         const newTy = my - worldY * newScale;
 
-        setTransform(newTx, newTy, newScale);
+        const { x: clampedTx, y: clampedTy } = getClampedTranslation(newTx, newTy, newScale);
+        setTransform(clampedTx, clampedTy, newScale);
+
     };
 
     const manualZoom = (direction: 1 | -1) => {
@@ -417,7 +433,9 @@ export const Canvas: React.FC = () => {
         const newTx = mx - worldX * newScale;
         const newTy = my - worldY * newScale;
 
-        setTransform(newTx, newTy, newScale);
+        const { x: clampedTx, y: clampedTy } = getClampedTranslation(newTx, newTy, newScale);
+        setTransform(clampedTx, clampedTy, newScale);
+
     };
 
     // Helper to determine LOD state for a node (used for connections)

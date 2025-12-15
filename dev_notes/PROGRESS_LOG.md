@@ -373,3 +373,28 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
 - **Custom Select Component**:
     - **Implementation**: Replaced native HTML `<select>` elements with a custom `Select.tsx` component.
     - **Goal**: Eliminated the jarring "white flash" inherent to native dropdowns on dark themes and ensured the dropdown UI matches the application's premium aesthetic (Tailwind styled).
+
+---
+
+## Entry: December 15, 2025
+
+### 1. Canvas Boundary & Physics Constraints
+- **Absolute Boundaries**:
+    - **Implementation**: Defined fixed world bounds (`-10000` to `12000`) in `constants.ts`.
+    - **Visual Clamping**: Updated `Canvas.tsx` to strictly clamp panning and zooming operations. Users can no longer scroll past the defined edges, ensuring they never lose sight of their nodes.
+    - **Physics Walls**: Updated `usePhysicsEngine.ts` to generate static rectangular bodies (Walls) around the perimeter. Nodes bouncing against these walls are kept inside the play area.
+- **Drag Interaction Fix**:
+    - **Problem**: Users could "pull" nodes through the physics walls by dragging their mouse cursor far outside the bounds. The physics constraint (spring) would stretch indefinitely, eventually pulling the node through the static wall body.
+    - **Fix**: Implemented smart clamping in `dragMove`. The drag target (mouse position) is now mathematically clamped to the canvas bounds *minus the node's half-size*. This means the "ghost hand" pulling the node stops exactly at the wall, making it physicaly impossible to drag a node through, regardless of mouse speed or distance.
+
+### 2. Startup Visual Stability (The "Flash" Fixes)
+- **Hydration Sync**:
+    - **Problem**: On page load, the grid and nodes would flash at `(0,0)` or default positions for 1 frame before `localStorage` hydration kicked in.
+    - **Fix**: Modified `Canvas.tsx` to set `opacity: 0` on the Grid and World Container until the `hasHydrated` flag is true. The app now fades in smoothly once state is ready.
+- **Initialization Jumps**:
+    - **Problem 1 (Pinned Nodes)**: Pinned nodes would load small (LOD size) then animate open.
+    - **Problem 2 (Zoomed Out)**: Normal nodes would load big then animate closed if the user refreshed while zoomed out.
+    - **Fix**: Updated `Node.tsx` initialization logic. The component now checks `isImmune` (Pinned) and `isZoomedOut` on mount. If either condition is met, the physics springs `jump()` instantly to the target size, skipping the transition animation completely.
+- **Zero-Coordinate Glitch**:
+    - **Problem**: Physics bodies initialized at `(0,0)` before reading the store, causing a single frame of nodes bunched in the corner.
+    - **Fix**: Updated `getMotionValues` to peek directly at the Zustand store (`useStore.getState()`) during initialization, ensuring the very first render frame uses the correct saved coordinates.

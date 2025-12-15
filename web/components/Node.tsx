@@ -103,11 +103,16 @@ export const Node: React.FC<NodeProps> = React.memo(({
         }
     }, [effectiveWidth, effectiveHeight, onResize, isResizing, isActive, motionValues]);
 
-    // [Shiro] JUMP FIX: If initializing as active, jump the spring immediately to avoid "expanding" animation.
+    // [Shiro] JUMP FIX: If initializing as:
+    // 1. Active or Immune -> Jump to Full Size (Skip Expansion)
+    // 2. Zoomed Out -> Jump to LOD Size (Skip Shrink)
     useEffect(() => {
-        if (isActive) {
+        if (isActive || isImmune) {
             widthSpring.jump(currentWidth);
             heightSpring.jump(currentHeight);
+        } else if (isZoomedOut) {
+            widthSpring.jump(LOD_WIDTH);
+            heightSpring.jump(LOD_HEIGHT);
         }
     }, []);
 
@@ -293,6 +298,7 @@ export const Node: React.FC<NodeProps> = React.memo(({
                 scale: isActive || isDragging ? 1.02 : 1
             }}
             // Remove 'animate' for width/height to let MotionValues take control during interaction
+            initial={{ opacity: 0 }}
             animate={{
                 translateX: '-50%',
                 translateY: '-50%',

@@ -7,30 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-12-15]
+
+### Added
+- Implemented hard limits for panning and zooming. The viewport is now clamped to specific world bounds (-10000 to 12000), preventing users from getting lost in infinite space.
+- Added static invisible bodies around the world bounds. Nodes can no longer be thrown or pushed outside the playable area.
+
+### Fixed
+- Hiding Grid/World until hydration is complete.
+- Initializing nodes with `opacity: 0` and fading them in.
+- Pre-seeding physics motion values with stored positions to preventing `(0,0)` teleportation.
+- Initialization Animations:
+- Pinned Nodes: Fixed an issue where pinned nodes would animate "open" from small size on load. They now instant-jump to full size.
+- Zoomed Out Nodes: Fixed an issue where nodes would animate "closed" from full size if loaded in a zoomed-out state. They now instant-jump to LOD size.
+- Manual Drag Escape: Fixed an exploit where users could drag nodes through walls by moving the mouse cursor fast enough. The drag constraint is now clamped to the world bounds (accounting for node size), effectively "leashing" the node to the wall.
+
 ## [2025-12-14]
 
 ### Changed
-- **LOD Logic**: Pinned nodes (`isImmune`) now correctly ignore the global zoom-out threshold, remaining visible at any distance.
-- **Toggle Inputs**: Refactored `ToggleInput` to be a generic, shared component supporting both text and number types.
-- **Node Inputs**: Applied the new `ToggleInput` to Learning Rates, Gradient Accumulation, and Keep Tokens Separator for consistent behavior.
+- LOD Logic: Pinned nodes (`isImmune`) now correctly ignore the global zoom-out threshold, remaining visible at any distance.
+- Refactored `ToggleInput` to be a generic, shared component supporting both text and number types.
+- Applied the new `ToggleInput` to Learning Rates, Gradient Accumulation, and Keep Tokens Separator for consistent behavior.
 
 ### Fixed
-- **Connection Detachment**: Fixed a regression where connection lines would detach and point to the wrong location while resizing a node.
-- **Connection Animation**: Updated `Connection` component to use a reactive `useSpring` pipeline on shared `MotionValues`, preventing crashes and ensuring 60fps synchronization with node resizing.
-- **Visual Glitches**:
-    - **Font Blurring**: Removed `will-change: transform` from nodes to fix permanent font blurring issues on some screens.
-    - **Dropdown Flash**: Implemented a custom `Select` component to eliminate the white flash seen with native browser selects.
+- Fixed a regression where connection lines would detach and point to the wrong location while resizing a node.
+- Updated `Connection` component to use a reactive `useSpring` pipeline on shared `MotionValues`, preventing crashes and ensuring 60fps synchronization with node resizing.
+- Removed `will-change: transform` from nodes to fix permanent font blurring issues on some screens.
+- Implemented a custom `Select` component to eliminate the white flash seen with native browser selects.
 
 ## [2025-12-07]
 
 ### Changed
-- **Optimized Form Layout**: Reordered dynamic optimizer arguments in Training Node to prioritizing entry fields over toggles, with smart spacing to ensure toggles always start on a new row.
-- **Improved Disabled States**:
-    - Removed `pointer-events-none` from multiple disabled sections (Bucketing, Network) to restore hover interactions.
-    - Added `cursor-not-allowed` to disabled inputs for "Gradient Accumulation", "Keep Tokens Separator", and "Dropout", providing consistent feedback across the app.
-- **UX Refinements**:
-    - Gradient Accumulation toggle now preserves the user's input value when disabled/re-enabled (cached).
-    - "Clip Skip" input and "Keep Tokens Separator" now properly reflect disabled state when applicable.
+- Reordered dynamic optimizer arguments in Training Node to prioritizing entry fields over toggles, with smart spacing to ensure toggles always start on a new row.
+- Removed `pointer-events-none` from multiple disabled sections (Bucketing, Network) to restore hover interactions.
+- Added `cursor-not-allowed` to disabled inputs for "Gradient Accumulation", "Keep Tokens Separator", and "Dropout", providing consistent feedback across the app.
+- Gradient Accumulation toggle now preserves the user's input value when disabled/re-enabled (cached).
+- "Clip Skip" input and "Keep Tokens Separator" now properly reflect disabled state when applicable.
 
 ## [2025-12-06]
 
@@ -42,8 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `Connection` links to track active node expansion even when minimized
 
 ### Added
-- **Dropout Section**: Added `networkDropout`, `rankDropout`, and `moduleDropout` to Network Node
-- **Section Headers**: Added visual section headers to Network Node (Network Selection, Architecture, Regularization, Algo Specifics)
+- Added `networkDropout`, `rankDropout`, and `moduleDropout` to Network Node
+- Added visual section headers to Network Node (Network Selection, Architecture, Regularization, Algo Specifics)
 
 ### Fixed
 - Nodes no longer reset to minimized state on browser refresh
