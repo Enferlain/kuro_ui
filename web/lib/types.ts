@@ -125,8 +125,8 @@ export interface TrainingConfig {
 
   // Optimizer
   learningRate: number;
-  unetLr: number;
-  textEncoderLr: number;
+  unetLr?: number;
+  textEncoderLr?: number;
   optimizerType: string;
   optimizerArgs: Record<string, any>;
   lrScheduler: 'cosine' | 'constant' | 'constant_with_warmup';

@@ -23,8 +23,8 @@ const CONTENT_CENTER_Y = 450;
 const Connection: React.FC<{
     sourcePos: { x: MotionValue<number>, y: MotionValue<number> },
     targetPos: { x: MotionValue<number>, y: MotionValue<number> },
-    sourceDim: { width: number, height: number },
-    targetDim: { width: number, height: number },
+    sourceDim: { width: MotionValue<number>, height: MotionValue<number> },
+    targetDim: { width: MotionValue<number>, height: MotionValue<number> },
     isSourceLOD: boolean,
     isTargetLOD: boolean,
     isSourceMinimized: boolean,
@@ -35,22 +35,18 @@ const Connection: React.FC<{
     draggedNode: NodeId | null
 }> = React.memo(({ sourcePos, targetPos, sourceDim, targetDim, isSourceLOD, isTargetLOD, isSourceMinimized, isTargetMinimized, isZoomedOut, sourceId, targetId, draggedNode }) => {
 
-    // Calculate Handles based on LOD/Minimized state
-    // POSITIONS ARE NOW CENTERS (Physics Engine)
+    // [Shiro] REACTIVE ANIMATION FIX:
+    // 1. We start with the Physics MotionValue (Live Width)
+    // 2. We transform it: If LOD is active, return LOD_WIDTH instead.
+    // 3. We wrap it in a Spring: The spring follows the Transform result.
+    // This removes the need for useEffects and manual sets, effectively "piping" the data.
 
-    // [Shiro] ANIMATION FIX: Use springs for the width to match Node animation
-    const targetSourceWidth = (isSourceLOD) ? LOD_WIDTH : sourceDim.width;
-    const targetTargetWidth = (isTargetLOD) ? LOD_WIDTH : targetDim.width;
+    const finalSourceWidth = useTransform(sourceDim.width, (w) => isSourceLOD ? LOD_WIDTH : w);
+    const finalTargetWidth = useTransform(targetDim.width, (w) => isTargetLOD ? LOD_WIDTH : w);
 
     const springConfig = { stiffness: 400, damping: 30 };
-    const animatedSourceWidth = useSpring(targetSourceWidth, springConfig);
-    const animatedTargetWidth = useSpring(targetTargetWidth, springConfig);
-
-    // Sync springs when targets change
-    useEffect(() => {
-        animatedSourceWidth.set(targetSourceWidth);
-        animatedTargetWidth.set(targetTargetWidth);
-    }, [targetSourceWidth, targetTargetWidth, animatedSourceWidth, animatedTargetWidth]);
+    const animatedSourceWidth = useSpring(finalSourceWidth, springConfig);
+    const animatedTargetWidth = useSpring(finalTargetWidth, springConfig);
 
     const x1 = useTransform([sourcePos.x, animatedSourceWidth], ([x, w]: number[]) => {
         // [Shiro] CENTER LOGIC: Right side = Center + Width/2
@@ -458,7 +454,7 @@ export const Canvas: React.FC = () => {
                 title={config.title}
                 icon={config.icon}
                 // PHYSICS PROPS
-                motionValues={getMotionValues(config.id)}
+                motionValues={getMotionValues(config.id)} // Now contains width/height too
                 onDragStart={(x, y) => dragStart(config.id, x, y)}
                 onDragMove={(x, y) => dragMove(config.id, x, y)}
                 onDragEnd={() => dragEnd(config.id)}
@@ -494,14 +490,12 @@ export const Canvas: React.FC = () => {
             `,
                     backgroundPosition: `${translation.x}px ${translation.y}px`,
                     backgroundSize: `${40 * scale}px ${40 * scale}px`,
-                    willChange: isInteracting ? 'background-position, background-size' : 'auto'
                 }}
             />
 
             {/* World Container */}
             <motion.div
                 className="absolute top-0 left-0 w-full h-full origin-top-left"
-                style={{ willChange: isInteracting ? 'transform' : 'auto' }}
                 animate={{
                     x: translation.x,
                     y: translation.y,
@@ -515,10 +509,13 @@ export const Canvas: React.FC = () => {
                 {/* Connections (Dynamically Generated) */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
                     {useMemo(() => GRAPH_EDGES.map((edge) => {
-                        const sourceNode = nodes[edge.source];
-                        const targetNode = nodes[edge.target];
+                        const sourceNodeState = nodes[edge.source];
+                        const targetNodeState = nodes[edge.target];
 
-                        if (!sourceNode || !targetNode) return null;
+                        if (!sourceNodeState || !targetNodeState) return null;
+
+                        const sourceMotionValues = getMotionValues(edge.source);
+                        const targetMotionValues = getMotionValues(edge.target);
 
                         const isSourceLOD = getNodeLODState(edge.source);
                         const isTargetLOD = getNodeLODState(edge.target);
@@ -528,10 +525,10 @@ export const Canvas: React.FC = () => {
                         return (
                             <Connection
                                 key={`${edge.source}-${edge.target}`}
-                                sourcePos={getMotionValues(edge.source)}
-                                targetPos={getMotionValues(edge.target)}
-                                sourceDim={{ width: sourceNode.width, height: sourceNode.height }}
-                                targetDim={{ width: targetNode.width, height: targetNode.height }}
+                                sourcePos={sourceMotionValues}
+                                targetPos={targetMotionValues}
+                                sourceDim={{ width: sourceMotionValues.width, height: sourceMotionValues.height }}
+                                targetDim={{ width: targetMotionValues.width, height: targetMotionValues.height }}
                                 isSourceLOD={isSourceLOD}
                                 isTargetLOD={isTargetLOD}
                                 isSourceMinimized={isSourceMinimized}
@@ -604,43 +601,43 @@ export const Canvas: React.FC = () => {
                     )}
                 </AnimatePresence>
 
-                <div className="flex items-center gap-2 bg-node-bg/80 backdrop-blur-md border border-node-border p-1 rounded-lg shadow-2xl">
-                    <button
-                        onClick={() => {
-                            resetLayout(NODE_REGISTRY);
-                            // [Shiro] RESET FIX: Force Physics Engine to re-initialize with default positions
-                            // This ensures the physics bodies snap back to their original places.
-                            const defaultNodes = Object.values(NODE_REGISTRY).map(conf => ({
-                                id: conf.id,
-                                cx: conf.defaultPosition.x + conf.defaultDimensions.width / 2,
-                                cy: conf.defaultPosition.y + conf.defaultDimensions.height / 2,
-                                width: conf.defaultDimensions.width,
-                                height: conf.defaultDimensions.height
-                            }));
-                            initPhysics(defaultNodes);
-                        }}
-                        className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition"
-                        title="Reset Layout"
-                    >
-                        <LayoutGrid size={18} />
-                    </button>
-                    <button onClick={() => manualZoom(1)} className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition">
-                        <ZoomIn size={18} />
-                    </button>
-                    <button onClick={() => manualZoom(-1)} className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition">
-                        <ZoomOut size={18} />
-                    </button>
-                    <button
-                        onClick={() => setIsSearchOpen(!isSearchOpen)}
-                        className={`p-2 rounded transition ${isSearchOpen ? 'bg-node-border text-white' : 'hover:bg-node-border text-node-dim hover:text-white'}`}
-                        title="Search Nodes"
-                    >
-                        <Search size={18} />
-                    </button>
-                </div>
-                <div className="bg-node-bg/80 backdrop-blur-md text-node-dim text-[10px] uppercase tracking-wider px-3 py-2 rounded-lg border border-node-border flex items-center gap-2 shadow-xl">
-                    <MousePointer2 size={10} />
-                    <span>Nav: Drag & Scroll</span>
+                <div className="flex flex-col gap-2 items-stretch">
+                    <div className="flex items-center justify-between gap-2 bg-node-bg/80 backdrop-blur-md border border-node-border p-1 rounded-lg shadow-2xl">
+                        <button
+                            onClick={() => {
+                                resetLayout(NODE_REGISTRY);
+                                const defaultNodes = Object.values(NODE_REGISTRY).map(conf => ({
+                                    id: conf.id,
+                                    cx: conf.defaultPosition.x + conf.defaultDimensions.width / 2,
+                                    cy: conf.defaultPosition.y + conf.defaultDimensions.height / 2,
+                                    width: conf.defaultDimensions.width,
+                                    height: conf.defaultDimensions.height
+                                }));
+                                initPhysics(defaultNodes);
+                            }}
+                            className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition"
+                            title="Reset Layout"
+                        >
+                            <LayoutGrid size={18} />
+                        </button>
+                        <button onClick={() => manualZoom(1)} className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition">
+                            <ZoomIn size={18} />
+                        </button>
+                        <button onClick={() => manualZoom(-1)} className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition">
+                            <ZoomOut size={18} />
+                        </button>
+                        <button
+                            onClick={() => setIsSearchOpen(!isSearchOpen)}
+                            className={`p-2 rounded transition ${isSearchOpen ? 'bg-node-border text-white' : 'hover:bg-node-border text-node-dim hover:text-white'}`}
+                            title="Search Nodes"
+                        >
+                            <Search size={18} />
+                        </button>
+                    </div>
+                    <div className="bg-node-bg/80 backdrop-blur-md text-node-dim text-[10px] uppercase tracking-wider px-3 py-2 rounded-lg border border-node-border flex items-center justify-center gap-2 shadow-xl">
+                        <MousePointer2 size={10} />
+                        <span>Nav: Drag & Scroll</span>
+                    </div>
                 </div>
             </div>
         </div>

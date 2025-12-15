@@ -45,7 +45,7 @@ export const calculateLodState = ({
     // - NOT Active AND
     // - (Minimized OR GlobalZoomedOut OR (SmallVisualSize AND NOT Immune))
 
-    const autoCollapse = isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold && !isImmune);
+    const autoCollapse = (isGlobalZoomedOut || (scale < 0.65 && visualSize < threshold)) && !isImmune;
 
     const isZoomedOut = !isActive && (
         isMinimized ||

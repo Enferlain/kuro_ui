@@ -117,3 +117,78 @@ export const TextArea: React.FC<TextAreaProps> = ({ label, name, className = '',
         </FieldWrapper>
     );
 };
+
+interface ToggleInputProps {
+    label: string;
+    name: string;
+    value?: string | number;
+    defaultValue?: string | number;
+    onChange: (value?: any) => void;
+    step?: number;
+    type?: 'text' | 'number';
+    placeholder?: string;
+}
+
+export const ToggleInput: React.FC<ToggleInputProps> = ({
+    label,
+    name,
+    value,
+    defaultValue = 0.0001,
+    onChange,
+    step = 0.0001,
+    type = 'number',
+    placeholder,
+}) => {
+    const [localValue, setLocalValue] = React.useState<string>(value !== undefined ? value.toString() : defaultValue?.toString() || '');
+
+    React.useEffect(() => {
+        if (value !== undefined) {
+            setLocalValue(value.toString());
+        }
+    }, [value]);
+
+    return (
+        <FieldWrapper label={label} id={name}>
+            <div className="flex items-center h-[42px] border border-[#3E3B5E] rounded-sm overflow-hidden">
+                <div className="flex items-center justify-center px-3 h-full border-r border-[#3E3B5E] bg-[#181625]">
+                    <Toggle
+                        name={name}
+                        checked={value !== undefined && value !== ''}
+                        onChange={(e) => {
+                            if (e.target.checked) {
+                                if (type === 'number') {
+                                    const num = parseFloat(localValue);
+                                    onChange(isNaN(num) ? defaultValue : num);
+                                } else {
+                                    onChange(localValue || defaultValue);
+                                }
+                            } else {
+                                onChange(undefined);
+                            }
+                        }}
+                    />
+                </div>
+                <input
+                    type={type}
+                    step={type === 'number' ? step : undefined}
+                    value={localValue}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        setLocalValue(val);
+                        if (value !== undefined && value !== '') {
+                            if (type === 'number') {
+                                const num = parseFloat(val);
+                                if (!isNaN(num)) onChange(num);
+                            } else {
+                                onChange(val);
+                            }
+                        }
+                    }}
+                    disabled={value === undefined || value === ''}
+                    placeholder={placeholder}
+                    className={`flex-1 px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full min-w-0 bg-[#181625] transition-opacity ${value === undefined || value === '' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                />
+            </div>
+        </FieldWrapper>
+    );
+};

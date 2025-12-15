@@ -349,3 +349,27 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
     - **Cursor consistency**: Manually added `cursor-not-allowed` to custom composite inputs (Gradient Accumulation, Dropout, Keep Tokens Separator) to ensure 100% coverage of the disabled styling.
 - **Smart Toggle Persistence**:
     - **Gradient Accumulation**: When toggling this off (setting value to 1), the previous user-entered value (e.g., 4) is now cached. Re-enabling the toggle restores the value "4" instead of resetting to "1", preventing data loss.
+---
+
+## Entry: December 14, 2025
+
+### 1. Visual Stability & Regression Fixes
+- **Connection Detachment Fix**:
+    - **Problem**: A regression caused connection lines to detach from their nodes during manual resizing, pointing to the old "saved" position instead of the live edge.
+    - **Root Cause**: The `Connection` component was listening to the store's static size (updated only on drag end), while the Node was resizing visually via local state.
+    - **Solution**: Wired both `Node` and `Connection` to listen to the exact same **Shared MotionValues** from the physics engine. Created a reactive pipeline using `useTransform` -> `useSpring` in the Connection component to handle LOD and expansion logic seamlessly.
+- **LOD Pinning Logic**:
+    - **Problem**: Pinned nodes were still being forced into LOD (card view) when zooming out very far (Global Zoomout).
+    - **Fix**: Updated `lod.ts` logic to ensure the `isImmune` flag overrides the global zoom threshold. Pinned nodes now stay visible at any zoom level, behaving like true landmarks.
+- **Font Blurring**:
+    - **Problem**: Text on nodes appeared permanently blurry on some displays.
+    - **Fix**: Removed `will-change: transform` optimization which was causing browsers to rasterize the element at a low resolution.
+
+### 2. Component Standardization
+- **Universal Toggle Input**:
+    - **Refactor**: Generalized the `ToggleInput` component (previously used only for specific fields) to support both `text` and `number` types genericly.
+    - **Adoption**: Replaced ad-hoc implementations in `GeneralArgsNode` (Gradient Accumulation, Keep Tokens Separator) and `TrainingNode` (Learning Rates) with this standardized component.
+    - **Benefits**: Consistent behavior (click-to-enable, cached values) and identical styling across the entire application.
+- **Custom Select Component**:
+    - **Implementation**: Replaced native HTML `<select>` elements with a custom `Select.tsx` component.
+    - **Goal**: Eliminated the jarring "white flash" inherent to native dropdowns on dark themes and ensured the dropdown UI matches the application's premium aesthetic (Tailwind styled).

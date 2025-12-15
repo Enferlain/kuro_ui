@@ -1,54 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../lib/store';
-import { Input, Select, Toggle, FieldWrapper } from '../FormComponents';
+import { Input, Select, Toggle, FieldWrapper, ToggleInput } from '../FormComponents';
 import { NodeSeparator, NodeHeader } from '../NodeStyles';
 import { Plus, Trash2, FolderOpen, HelpCircle } from 'lucide-react';
-
-const DropoutInput = ({ label, name, value, onChange }: { label: string, name: string, value: number | undefined, onChange: (v: number | undefined) => void }) => {
-    const [localValue, setLocalValue] = useState<string>(value !== undefined ? value.toString() : '0.1');
-
-    useEffect(() => {
-        if (value !== undefined) {
-            setLocalValue(value.toString());
-        }
-    }, [value]);
-
-    return (
-        <FieldWrapper label={label} id={name}>
-            <div className="flex items-center h-[42px] border border-[#3E3B5E] rounded-sm overflow-hidden">
-                <div className="flex items-center justify-center px-3 h-full border-r border-[#3E3B5E] bg-[#181625]">
-                    <Toggle
-                        name={name}
-                        checked={value !== undefined}
-                        onChange={(e) => {
-                            if (e.target.checked) {
-                                const num = parseFloat(localValue);
-                                onChange(isNaN(num) ? 0.1 : num);
-                            } else {
-                                onChange(undefined);
-                            }
-                        }}
-                    />
-                </div>
-                <input
-                    type="number"
-                    step={0.1}
-                    value={localValue}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        setLocalValue(val);
-                        if (value !== undefined) {
-                            const num = parseFloat(val);
-                            if (!isNaN(num)) onChange(num);
-                        }
-                    }}
-                    disabled={value === undefined}
-                    className={`flex-1 px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full min-w-0 bg-[#181625] transition-opacity ${value === undefined ? 'opacity-50 cursor-not-allowed' : ''}`}
-                />
-            </div>
-        </FieldWrapper>
-    );
-};
 
 export const NetworkNode: React.FC = () => {
     const { config, updateConfig, openGemini } = useStore();
@@ -244,22 +198,28 @@ export const NetworkNode: React.FC = () => {
                         <div className="space-y-3">
                             <NodeHeader title="Regularization" />
                             <div className="grid grid-cols-3 gap-3">
-                                <DropoutInput
+                                <ToggleInput
                                     label="Network Dropout"
                                     name="network_dropout"
                                     value={config.networkDropout}
+                                    defaultValue={0.1}
+                                    step={0.1}
                                     onChange={(val) => updateConfig({ networkDropout: val })}
                                 />
-                                <DropoutInput
+                                <ToggleInput
                                     label="Rank Dropout"
                                     name="rank_dropout"
                                     value={config.rankDropout}
+                                    defaultValue={0.1}
+                                    step={0.1}
                                     onChange={(val) => updateConfig({ rankDropout: val })}
                                 />
-                                <DropoutInput
+                                <ToggleInput
                                     label="Module Dropout"
                                     name="module_dropout"
                                     value={config.moduleDropout}
+                                    defaultValue={0.1}
+                                    step={0.1}
                                     onChange={(val) => updateConfig({ moduleDropout: val })}
                                 />
                             </div>

@@ -26,7 +26,7 @@ export const usePhysicsEngine = () => {
     const engine = useRef<Matter.Engine | null>(null);
     const runner = useRef<Matter.Runner | null>(null);
     const bodies = useRef<Map<NodeId, Matter.Body>>(new Map());
-    const motionValues = useRef(new Map<NodeId, { x: MotionValue<number>, y: MotionValue<number> }>());
+    const motionValues = useRef(new Map<NodeId, { x: MotionValue<number>, y: MotionValue<number>, width: MotionValue<number>, height: MotionValue<number> }>());
     const targetSizes = useRef(new Map<NodeId, { width: number, height: number }>());
 
     // [Shiro] Constraint for dragging (The "Rubber Band" approach)
@@ -65,12 +65,16 @@ export const usePhysicsEngine = () => {
             if (!motionValues.current.has(n.id)) {
                 motionValues.current.set(n.id, {
                     x: motionValue(n.cx),
-                    y: motionValue(n.cy)
+                    y: motionValue(n.cy),
+                    width: motionValue(n.width),
+                    height: motionValue(n.height)
                 });
             } else {
                 const mv = motionValues.current.get(n.id)!;
                 mv.x.set(n.cx);
                 mv.y.set(n.cy);
+                mv.width.set(n.width);
+                mv.height.set(n.height);
             }
 
             // Initialize Target Sizes (Include Buffer)
@@ -251,6 +255,15 @@ export const usePhysicsEngine = () => {
         position?: { x: number, y: number }
     ) => {
         const body = bodies.current.get(id);
+        const mv = motionValues.current.get(id);
+
+        // [Shiro] Sync Visuals immediately to MotionValues!
+        // This ensures connections and other listeners get the new size instantly.
+        if (mv) {
+            mv.width.set(width);
+            mv.height.set(height);
+        }
+
         if (!body) return;
 
         targetSizes.current.set(id, { width: width + PHYSICS_BUFFER, height: height + PHYSICS_BUFFER });
@@ -266,6 +279,11 @@ export const usePhysicsEngine = () => {
             // This replaces the need to call onDragMove() separately during resize.
             if (position) {
                 Matter.Body.setPosition(body, position);
+                // Also update position MV
+                if (mv) {
+                    mv.x.set(position.x);
+                    mv.y.set(position.y);
+                }
             }
 
             Matter.Body.setAngle(body, 0);
@@ -310,7 +328,12 @@ export const usePhysicsEngine = () => {
 
     const getMotionValues = useCallback((id: NodeId) => {
         if (!motionValues.current.has(id)) {
-            motionValues.current.set(id, { x: motionValue(0), y: motionValue(0) });
+            motionValues.current.set(id, {
+                x: motionValue(0),
+                y: motionValue(0),
+                width: motionValue(300), // Default, will be overwritten by init or notify
+                height: motionValue(300)
+            });
         }
         return motionValues.current.get(id)!;
     }, []);

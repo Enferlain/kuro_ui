@@ -14,7 +14,7 @@ interface NodeProps {
     icon: LucideIcon;
     children: React.ReactNode;
     // Physics Props
-    motionValues: { x: MotionValue<number>, y: MotionValue<number> };
+    motionValues: { x: MotionValue<number>, y: MotionValue<number>, width: MotionValue<number>, height: MotionValue<number> };
     onDragStart: (x: number, y: number) => void;
     onDragMove: (x: number, y: number) => void;
     onDragEnd: () => void;
@@ -48,6 +48,9 @@ export const Node: React.FC<NodeProps> = React.memo(({
     const toggleMinimize = useStore((state) => state.toggleMinimize);
     const setDraggedNode = useStore((state) => state.setDraggedNode);
 
+    const isImmune = lodImmuneNodes.includes(id);
+    const isMinimized = minimizedNodes.includes(id);
+
     // [Shiro] INITIAL LOAD FIX: Add selectors for initial LOD calculation
     const scale = useStore((state) => state.scale);
     const viewportSize = useStore((state) => state.viewportSize);
@@ -62,30 +65,17 @@ export const Node: React.FC<NodeProps> = React.memo(({
     const currentWidth = nodeState?.width || 300;
     const currentHeight = nodeState?.height || 300;
 
-    // [Shiro] INITIAL LOAD FIX: Calculate LOD-aware size before initializing springs
-    // This prevents the node from initializing at full size and then shrinking.
-    const isImmune = lodImmuneNodes.includes(id);
-    const isMinimized = minimizedNodes.includes(id);
-    const initialLodState = calculateLodState({
-        scale,
-        viewportSize,
-        dimensions: { width: currentWidth, height: currentHeight },
-        isActive,
-        isImmune,
-        isMinimized,
-    });
-    const initialWidth = initialLodState.isZoomedOut ? LOD_WIDTH : currentWidth;
-    const initialHeight = initialLodState.isZoomedOut ? LOD_HEIGHT : currentHeight;
-
-    // [Shiro] JELLY FIX: Separate Source from Spring
-    // We update 'Source' immediately. 'Spring' follows 'Source'.
+    // [Shiro] JELLY FIX: Use shared maps from Physics as Source!
+    // We update 'Source' (MotionValues) immediately. 'Spring' follows 'Source'.
     // During manual resize, we use 'Source' directly to avoid lag.
-    const widthSource = useMotionValue(initialWidth);
-    const heightSource = useMotionValue(initialHeight);
+
+    // NOTE: motionValues.width/height are ALREADY initialized by usePhysicsEngine
+    // But we should ensure they start at the right spot?
+    // usePhysicsEngine initPhysics sets them.
 
     const springConfig = { stiffness: 400, damping: 30 };
-    const widthSpring = useSpring(widthSource, springConfig);
-    const heightSpring = useSpring(heightSource, springConfig);
+    const widthSpring = useSpring(motionValues.width, springConfig);
+    const heightSpring = useSpring(motionValues.height, springConfig);
 
     // The problematic useEffect that fought LOD logic has been removed.
     // The useEffect below that uses `effectiveWidth` is now the single source of truth for size updates.
@@ -101,8 +91,8 @@ export const Node: React.FC<NodeProps> = React.memo(({
         if (!isResizing) {
             // [Shiro] ANIMATION FIX: Just set the spring target!
             // The spring will handle the interpolation smoothly.
-            widthSource.set(effectiveWidth);
-            heightSource.set(effectiveHeight);
+            motionValues.width.set(effectiveWidth);
+            motionValues.height.set(effectiveHeight);
 
             // [Shiro] ANCHOR LOGIC:
             // If this node is ACTIVE (User Selected), we anchor it so it pushes others away.
@@ -111,7 +101,7 @@ export const Node: React.FC<NodeProps> = React.memo(({
             // isManual = false (Let physics handle the expansion)
             onResize(effectiveWidth, effectiveHeight, isActive, false);
         }
-    }, [effectiveWidth, effectiveHeight, onResize, isResizing, isActive, widthSource, heightSource]);
+    }, [effectiveWidth, effectiveHeight, onResize, isResizing, isActive, motionValues]);
 
     // [Shiro] JUMP FIX: If initializing as active, jump the spring immediately to avoid "expanding" animation.
     useEffect(() => {
@@ -189,11 +179,11 @@ export const Node: React.FC<NodeProps> = React.memo(({
 
         // Capture starting values
         // [Shiro] JELLY FIX: Sync source to current spring value to prevent jump
-        widthSource.set(widthSpring.get());
-        heightSource.set(heightSpring.get());
+        motionValues.width.set(widthSpring.get());
+        motionValues.height.set(heightSpring.get());
 
-        const startWidth = widthSource.get();
-        const startHeight = heightSource.get();
+        const startWidth = motionValues.width.get();
+        const startHeight = motionValues.height.get();
         const currentScale = useStore.getState().scale;
         const startCenterX = motionValues.x.get();
         const startCenterY = motionValues.y.get();
@@ -226,8 +216,8 @@ export const Node: React.FC<NodeProps> = React.memo(({
 
             // 3. Update Visuals
             // [Shiro] JELLY FIX: Update Source directly!
-            widthSource.set(desiredWidth);
-            heightSource.set(desiredHeight);
+            motionValues.width.set(desiredWidth);
+            motionValues.height.set(desiredHeight);
 
             motionValues.x.set(newCenterX);
             motionValues.y.set(newCenterY);
@@ -250,8 +240,8 @@ export const Node: React.FC<NodeProps> = React.memo(({
 
             // 5. SAVE TO STORE (Persistence) - Triggers Render
             updateNode(id, {
-                width: widthSource.get(),
-                height: heightSource.get(),
+                width: motionValues.width.get(),
+                height: motionValues.height.get(),
                 cx: motionValues.x.get(),
                 cy: motionValues.y.get()
             });
@@ -296,8 +286,8 @@ export const Node: React.FC<NodeProps> = React.memo(({
                 translateX: '-50%',
                 translateY: '-50%',
                 // If resizing, use the raw 'Source' (instant). Otherwise, use 'Spring' (smooth).
-                width: isResizing ? widthSource : widthSpring,
-                height: isResizing ? heightSource : heightSpring,
+                width: isResizing ? motionValues.width : widthSpring,
+                height: isResizing ? motionValues.height : heightSpring,
                 opacity,
                 zIndex,
                 scale: isActive || isDragging ? 1.02 : 1

@@ -38,16 +38,16 @@ References for working on the ui, based on the previous ui, can be found in trai
 - [x] Other disable fields also show the x cursor when hovered over
 - Timestep and other noise related stuff to training node
 - [x] Gradient accumulation toggle should not alter shown value
-- Check why dropdowns are white for a brief moment before style applying instead from the start
+- [x] Check why dropdowns are white for a brief moment before style applying instead from the start
+- [x] Permanent font scaling instead of intermittent updates that look blurry? or something else?
+- [x] low prio Optimizer args order: maybe reorder them so entry fields go first and toggles last in training node
+- [x] For the dynamic Optimizer args, make it so if a toggle would appear after a field on the same row, it gets placed on the next row
 - panning goes from 240 fps to 100~ why?
 - Enforce canvas bounds so nodes physically can't move outside of them
-- Permanent font scaling instead of intermittent updates that look blurry? or something else?
 - Expansion animation doesn't invoke proper collision physics
 - Check why physics feel glued for nearby nodes when expanding
 - If collision happens should force be also applied to the initiating node? (something to think about)
 - minimap for canvas, legend for buttons and stuff (maybe the nav bar could be clicked or replaced to show them)
 - Tooltips (still need to think about how to query flags)
-- [x] low prio Optimizer args order: maybe reorder them so entry fields go first and toggles last in training node
-- [x] For the dynamic Optimizer args, make it so if a toggle would appear after a field on the same row, it gets placed on the next row
 - Think about how logging will work
 - other nodes

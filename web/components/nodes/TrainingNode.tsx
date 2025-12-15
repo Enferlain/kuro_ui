@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useStore } from '../../lib/store';
-import { Input, Select, Toggle, FieldWrapper } from '../FormComponents';
+import { Input, Select, Toggle, FieldWrapper, ToggleInput } from '../FormComponents';
 import { NodeSeparator, NodeHeader } from '../NodeStyles';
 import { OPTIMIZER_SCHEMAS, SCHEDULER_OPTIONS, OptimizerArgDef } from '../../lib/optimizer-schema';
 import { HelpCircle } from 'lucide-react';
@@ -139,21 +139,19 @@ export const TrainingNode: React.FC = () => {
                         value={config.learningRate}
                         onChange={(e) => updateConfig({ learningRate: parseFloat(e.target.value) })}
                     />
-                    <Input
+                    <ToggleInput
                         label="Unet Learning Rate"
                         name="unet_lr"
-                        type="number"
-                        step="0.0001"
+                        defaultValue={0.0001}
                         value={config.unetLr}
-                        onChange={(e) => updateConfig({ unetLr: parseFloat(e.target.value) })}
+                        onChange={(val) => updateConfig({ unetLr: val })}
                     />
-                    <Input
+                    <ToggleInput
                         label="Text Encoder LR"
                         name="text_encoder_lr"
-                        type="number"
-                        step="0.0001"
+                        defaultValue={0.00005}
                         value={config.textEncoderLr}
-                        onChange={(e) => updateConfig({ textEncoderLr: parseFloat(e.target.value) })}
+                        onChange={(val) => updateConfig({ textEncoderLr: val })}
                     />
                 </div>
             </div>

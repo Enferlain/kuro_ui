@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../../lib/store';
-import { Input, Select, Toggle, TextArea, FieldWrapper } from '../FormComponents';
+import { Input, Select, Toggle, TextArea, FieldWrapper, ToggleInput } from '../FormComponents';
 import { NodeSeparator, NodeHeader } from '../NodeStyles';
 import { HelpCircle, FolderOpen } from 'lucide-react';
 
@@ -324,24 +324,15 @@ export const GeneralArgsNode: React.FC = () => {
                     </FieldWrapper>
 
                     {/* Keep Tokens Separator - Moved here for 3x3 grid */}
-                    <FieldWrapper label="Keep Tokens Separator" id="keep_tokens_separator_enable">
-                        <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm overflow-hidden">
-                            <div className="flex items-center justify-center px-3 h-full border-r border-[#3E3B5E]">
-                                <Toggle
-                                    name="keep_tokens_separator_enable"
-                                    checked={!!config.keepTokensSeparator}
-                                    onChange={(e) => updateConfig({ keepTokensSeparator: e.target.checked ? '|||' : '' })}
-                                />
-                            </div>
-                            <input
-                                value={config.keepTokensSeparator}
-                                onChange={(e) => updateConfig({ keepTokensSeparator: e.target.value })}
-                                disabled={!config.keepTokensSeparator}
-                                className={`flex-1 bg-transparent px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full min-w-0 ${!config.keepTokensSeparator ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                placeholder="Separator"
-                            />
-                        </div>
-                    </FieldWrapper>
+                    <ToggleInput
+                        label="Keep Tokens Separator"
+                        name="keep_tokens_separator_enable"
+                        value={config.keepTokensSeparator}
+                        defaultValue="|||"
+                        type="text"
+                        placeholder="Separator"
+                        onChange={(val) => updateConfig({ keepTokensSeparator: val ?? '' })}
+                    />
                 </div>
             </div>
 
@@ -384,32 +375,17 @@ export const GeneralArgsNode: React.FC = () => {
                             </div>
                         </FieldWrapper>
 
-                        <FieldWrapper label="Gradient Accumulation" id="grad_accumulation_enable">
-                            <div className="flex items-center h-[42px] border border-[#3E3B5E] rounded-sm overflow-hidden">
-                                <div className="flex items-center justify-center px-3 h-full border-r border-[#3E3B5E] bg-[#181625]">
-                                    <Toggle
-                                        name="grad_accumulation_enable"
-                                        checked={gradAccumEnabled}
-                                        onChange={(e) => {
-                                            setGradAccumEnabled(e.target.checked);
-                                            if (e.target.checked) {
-                                                updateConfig({ gradientAccumulation: cachedGradAccum });
-                                            } else {
-                                                setCachedGradAccum(config.gradientAccumulation > 1 ? config.gradientAccumulation : cachedGradAccum);
-                                                updateConfig({ gradientAccumulation: 1 });
-                                            }
-                                        }}
-                                    />
-                                </div>
-                                <input
-                                    type="number"
-                                    value={gradAccumEnabled ? config.gradientAccumulation : cachedGradAccum}
-                                    onChange={(e) => updateConfig({ gradientAccumulation: parseInt(e.target.value) })}
-                                    disabled={!gradAccumEnabled}
-                                    className={`flex-1 px-3 py-2 text-sm text-[#E2E0EC] placeholder-[#5B5680] focus:outline-none font-mono h-full bg-[#181625] transition-opacity duration-200 ${!gradAccumEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                />
-                            </div>
-                        </FieldWrapper>
+                        <ToggleInput
+                            label="Gradient Accumulation"
+                            name="grad_accumulation_enable"
+                            value={config.gradientAccumulation > 1 ? config.gradientAccumulation : undefined}
+                            defaultValue={cachedGradAccum}
+                            step={1}
+                            onChange={(val) => {
+                                updateConfig({ gradientAccumulation: val ?? 1 });
+                                if (val !== undefined) setCachedGradAccum(val);
+                            }}
+                        />
                     </div>
                 </div>
             </div>

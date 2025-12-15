@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-12-14]
+
+### Changed
+- **LOD Logic**: Pinned nodes (`isImmune`) now correctly ignore the global zoom-out threshold, remaining visible at any distance.
+- **Toggle Inputs**: Refactored `ToggleInput` to be a generic, shared component supporting both text and number types.
+- **Node Inputs**: Applied the new `ToggleInput` to Learning Rates, Gradient Accumulation, and Keep Tokens Separator for consistent behavior.
+
+### Fixed
+- **Connection Detachment**: Fixed a regression where connection lines would detach and point to the wrong location while resizing a node.
+- **Connection Animation**: Updated `Connection` component to use a reactive `useSpring` pipeline on shared `MotionValues`, preventing crashes and ensuring 60fps synchronization with node resizing.
+- **Visual Glitches**:
+    - **Font Blurring**: Removed `will-change: transform` from nodes to fix permanent font blurring issues on some screens.
+    - **Dropdown Flash**: Implemented a custom `Select` component to eliminate the white flash seen with native browser selects.
+
 ## [2025-12-07]
 
 ### Changed
