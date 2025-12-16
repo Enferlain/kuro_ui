@@ -426,3 +426,32 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
     - **Mutual Exclusivity**: Implemented logic to ensure only one control menu (Mode, Zoom, Search) can be open at a time.
     - **Zoom Menu**: Fixed centering logic (`-translate-x-1/2`) to ensure the popover is perfectly aligned with its trigger button.
     - **Search Overlay**: Refactored the Search menu to appear as a full-width overlay on top of the control bar.
+
+---
+
+## Entry: December 17, 2025
+
+### 1. Dynamic Search Indexing
+- **Dynamic Architecture**: Refactored the search system to move away from hardcoded search terms.
+    - **`getSearchIndex()`**: Created a utility in `search-definitions.ts` that dynamically generates the search index by parsing:
+        1. Static field definitions (`field-definitions.ts`) for General, Data, and Network nodes.
+        2. Dynamic optimizer schemas `optimizer-schema.ts` for the Training node.
+    - **Benefit**: As new optimizers or fields are added, they are automatically indexed without manual updates.
+
+### 2. Context-Aware Search Intelligence
+- **Problem**: Searching for generic terms like "Learning Rate" would return results for every single optimizer (AdamW, AdaBelief, etc.), clustering the results list with irrelevant options.
+- **Solution**: Implemented context-aware filtering.
+    - **Mechanism**: The search component (`CanvasControls.tsx`) now observes the global `optimizerType` state.
+    - **Filtering**: Search results for optimizer-specific arguments are now tagged with `validOptimizers`. The search list automatically filters out arguments that don't apply to the currently selected optimizer.
+    - **Result**: Searching "Learning Rate" now only shows the "Main Learning Rate" and the specific learning rate (e.g., "Prodigy Learning Rate") for the *active* optimizer, significantly cleaning up the UX.
+
+### 3. Canvas Controls Interaction Fixes
+- **Search Bar Freezing**:
+    - **Issue**: Clicking the search input would cause it to instantly lose focus.
+    - **Fix**: Added `e.stopPropagation()` to the search interactions. This prevents the click from bubbling up to the `Canvas` component, which was interpreting it as a "canvas click" and forcing a blur.
+- **Accidental Zooming**:
+    - **Issue**: Converting the mouse wheel inside the search results list would zoom the entire canvas.
+    - **Fix**: Added `onWheel={(e) => e.stopPropagation()}` to the search results container, isolating the scroll interaction.
+- **Click-Away Behavior**:
+    - **Implementation**: Added a global `pointerdown` listener to automatically close open menus (Search, Mode, Zoom) when the user clicks anywhere else (canvas background, nodes, etc.).
+    - **Detail**: Used `pointerdown` instead of `mousedown` to correctly intercept events that the Canvas's drag system might otherwise consume.

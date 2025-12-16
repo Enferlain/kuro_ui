@@ -3,7 +3,8 @@ import { useStore } from '../lib/store';
 import { Map, MapPinOff, Maximize, ChevronDown, ZoomIn, ZoomOut, Search, MousePointer2, Hand, Check } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CANVAS_BOUNDS } from '../lib/constants';
-import { SEARCH_INDEX, SearchItem } from './NodeRegistry';
+import { SEARCH_INDEX } from './NodeRegistry';
+import { SearchItem } from '../lib/search-definitions';
 import { CornerDownRight, X } from 'lucide-react';
 
 interface CanvasControlsProps {
@@ -85,17 +86,32 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({ onReset }) => {
         }
     }, [isSearchOpen]);
 
+    // [Shiro] Context for Filtering
+    const config = useStore((state) => state.config);
+
     useEffect(() => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
             return;
         }
-        const results = SEARCH_INDEX.filter(item =>
-            item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.id.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        const lowerQuery = searchQuery.toLowerCase();
+
+        const results = SEARCH_INDEX.filter(item => {
+            // [Shiro] Context Check: If item relies on specific optimizers, check if current one is valid
+            if (item.validOptimizers) {
+                if (!item.validOptimizers.includes(config.optimizerType)) {
+                    return false;
+                }
+            }
+
+            return (
+                item.label.toLowerCase().includes(lowerQuery) ||
+                item.id.toLowerCase().includes(lowerQuery) ||
+                item.keywords?.some(k => k.toLowerCase().includes(lowerQuery))
+            );
+        });
         setSearchResults(results);
-    }, [searchQuery]);
+    }, [searchQuery, config.optimizerType]); // Re-run when query OR optimizer changes
 
     const handleSearchResultClick = (item: SearchItem) => {
         const node = nodes[item.nodeId];
@@ -209,8 +225,32 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({ onReset }) => {
         }
     };
 
+    // [Shiro] Click Away Listener
+    const controlsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent | TouchEvent | PointerEvent) => {
+            // Check if click is outside ref
+            if (controlsRef.current && !controlsRef.current.contains(event.target as Node)) {
+                setActiveMenu(null);
+                setSearchOpen(false);
+            }
+        };
+
+        // [Shiro] Use pointerdown because Canvas calls preventDefault() which blocks mousedown
+        document.addEventListener('pointerdown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('pointerdown', handleClickOutside);
+        };
+    }, [setSearchOpen]);
+
     return (
-        <div className="flex flex-col items-end gap-2 pointer-events-auto select-none relative z-[60]">
+        <div
+            ref={controlsRef}
+            className="flex flex-col items-end gap-2 pointer-events-auto select-none relative z-[60]"
+            onPointerDown={(e) => e.stopPropagation()}
+        >
 
             {/* unified Control Bar */}
             <div className="w-full flex items-center justify-between bg-node-bg/90 backdrop-blur-md border border-node-border rounded-lg shadow-2xl p-1 h-10 relative">
@@ -239,10 +279,13 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({ onReset }) => {
                                 </button>
                             </div>
                             {searchResults.length > 0 ? (
-                                <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                                    {searchResults.map((item) => (
+                                <div
+                                    className="max-h-48 overflow-y-auto custom-scrollbar"
+                                    onWheel={(e) => e.stopPropagation()}
+                                >
+                                    {searchResults.map((item, index) => (
                                         <div
-                                            key={item.id}
+                                            key={`${item.id}-${index}`}
                                             className="px-3 py-2 hover:bg-node-border/50 cursor-pointer flex items-center justify-between group"
                                             onClick={() => handleSearchResultClick(item)}
                                         >

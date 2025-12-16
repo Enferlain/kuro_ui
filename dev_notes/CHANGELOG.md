@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-12-17]
+
+### Added
+- The search functionality is no longer hardcoded. The index is now generated dynamically from field definitions (`field-definitions.ts`) and optimizer schemas, ensuring new fields are automatically searchable.
+- Search results for optimizer arguments (e.g., "Main Learning Rate") are now filtered based on the currently selected `Optimizer Type`. Users will only see relevant settings, reducing clutter.
+- Clicking anywhere on the canvas or outside the controls now automatically closes all open menus (Search, Mode, Zoom).
+
+### Fixed
+- Fixed an issue where the search input would "freeze" (lose focus) when clicked due to canvas event interference. Added `stopPropagation` to isolate search interactions.
+- Fixed a bug where scrolling inside the search results list would unintentionally zoom the canvas.
+- Adjusted the "Fit View" button size to match the standard dimensions (32px), resolving visual alignment issues in the control bar.
+- Fixed unique key generation for search results to prevent React warnings.
+
 ## [2025-12-16]
 
 ### Added
@@ -192,7 +205,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Node background color (corrected to #232034)
 - Performance optimization for canvas rendering
 - Store subscription optimization for connection lines
-
----
-
-For detailed technical information, see [PROGRESS_LOG.md](./PROGRESS_LOG.md).

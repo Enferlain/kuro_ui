@@ -3,6 +3,7 @@ import { useStore } from '../../lib/store';
 import { Input, Select, Toggle, FieldWrapper, ToggleInput } from '../FormComponents';
 import { NodeSeparator, NodeHeader } from '../NodeStyles';
 import { OPTIMIZER_SCHEMAS, SCHEDULER_OPTIONS, OptimizerArgDef } from '../../lib/optimizer-schema';
+import { TRAINING_ARGS_DEFS } from '../../lib/field-definitions';
 import { HelpCircle } from 'lucide-react';
 
 export const TrainingNode: React.FC = () => {
@@ -95,7 +96,7 @@ export const TrainingNode: React.FC = () => {
             <div className="space-y-3">
                 <NodeHeader title="Optimizer" />
                 <Select
-                    label="Optimizer Type"
+                    label={TRAINING_ARGS_DEFS.optimizer_type.label}
                     name="optimizer_type"
                     value={config.optimizerType}
                     onChange={(e) => {
@@ -132,7 +133,7 @@ export const TrainingNode: React.FC = () => {
                 <NodeHeader title="Learning Rates" />
                 <div className="grid grid-cols-2 gap-3">
                     <Input
-                        label="Main Learning Rate"
+                        label={TRAINING_ARGS_DEFS.learning_rate.label}
                         name="learning_rate"
                         type="number"
                         step="0.0001"
@@ -140,14 +141,14 @@ export const TrainingNode: React.FC = () => {
                         onChange={(e) => updateConfig({ learningRate: parseFloat(e.target.value) })}
                     />
                     <ToggleInput
-                        label="Unet Learning Rate"
+                        label={TRAINING_ARGS_DEFS.unet_lr.label}
                         name="unet_lr"
                         defaultValue={0.0001}
                         value={config.unetLr}
                         onChange={(val) => updateConfig({ unetLr: val })}
                     />
                     <ToggleInput
-                        label="Text Encoder LR"
+                        label={TRAINING_ARGS_DEFS.text_encoder_lr.label}
                         name="text_encoder_lr"
                         defaultValue={0.00005}
                         value={config.textEncoderLr}
@@ -162,7 +163,7 @@ export const TrainingNode: React.FC = () => {
             <div className="space-y-3">
                 <NodeHeader title="Scheduler" />
                 <Select
-                    label="LR Scheduler"
+                    label={TRAINING_ARGS_DEFS.lr_scheduler.label}
                     name="lr_scheduler"
                     value={config.lrScheduler}
                     onChange={(e) => updateConfig({ lrScheduler: e.target.value as any })}
@@ -173,7 +174,7 @@ export const TrainingNode: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                     {/* We can add specific scheduler args here later if needed, e.g. warmup_ratio */}
                     <Input
-                        label="Warmup Ratio"
+                        label={TRAINING_ARGS_DEFS.warmup_ratio.label}
                         name="warmup_ratio"
                         type="number"
                         step="0.01"
@@ -186,7 +187,7 @@ export const TrainingNode: React.FC = () => {
                         onChange={(e) => handleArgChange('warmup_ratio', parseFloat(e.target.value))}
                     />
                     <Input
-                        label="Num Cycles"
+                        label={TRAINING_ARGS_DEFS.num_cycles.label}
                         name="num_cycles"
                         type="number"
                         step="1"

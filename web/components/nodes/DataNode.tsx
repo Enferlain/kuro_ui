@@ -4,6 +4,7 @@ import { Input, Select, Toggle, FieldWrapper } from '../FormComponents';
 import { NodeHeader } from '../NodeStyles';
 import { FolderOpen, Plus, Trash2, ChevronDown, ChevronRight, ChevronUp, Pencil } from 'lucide-react';
 import { SubsetConfig } from '../../lib/types';
+import { DATA_ARGS_DEFS } from '../../lib/field-definitions';
 
 // TODO: query to flags
 
@@ -79,7 +80,7 @@ const SubsetCard: React.FC<{
                     <div className="space-y-3">
                         <div className="relative group cursor-pointer">
                             <Input
-                                label="Input Image Directory"
+                                label={DATA_ARGS_DEFS.subset_image_dir.label}
                                 name={`subset_${subset.id}_image_dir`}
                                 value={subset.imageDir}
                                 onChange={(e) => onUpdate(subset.id, { imageDir: e.target.value })}
@@ -88,7 +89,7 @@ const SubsetCard: React.FC<{
                         </div>
                         <div className="relative group cursor-pointer">
                             <Input
-                                label="Target Image Directory"
+                                label={DATA_ARGS_DEFS.subset_target_image_dir.label}
                                 name={`subset_${subset.id}_target_image_dir`}
                                 value={subset.targetImageDir}
                                 onChange={(e) => onUpdate(subset.id, { targetImageDir: e.target.value })}
@@ -97,7 +98,7 @@ const SubsetCard: React.FC<{
                         </div>
                         <div className="relative group cursor-pointer">
                             <Input
-                                label="Masked Image Directory"
+                                label={DATA_ARGS_DEFS.subset_masked_image_dir.label}
                                 name={`subset_${subset.id}_masked_image_dir`}
                                 value={subset.maskedImageDir}
                                 onChange={(e) => onUpdate(subset.id, { maskedImageDir: e.target.value })}
@@ -109,14 +110,14 @@ const SubsetCard: React.FC<{
                     {/* Basic Fields */}
                     <div className="grid grid-cols-2 gap-3">
                         <Input
-                            label="Repeats"
+                            label={DATA_ARGS_DEFS.subset_repeats.label}
                             name={`subset_${subset.id}_repeats`}
                             type="number"
                             value={subset.numRepeats}
                             onChange={(e) => onUpdate(subset.id, { numRepeats: parseInt(e.target.value) || 1 })}
                         />
                         <Input
-                            label="Keep First n Tokens"
+                            label={DATA_ARGS_DEFS.subset_keep_tokens.label}
                             name={`subset_${subset.id}_keep_tokens`}
                             type="number"
                             value={subset.keepTokens}
@@ -124,13 +125,13 @@ const SubsetCard: React.FC<{
                             className={!!globalKeepTokensSeparator ? 'opacity-50 cursor-not-allowed' : ''}
                         />
                         <Input
-                            label="Caption Extension"
+                            label={DATA_ARGS_DEFS.subset_caption_ext.label}
                             name={`subset_${subset.id}_caption_ext`}
                             value={subset.captionExtension}
                             onChange={(e) => onUpdate(subset.id, { captionExtension: e.target.value })}
                         />
                         <Input
-                            label="Random Crop Padding %"
+                            label={DATA_ARGS_DEFS.subset_crop_padding.label}
                             name={`subset_${subset.id}_crop_padding`}
                             type="number"
                             value={subset.randomCropPadding}
@@ -141,37 +142,37 @@ const SubsetCard: React.FC<{
                     {/* Toggles Grid */}
                     <div className="grid grid-cols-2 gap-x-2 gap-y-2">
                         <Toggle
-                            label="Shuffle Captions"
+                            label={DATA_ARGS_DEFS.subset_shuffle_captions.label}
                             name={`subset_${subset.id}_shuffle_captions`}
                             checked={subset.shuffleCaptions}
                             onChange={(e) => onUpdate(subset.id, { shuffleCaptions: e.target.checked })}
                         />
                         <Toggle
-                            label="Flip Augment"
+                            label={DATA_ARGS_DEFS.subset_flip_augment.label}
                             name={`subset_${subset.id}_flip_augment`}
                             checked={subset.flipAugment}
                             onChange={(e) => onUpdate(subset.id, { flipAugment: e.target.checked })}
                         />
                         <Toggle
-                            label="Color Augment"
+                            label={DATA_ARGS_DEFS.subset_color_augment.label}
                             name={`subset_${subset.id}_color_augment`}
                             checked={subset.colorAugment}
                             onChange={(e) => onUpdate(subset.id, { colorAugment: e.target.checked })}
                         />
                         <Toggle
-                            label="Random Crop"
+                            label={DATA_ARGS_DEFS.subset_random_crop.label}
                             name={`subset_${subset.id}_random_crop`}
                             checked={subset.randomCrop}
                             onChange={(e) => onUpdate(subset.id, { randomCrop: e.target.checked })}
                         />
                         <Toggle
-                            label="Reg Images"
+                            label={DATA_ARGS_DEFS.subset_reg_images.label}
                             name={`subset_${subset.id}_reg_images`}
                             checked={subset.isRegImage}
                             onChange={(e) => onUpdate(subset.id, { isRegImage: e.target.checked })}
                         />
                         <Toggle
-                            label="Val Images"
+                            label={DATA_ARGS_DEFS.subset_val_images.label}
                             name={`subset_${subset.id}_val_images`}
                             checked={subset.isValImage}
                             onChange={(e) => onUpdate(subset.id, { isValImage: e.target.checked })}
@@ -196,7 +197,7 @@ const SubsetCard: React.FC<{
                                 {/* Face Crop */}
                                 <div className="space-y-2">
                                     <Toggle
-                                        label="Face Crop"
+                                        label={DATA_ARGS_DEFS.subset_face_crop.label}
                                         name={`subset_${subset.id}_face_crop`}
                                         checked={subset.faceCrop}
                                         onChange={(e) => onUpdate(subset.id, { faceCrop: e.target.checked })}
@@ -224,7 +225,7 @@ const SubsetCard: React.FC<{
                                 {/* Caption Dropout */}
                                 <div className="space-y-2">
                                     <Toggle
-                                        label="Caption Dropout"
+                                        label={DATA_ARGS_DEFS.subset_caption_dropout.label}
                                         name={`subset_${subset.id}_caption_dropout`}
                                         checked={subset.captionDropout}
                                         onChange={(e) => onUpdate(subset.id, { captionDropout: e.target.checked })}
@@ -262,7 +263,7 @@ const SubsetCard: React.FC<{
                                 {/* Token Warmup */}
                                 <div className="space-y-2">
                                     <Toggle
-                                        label="Token Warmup"
+                                        label={DATA_ARGS_DEFS.subset_token_warmup.label}
                                         name={`subset_${subset.id}_token_warmup`}
                                         checked={subset.tokenWarmup}
                                         onChange={(e) => onUpdate(subset.id, { tokenWarmup: e.target.checked })}
@@ -291,7 +292,7 @@ const SubsetCard: React.FC<{
                                 {/* Caption Shuffle */}
                                 <div className="space-y-2">
                                     <Toggle
-                                        label="Caption Shuffle Modifiers"
+                                        label={DATA_ARGS_DEFS.subset_caption_shuffle_modifiers.label}
                                         name={`subset_${subset.id}_caption_shuffle_modifiers`}
                                         checked={subset.captionShuffleModifiers}
                                         onChange={(e) => onUpdate(subset.id, { captionShuffleModifiers: e.target.checked })}

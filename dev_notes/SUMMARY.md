@@ -47,7 +47,7 @@ References for working on the ui, based on the previous ui, can be found in trai
 - Expansion animation doesn't invoke proper collision physics
 - Check why physics feel glued for nearby nodes when expanding
 - If collision happens should force be also applied to the initiating node? (something to think about)
-- minimap for canvas, legend for buttons and stuff (maybe the nav bar could be clicked or replaced to show them)
+ [x] minimap for canvas, legend for buttons and stuff (maybe the nav bar could be clicked or replaced to show them)
 - Tooltips (still need to think about how to query flags)
 - Instead of hardcoded search terms in noderegistry, register every setting type title
 - Think about how logging will work

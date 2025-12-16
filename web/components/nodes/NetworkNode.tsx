@@ -3,6 +3,7 @@ import { useStore } from '../../lib/store';
 import { Input, Select, Toggle, FieldWrapper, ToggleInput } from '../FormComponents';
 import { NodeSeparator, NodeHeader } from '../NodeStyles';
 import { Plus, Trash2, FolderOpen, HelpCircle } from 'lucide-react';
+import { NETWORK_ARGS_DEFS } from '../../lib/field-definitions';
 
 export const NetworkNode: React.FC = () => {
     const { config, updateConfig, openGemini } = useStore();
@@ -68,7 +69,7 @@ export const NetworkNode: React.FC = () => {
                         <div className="space-y-3">
                             <NodeHeader title="Network Selection" />
                             <Select
-                                label="Network Algo"
+                                label={NETWORK_ARGS_DEFS.network_algo.label}
                                 name="network_algo"
                                 value={
                                     config.networkAlgo === 'locon'
@@ -112,7 +113,7 @@ export const NetworkNode: React.FC = () => {
                             {/* Preset Field - Always visible but disabled for LoRA (Kohya) */}
                             <div className={`relative group cursor-pointer transition-opacity duration-200 ${config.networkAlgo === 'lora' ? 'opacity-50' : ''}`}>
                                 <Input
-                                    label="LyCORIS Preset"
+                                    label={NETWORK_ARGS_DEFS.network_preset.label}
                                     name="network_preset"
                                     value={config.networkPreset || ''}
                                     onChange={(e) => updateConfig({ networkPreset: e.target.value })}
@@ -154,14 +155,14 @@ export const NetworkNode: React.FC = () => {
                                 <>
                                     <div className="grid grid-cols-2 gap-3">
                                         <Input
-                                            label="Network Dim"
+                                            label={NETWORK_ARGS_DEFS.network_dim.label}
                                             name="network_dim"
                                             type="number"
                                             value={config.networkDim || 32}
                                             onChange={(e) => updateConfig({ networkDim: parseInt(e.target.value) })}
                                         />
                                         <Input
-                                            label="Network Alpha"
+                                            label={NETWORK_ARGS_DEFS.network_alpha.label}
                                             name="network_alpha"
                                             type="number"
                                             value={config.networkAlpha || 16}
@@ -173,14 +174,14 @@ export const NetworkNode: React.FC = () => {
                                     {(!['lora', 'diag-oft', 'boft'].includes(config.networkAlgo)) && (
                                         <div className="grid grid-cols-2 gap-3">
                                             <Input
-                                                label="Conv Dim"
+                                                label={NETWORK_ARGS_DEFS.network_conv_dim.label}
                                                 name="network_conv_dim"
                                                 type="number"
                                                 value={config.networkConvDim || 32}
                                                 onChange={(e) => updateConfig({ networkConvDim: parseInt(e.target.value) })}
                                             />
                                             <Input
-                                                label="Conv Alpha"
+                                                label={NETWORK_ARGS_DEFS.network_conv_alpha.label}
                                                 name="network_conv_alpha"
                                                 type="number"
                                                 value={config.networkConvAlpha || 16}
@@ -199,7 +200,7 @@ export const NetworkNode: React.FC = () => {
                             <NodeHeader title="Regularization" />
                             <div className="grid grid-cols-3 gap-3">
                                 <ToggleInput
-                                    label="Network Dropout"
+                                    label={NETWORK_ARGS_DEFS.network_dropout.label}
                                     name="network_dropout"
                                     value={config.networkDropout}
                                     defaultValue={0.1}
@@ -207,7 +208,7 @@ export const NetworkNode: React.FC = () => {
                                     onChange={(val) => updateConfig({ networkDropout: val })}
                                 />
                                 <ToggleInput
-                                    label="Rank Dropout"
+                                    label={NETWORK_ARGS_DEFS.rank_dropout.label}
                                     name="rank_dropout"
                                     value={config.rankDropout}
                                     defaultValue={0.1}
@@ -215,7 +216,7 @@ export const NetworkNode: React.FC = () => {
                                     onChange={(val) => updateConfig({ rankDropout: val })}
                                 />
                                 <ToggleInput
-                                    label="Module Dropout"
+                                    label={NETWORK_ARGS_DEFS.module_dropout.label}
                                     name="module_dropout"
                                     value={config.moduleDropout}
                                     defaultValue={0.1}
@@ -236,7 +237,7 @@ export const NetworkNode: React.FC = () => {
                                     {/* Block Size */}
                                     {(['dylora', 'diag-oft', 'boft'].includes(config.networkAlgo)) && (
                                         <Input
-                                            label="Block Size"
+                                            label={NETWORK_ARGS_DEFS.network_block_size.label}
                                             name="network_block_size"
                                             type="number"
                                             value={config.networkBlockSize || 4}
@@ -248,7 +249,7 @@ export const NetworkNode: React.FC = () => {
                                     {config.networkAlgo === 'lokr' && (
                                         <div className={`transition-opacity duration-200 ${config.networkLoKrFullMatrix ? 'opacity-50' : ''}`}>
                                             <Input
-                                                label="Factor"
+                                                label={NETWORK_ARGS_DEFS.network_lokr_factor.label}
                                                 name="network_lokr_factor"
                                                 type="number"
                                                 value={config.networkLoKrFactor ?? -1}
@@ -264,7 +265,7 @@ export const NetworkNode: React.FC = () => {
 
                                     {/* DIAG-OFT / BOFT - Constraint (Toggle + Input) */}
                                     {['diag-oft', 'boft'].includes(config.networkAlgo) && (
-                                        <FieldWrapper label="Constraint" id="network_constraint_enabled">
+                                        <FieldWrapper label={NETWORK_ARGS_DEFS.network_constraint_enabled.label} id="network_constraint_enabled">
                                             <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm overflow-hidden">
                                                 <div className="flex items-center justify-center px-3 h-full border-r border-[#3E3B5E]">
                                                     <Toggle
@@ -294,19 +295,19 @@ export const NetworkNode: React.FC = () => {
                                     {config.networkAlgo === 'lokr' && (
                                         <>
                                             <Toggle
-                                                label="Full Matrix"
+                                                label={NETWORK_ARGS_DEFS.network_lokr_full_matrix.label}
                                                 name="network_lokr_full_matrix"
                                                 checked={config.networkLoKrFullMatrix}
                                                 onChange={(e) => updateConfig({ networkLoKrFullMatrix: e.target.checked })}
                                             />
                                             <Toggle
-                                                label="Unbalanced Factorization"
+                                                label={NETWORK_ARGS_DEFS.network_lokr_unbalanced.label}
                                                 name="network_lokr_unbalanced"
                                                 checked={config.networkLoKrUnbalancedFactorization}
                                                 onChange={(e) => updateConfig({ networkLoKrUnbalancedFactorization: e.target.checked })}
                                             />
                                             <Toggle
-                                                label="Decompose Both"
+                                                label={NETWORK_ARGS_DEFS.network_lokr_decompose_both.label}
                                                 name="network_lokr_decompose_both"
                                                 checked={config.networkLoKrDecomposeBoth}
                                                 onChange={(e) => updateConfig({ networkLoKrDecomposeBoth: e.target.checked })}
@@ -318,7 +319,7 @@ export const NetworkNode: React.FC = () => {
                                     {((config.networkAlgo === 'locon' && config.networkLoConType === 'lycoris') ||
                                         ['loha', 'lokr', 'abba'].includes(config.networkAlgo)) && (
                                             <Toggle
-                                                label="Weight Decomposition"
+                                                label={NETWORK_ARGS_DEFS.network_weight_decomposition.label}
                                                 name="network_weight_decomposition"
                                                 checked={config.networkWeightDecomposition}
                                                 onChange={(e) => {
@@ -335,7 +336,7 @@ export const NetworkNode: React.FC = () => {
                                     {((config.networkAlgo === 'locon' && config.networkLoConType === 'lycoris') ||
                                         ['loha', 'lokr', 'abba'].includes(config.networkAlgo)) && (
                                             <Toggle
-                                                label="WD on Output"
+                                                label={NETWORK_ARGS_DEFS.network_wd_on_output.label}
                                                 name="network_wd_on_output"
                                                 checked={config.networkWdOnOutput}
                                                 onChange={(e) => {
@@ -352,7 +353,7 @@ export const NetworkNode: React.FC = () => {
                                     {((config.networkAlgo === 'locon' && config.networkLoConType === 'lycoris') ||
                                         ['loha', 'lokr', 'glora', 'glora-ex'].includes(config.networkAlgo)) && (
                                             <Toggle
-                                                label="Tucker Decomposition"
+                                                label={NETWORK_ARGS_DEFS.network_tucker_decomposition.label}
                                                 name="network_tucker_decomposition"
                                                 checked={config.networkTuckerDecomposition}
                                                 onChange={(e) => updateConfig({ networkTuckerDecomposition: e.target.checked })}
@@ -363,7 +364,7 @@ export const NetworkNode: React.FC = () => {
                                     {((config.networkAlgo === 'locon' && config.networkLoConType === 'lycoris') ||
                                         ['lokr', 'glora', 'glora-ex'].includes(config.networkAlgo)) && (
                                             <Toggle
-                                                label="Orthogonalize"
+                                                label={NETWORK_ARGS_DEFS.network_orthogonalize.label}
                                                 name="network_orthogonalize"
                                                 checked={config.networkOrthogonalize}
                                                 onChange={(e) => updateConfig({ networkOrthogonalize: e.target.checked })}
@@ -374,7 +375,7 @@ export const NetworkNode: React.FC = () => {
                                     {((config.networkAlgo === 'locon' && config.networkLoConType === 'lycoris') ||
                                         ['loha', 'lokr', 'glora', 'glora-ex'].includes(config.networkAlgo)) && (
                                             <Toggle
-                                                label="Rank Stabilized"
+                                                label={NETWORK_ARGS_DEFS.network_rank_stabilized.label}
                                                 name="network_rank_stabilized"
                                                 checked={config.networkRankStabilized}
                                                 onChange={(e) => updateConfig({ networkRankStabilized: e.target.checked })}
@@ -384,7 +385,7 @@ export const NetworkNode: React.FC = () => {
                                     {/* IA3 - Train on Input */}
                                     {config.networkAlgo === 'ia3' && (
                                         <Toggle
-                                            label="Train on Input"
+                                            label={NETWORK_ARGS_DEFS.network_train_on_input.label}
                                             name="network_train_on_input"
                                             checked={config.networkTrainOnInput}
                                             onChange={(e) => updateConfig({ networkTrainOnInput: e.target.checked })}
@@ -394,7 +395,7 @@ export const NetworkNode: React.FC = () => {
                                     {/* DIAG-OFT / BOFT - Rescaled */}
                                     {['diag-oft', 'boft'].includes(config.networkAlgo) && (
                                         <Toggle
-                                            label="Rescaled"
+                                            label={NETWORK_ARGS_DEFS.network_rescaled.label}
                                             name="network_rescaled"
                                             checked={config.networkRescaled}
                                             onChange={(e) => updateConfig({ networkRescaled: e.target.checked })}
@@ -407,7 +408,7 @@ export const NetworkNode: React.FC = () => {
                                     {((config.networkAlgo === 'locon' && config.networkLoConType === 'lycoris') ||
                                         ['loha', 'lokr', 'dylora', 'diag-oft', 'boft', 'glora', 'glora-ex', 'abba', 'full'].includes(config.networkAlgo)) && (
                                             <Toggle
-                                                label="Train Norm"
+                                                label={NETWORK_ARGS_DEFS.network_train_norm.label}
                                                 name="network_train_norm"
                                                 checked={config.networkTrainNorm}
                                                 onChange={(e) => updateConfig({ networkTrainNorm: e.target.checked })}
@@ -418,7 +419,7 @@ export const NetworkNode: React.FC = () => {
                                     {((config.networkAlgo === 'locon' && config.networkLoConType === 'lycoris') ||
                                         ['loha', 'lokr', 'glora', 'glora-ex', 'abba'].includes(config.networkAlgo)) && (
                                             <Toggle
-                                                label="Use Scalar"
+                                                label={NETWORK_ARGS_DEFS.network_use_scalar.label}
                                                 name="network_use_scalar"
                                                 checked={config.networkUseScalar}
                                                 onChange={(e) => updateConfig({ networkUseScalar: e.target.checked })}
@@ -429,7 +430,7 @@ export const NetworkNode: React.FC = () => {
                                     {((config.networkAlgo === 'locon' && config.networkLoConType === 'lycoris') ||
                                         ['loha', 'lokr', 'dylora', 'diag-oft', 'boft', 'glora', 'glora-ex', 'abba'].includes(config.networkAlgo)) && (
                                             <Toggle
-                                                label="Bypass Mode"
+                                                label={NETWORK_ARGS_DEFS.network_bypass_mode.label}
                                                 name="network_bypass_mode"
                                                 checked={config.networkBypassMode}
                                                 onChange={(e) => updateConfig({ networkBypassMode: e.target.checked })}

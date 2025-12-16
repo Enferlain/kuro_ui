@@ -3,6 +3,7 @@ import { useStore } from '../../lib/store';
 import { Input, Select, Toggle, TextArea, FieldWrapper, ToggleInput } from '../FormComponents';
 import { NodeSeparator, NodeHeader } from '../NodeStyles';
 import { HelpCircle, FolderOpen } from 'lucide-react';
+import { GENERAL_ARGS_DEFS } from '../../lib/field-definitions';
 
 export const GeneralArgsNode: React.FC = () => {
     const { config, updateConfig, openGemini } = useStore();
@@ -25,7 +26,7 @@ export const GeneralArgsNode: React.FC = () => {
                 <NodeHeader title="Model Configuration" />
                 <div className="relative group cursor-pointer">
                     <Input
-                        label="Base Model"
+                        label={GENERAL_ARGS_DEFS.base_model.label}
                         name="base_model"
                         value={config.baseModelPath}
                         onChange={(e) => updateConfig({ baseModelPath: e.target.value })}
@@ -35,7 +36,7 @@ export const GeneralArgsNode: React.FC = () => {
                 </div>
                 <div className="relative group cursor-pointer">
                     <Input
-                        label="External VAE"
+                        label={GENERAL_ARGS_DEFS.vae_path.label}
                         name="vae_path"
                         value={config.vaePath}
                         onChange={(e) => updateConfig({ vaePath: e.target.value })}
@@ -44,7 +45,7 @@ export const GeneralArgsNode: React.FC = () => {
                     <FolderOpen className="absolute right-3 top-9 w-4 h-4 text-[#484463] group-hover:text-violet-400 transition-colors" />
                 </div>
                 <Select
-                    label="VAE Padding Mode"
+                    label={GENERAL_ARGS_DEFS.vae_padding_mode.label}
                     name="vae_padding_mode"
                     value={config.vaePaddingMode}
                     onChange={(e) => updateConfig({ vaePaddingMode: e.target.value as any })}
@@ -78,13 +79,13 @@ export const GeneralArgsNode: React.FC = () => {
 
                     <div className="grid grid-cols-3 gap-x-2 gap-y-2 px-1">
                         <Toggle
-                            label="SDXL"
+                            label={GENERAL_ARGS_DEFS.sdxl_enable.label}
                             name="sdxl_enable"
                             checked={config.modelType === 'sdxl'}
                             onChange={(e) => updateConfig({ modelType: e.target.checked ? 'sdxl' : 'sd15' })}
                         />
                         <Toggle
-                            label="SD2.X"
+                            label={GENERAL_ARGS_DEFS.v2_enable.label}
                             name="v2_enable"
                             checked={config.modelType === 'sd2'}
                             onChange={(e) => updateConfig({ modelType: e.target.checked ? 'sd2' : 'sd15' })}
@@ -107,7 +108,7 @@ export const GeneralArgsNode: React.FC = () => {
 
                     <div className="grid grid-cols-3 gap-x-2 gap-y-2 px-1">
                         <Toggle
-                            label="Full FP16"
+                            label={GENERAL_ARGS_DEFS.full_fp16.label}
                             name="full_fp16"
                             checked={config.fullFp16}
                             onChange={(e) => updateConfig({
@@ -117,7 +118,7 @@ export const GeneralArgsNode: React.FC = () => {
                             })}
                         />
                         <Toggle
-                            label="Full BF16"
+                            label={GENERAL_ARGS_DEFS.full_bf16.label}
                             name="full_bf16"
                             checked={config.fullBf16}
                             onChange={(e) => updateConfig({
@@ -127,7 +128,7 @@ export const GeneralArgsNode: React.FC = () => {
                             })}
                         />
                         <Toggle
-                            label="FP8 Base"
+                            label={GENERAL_ARGS_DEFS.fp8_base.label}
                             name="fp8_base"
                             checked={config.fp8Base}
                             onChange={(e) => updateConfig({
@@ -154,19 +155,19 @@ export const GeneralArgsNode: React.FC = () => {
 
                     <div className="grid grid-cols-3 gap-x-2 gap-y-2 px-1">
                         <Toggle
-                            label="V-Prediction"
+                            label={GENERAL_ARGS_DEFS.v_pred.label}
                             name="v_pred"
                             checked={config.v_parameterization}
                             onChange={(e) => updateConfig({ v_parameterization: e.target.checked })}
                         />
                         <Toggle
-                            label="Scale V Loss"
+                            label={GENERAL_ARGS_DEFS.scale_v_pred_loss.label}
                             name="scale_v_pred_loss"
                             checked={config.scaleVPredLoss}
                             onChange={(e) => updateConfig({ scaleVPredLoss: e.target.checked })}
                         />
                         <Toggle
-                            label="Debiased Estimation"
+                            label={GENERAL_ARGS_DEFS.debiased_estimation.label}
                             name="debiased_estimation"
                             checked={config.debiasedEstimationLoss}
                             onChange={(e) => updateConfig({ debiasedEstimationLoss: e.target.checked })}
@@ -189,7 +190,7 @@ export const GeneralArgsNode: React.FC = () => {
 
                     <div className="grid grid-cols-3 gap-x-2 gap-y-2 px-1">
                         <Toggle
-                            label="Xformers"
+                            label={GENERAL_ARGS_DEFS.xformers_enable.label}
                             name="xformers_enable"
                             checked={config.useXformers}
                             onChange={(e) => updateConfig({
@@ -198,7 +199,7 @@ export const GeneralArgsNode: React.FC = () => {
                             })}
                         />
                         <Toggle
-                            label="SDPA"
+                            label={GENERAL_ARGS_DEFS.sdpa_enable.label}
                             name="sdpa_enable"
                             checked={config.useSdpa}
                             onChange={(e) => updateConfig({
@@ -207,7 +208,7 @@ export const GeneralArgsNode: React.FC = () => {
                             })}
                         />
                         <Toggle
-                            label="Cache Latents"
+                            label={GENERAL_ARGS_DEFS.cache_latents.label}
                             name="cache_latents"
                             checked={config.cacheLatents}
                             onChange={(e) => updateConfig({
@@ -216,7 +217,7 @@ export const GeneralArgsNode: React.FC = () => {
                             })}
                         />
                         <Toggle
-                            label="Cache Latents to Disk"
+                            label={GENERAL_ARGS_DEFS.cache_latents_to_disk.label}
                             name="cache_latents_to_disk"
                             checked={config.cacheLatentsToDisk}
                             onChange={(e) => updateConfig({
@@ -225,7 +226,7 @@ export const GeneralArgsNode: React.FC = () => {
                             })}
                         />
                         <Toggle
-                            label="No Half VAE"
+                            label={GENERAL_ARGS_DEFS.no_half_vae.label}
                             name="no_half_vae"
                             checked={config.noHalfVae}
                             onChange={(e) => updateConfig({ noHalfVae: e.target.checked })}
@@ -241,21 +242,21 @@ export const GeneralArgsNode: React.FC = () => {
                 <NodeHeader title="Run Configuration" />
                 <div className="grid grid-cols-3 gap-3">
                     <Input
-                        label="Seed"
+                        label={GENERAL_ARGS_DEFS.seed.label}
                         name="seed"
                         type="number"
                         value={config.seed}
                         onChange={(e) => updateConfig({ seed: parseInt(e.target.value) })}
                     />
                     <Input
-                        label="Batch Size"
+                        label={GENERAL_ARGS_DEFS.batch_size.label}
                         name="batch_size"
                         type="number"
                         value={config.batchSize}
                         onChange={(e) => updateConfig({ batchSize: parseInt(e.target.value) })}
                     />
                     <Input
-                        label="Clip Skip"
+                        label={GENERAL_ARGS_DEFS.clip_skip.label}
                         name="clip_skip"
                         type="number"
                         value={config.clipSkip}
@@ -264,7 +265,7 @@ export const GeneralArgsNode: React.FC = () => {
                         className={config.modelType === 'sdxl' ? 'opacity-50 cursor-not-allowed' : ''}
                     />
                     <Select
-                        label="Max Token Length"
+                        label={GENERAL_ARGS_DEFS.max_token_length.label}
                         name="max_token_length"
                         value={config.maxTokenLength}
                         onChange={(e) => updateConfig({ maxTokenLength: e.target.value as any })}
@@ -275,7 +276,7 @@ export const GeneralArgsNode: React.FC = () => {
                         ]}
                     />
                     <Input
-                        label="Prior Loss Weight"
+                        label={GENERAL_ARGS_DEFS.prior_loss_weight.label}
                         name="prior_loss_weight"
                         type="number"
                         step="0.01"
@@ -283,7 +284,7 @@ export const GeneralArgsNode: React.FC = () => {
                         onChange={(e) => updateConfig({ priorLossWeight: parseFloat(e.target.value) })}
                     />
                     <Select
-                        label="Training Precision"
+                        label={GENERAL_ARGS_DEFS.mixed_precision.label}
                         name="mixed_precision"
                         value={config.mixedPrecision}
                         onChange={(e) => updateConfig({ mixedPrecision: e.target.value as any })}
@@ -294,7 +295,7 @@ export const GeneralArgsNode: React.FC = () => {
                         ]}
                     />
                     <Input
-                        label="Max Data Loader Workers"
+                        label={GENERAL_ARGS_DEFS.max_data_loader_n_workers.label}
                         name="max_data_loader_n_workers"
                         type="number"
                         value={config.maxDataLoaderWorkers}
@@ -302,7 +303,7 @@ export const GeneralArgsNode: React.FC = () => {
                     />
 
                     {/* Unified Max Train Duration Field - 1 Column */}
-                    <FieldWrapper label="Max Train Duration" id="max_train_time">
+                    <FieldWrapper label={GENERAL_ARGS_DEFS.max_train_time.label} id="max_train_time">
                         <div className="flex items-center h-[42px] bg-[#181625] border border-[#3E3B5E] rounded-sm overflow-hidden">
                             <input
                                 type="number"
@@ -325,7 +326,7 @@ export const GeneralArgsNode: React.FC = () => {
 
                     {/* Keep Tokens Separator - Moved here for 3x3 grid */}
                     <ToggleInput
-                        label="Keep Tokens Separator"
+                        label={GENERAL_ARGS_DEFS.keep_tokens_separator_enable.label}
                         name="keep_tokens_separator_enable"
                         value={config.keepTokensSeparator}
                         defaultValue="|||"
@@ -345,14 +346,14 @@ export const GeneralArgsNode: React.FC = () => {
                     <NodeHeader title="Resolution" />
                     <div className="flex flex-col gap-3">
                         <Input
-                            label="Width"
+                            label={GENERAL_ARGS_DEFS.width.label}
                             name="width"
                             type="number"
                             value={config.width}
                             onChange={(e) => updateConfig({ width: parseInt(e.target.value) })}
                         />
                         <Input
-                            label="Height"
+                            label={GENERAL_ARGS_DEFS.height.label}
                             name="height"
                             type="number"
                             value={config.height}
@@ -365,7 +366,7 @@ export const GeneralArgsNode: React.FC = () => {
                 <div className="space-y-3">
                     <NodeHeader title="Gradient" />
                     <div className="flex flex-col gap-3">
-                        <FieldWrapper label="Gradient Checkpointing" id="grad_checkpointing">
+                        <FieldWrapper label={GENERAL_ARGS_DEFS.grad_checkpointing.label} id="grad_checkpointing">
                             <div className="flex items-center h-[42px] px-1">
                                 <Toggle
                                     name="grad_checkpointing"
@@ -376,7 +377,7 @@ export const GeneralArgsNode: React.FC = () => {
                         </FieldWrapper>
 
                         <ToggleInput
-                            label="Gradient Accumulation"
+                            label={GENERAL_ARGS_DEFS.grad_accumulation_enable.label}
                             name="grad_accumulation_enable"
                             value={config.gradientAccumulation > 1 ? config.gradientAccumulation : undefined}
                             defaultValue={cachedGradAccum}
@@ -398,13 +399,15 @@ export const GeneralArgsNode: React.FC = () => {
                     <div className="flex items-center gap-2">
                         <NodeHeader title="Bucketing" />
                         <Toggle
+                            key="enable_bucket"
                             name="enable_bucket"
                             checked={config.enableBucket}
                             onChange={(e) => updateConfig({ enableBucket: e.target.checked })}
+                            label={GENERAL_ARGS_DEFS.enable_bucket.label} // Using standard Toggle label prop if supported, or wrapped
                         />
                     </div>
                     <div className={`flex items-center gap-2 transition-opacity duration-200 ${!config.enableBucket ? 'opacity-50' : ''}`}>
-                        <span className="text-xs text-[#7B77A0] font-medium">Don't Upscale Images</span>
+                        <span className="text-xs text-[#7B77A0] font-medium">{GENERAL_ARGS_DEFS.bucket_no_upscale.label}</span>
                         <Toggle
                             name="bucket_no_upscale"
                             checked={config.bucketNoUpscale}
@@ -415,7 +418,7 @@ export const GeneralArgsNode: React.FC = () => {
                 </div>
                 <div className={`grid grid-cols-3 gap-3 transition-opacity duration-200 ${!config.enableBucket ? 'opacity-50' : ''}`}>
                     <Input
-                        label="Min Bucket Reso"
+                        label={GENERAL_ARGS_DEFS.min_bucket_reso.label}
                         name="min_bucket_reso"
                         type="number"
                         value={config.minBucketReso}
@@ -423,7 +426,7 @@ export const GeneralArgsNode: React.FC = () => {
                         disabled={!config.enableBucket}
                     />
                     <Input
-                        label="Max Bucket Reso"
+                        label={GENERAL_ARGS_DEFS.max_bucket_reso.label}
                         name="max_bucket_reso"
                         type="number"
                         value={config.maxBucketReso}
@@ -431,7 +434,7 @@ export const GeneralArgsNode: React.FC = () => {
                         disabled={!config.enableBucket}
                     />
                     <Input
-                        label="Bucket Reso Steps"
+                        label={GENERAL_ARGS_DEFS.bucket_reso_steps.label}
                         name="bucket_reso_steps"
                         type="number"
                         value={config.bucketResoSteps}
@@ -446,7 +449,7 @@ export const GeneralArgsNode: React.FC = () => {
             {/* Section 5: Metadata */}
             <div>
                 <TextArea
-                    label="Comment"
+                    label={GENERAL_ARGS_DEFS.comment.label}
                     name="comment"
                     value={config.comment}
                     onChange={(e) => updateConfig({ comment: e.target.value })}
