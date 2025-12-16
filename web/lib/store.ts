@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { TrainingConfig, UIState, NodeId, NodeState, NodeConfig } from './types';
-import { LOD_WIDTH, LOD_HEIGHT } from '../components/Node';
+import { LOD_WIDTH, LOD_HEIGHT } from './constants';
 
 interface Store extends UIState {
     config: TrainingConfig;
@@ -41,6 +41,26 @@ interface Store extends UIState {
     // Hydration
     hasHydrated: boolean;
     setHasHydrated: (state: boolean) => void;
+
+    // Minimap
+    isMinimapVisible: boolean;
+    toggleMinimap: () => void;
+    minimapSettings: {
+        showNodeColors: boolean;
+        showLinks: boolean;
+        showGroups: boolean;
+        renderBypass: boolean;
+        renderError: boolean;
+    };
+    toggleMinimapSetting: (setting: keyof Store['minimapSettings']) => void;
+
+    // Search
+    isSearchOpen: boolean;
+    setSearchOpen: (isOpen: boolean) => void;
+
+    // Canvas Mode
+    canvasMode: 'pointer' | 'hand';
+    setCanvasMode: (mode: 'pointer' | 'hand') => void;
 }
 
 export const useStore = create<Store>()(
@@ -248,6 +268,28 @@ export const useStore = create<Store>()(
 
             hasHydrated: false,
             setHasHydrated: (state) => set({ hasHydrated: state }),
+
+            isMinimapVisible: true,
+            toggleMinimap: () => set((state) => ({ isMinimapVisible: !state.isMinimapVisible })),
+            minimapSettings: {
+                showNodeColors: true,
+                showLinks: true,
+                showGroups: true,
+                renderBypass: true,
+                renderError: true,
+            },
+            toggleMinimapSetting: (setting) => set((state) => ({
+                minimapSettings: {
+                    ...state.minimapSettings,
+                    [setting]: !state.minimapSettings[setting]
+                }
+            })),
+
+            canvasMode: 'pointer',
+            setCanvasMode: (mode) => set({ canvasMode: mode }),
+
+            isSearchOpen: false,
+            setSearchOpen: (isOpen) => set({ isSearchOpen: isOpen }),
         }),
         {
             // [Shiro] Version Bump to invalidate old data
@@ -262,6 +304,9 @@ export const useStore = create<Store>()(
                 minimizedNodes: state.minimizedNodes,
                 config: state.config,
                 nodePorts: state.nodePorts,
+                isMinimapVisible: state.isMinimapVisible,
+                minimapSettings: state.minimapSettings,
+                canvasMode: state.canvasMode,
             }),
             onRehydrateStorage: () => (state) => {
                 console.log('[Store] Rehydration complete', state);

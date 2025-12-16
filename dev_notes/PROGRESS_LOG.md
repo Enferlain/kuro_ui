@@ -396,5 +396,33 @@ Successfully migrated the "Kuro Trainer" frontend from a Vite/React application 
     - **Problem 2 (Zoomed Out)**: Normal nodes would load big then animate closed if the user refreshed while zoomed out.
     - **Fix**: Updated `Node.tsx` initialization logic. The component now checks `isImmune` (Pinned) and `isZoomedOut` on mount. If either condition is met, the physics springs `jump()` instantly to the target size, skipping the transition animation completely.
 - **Zero-Coordinate Glitch**:
-    - **Problem**: Physics bodies initialized at `(0,0)` before reading the store, causing a single frame of nodes bunched in the corner.
     - **Fix**: Updated `getMotionValues` to peek directly at the Zustand store (`useStore.getState()`) during initialization, ensuring the very first render frame uses the correct saved coordinates.
+
+---
+
+## Entry: December 16, 2025
+
+### 1. Minimap & Navigation Overhaul
+- **Background**: Replaced transparent minimap background with a solid `#1E1C29` fill for better visibility.
+- **Canvas Controls**: Redesigned the bottom-right controls toolbar:
+    - **Hand / Select Modes**: Added specific tools for Panning vs Selecting. 'Hand' mode disables node dragging.
+    - **Fit View**: Added 'Maximize' button to instantly fit all nodes into view.
+    - **Zoom Menu**: Implemented a popover menu with Zoom In/Out, Zoom to Fit, and a custom % input field.
+    - **Search Integration**: Moved the global search toggle into the toolbar for consistency.
+- **Minimap Settings**:
+    - **Settings Panel**: Added a top-left toggle button on the minimap revealing settings options.
+    - **Node Colors**: Implemented a toggle to enable/disable distinct node coloring on the minimap.
+    - **Visibility**: Added options (visual toggles) for showing Links, Groups, Bypass States, and Error States in the future.
+- **Layout Alignment**: Aligned the Minimap and Controls Toolbar vertically on the bottom right for a cohesive navigation experience.
+
+### 2. UI Polish & Visual Refinements
+- **Minimap Links**:
+    - **Visual Links**: Implemented "Show Links" functionality that renders connection lines between nodes on the minimap.
+    - **Styling**: Links are drawn as semi-transparent white lines behind nodes, providing context without clutter.
+- **Iconography**:
+    - **Custom Icons**: Created a custom "Map with Slash" icon for the Hide Minimap button to ensure pixel-perfect clarity.
+    - **Cursor Highlight**: Added a visual highlight box (32x32px) around the active cursor mode icon, mirroring the Minimap button's weight.
+- **Menu Interaction**:
+    - **Mutual Exclusivity**: Implemented logic to ensure only one control menu (Mode, Zoom, Search) can be open at a time.
+    - **Zoom Menu**: Fixed centering logic (`-translate-x-1/2`) to ensure the popover is perfectly aligned with its trigger button.
+    - **Search Overlay**: Refactored the Search menu to appear as a full-width overlay on top of the control bar.

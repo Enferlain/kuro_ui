@@ -4,3 +4,6 @@ export const CANVAS_BOUNDS = {
     minY: -10000,
     maxY: 12000
 };
+
+export const LOD_WIDTH = 200;
+export const LOD_HEIGHT = 128;

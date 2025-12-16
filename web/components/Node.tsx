@@ -21,8 +21,7 @@ interface NodeProps {
     onResize: (w: number, h: number, anchor?: boolean, isManual?: boolean, position?: { x: number, y: number }) => void;
 }
 
-export const LOD_WIDTH = 200;
-export const LOD_HEIGHT = 128;
+import { CANVAS_BOUNDS, LOD_WIDTH, LOD_HEIGHT } from '../lib/constants';
 
 export const Node: React.FC<NodeProps> = React.memo(({
     id,

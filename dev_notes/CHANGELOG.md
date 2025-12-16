@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-12-16]
+
+### Added
+- Integrated "Hand" and "Select" modes, Fit View, and a robust Zoom Menu.
+- Added a settings panel to the minimap (Node Colors, Show Links, etc.).
+- Moved search toggle to the main toolbar.
+- Implemented Minimap Links rendering (visual connection lines between nodes).
+
+### Changed
+- Solid background for better visibility, aligned to bottom-right with controls.
+- Disabled node dragging when in "Hand" mode.
+- Refactored Search Menu to overlay the control bar for a unified look.
+- Updated Minimap Toggle to use a custom "Map with Slash" icon.
+
+### Fixed
+- Enforced mutual exclusivity for control menus (Zoom, Mode, Search).
+- Fixed Zoom Menu centering alignment.
+
 ## [2025-12-15]
 
 ### Added

@@ -5,13 +5,15 @@ import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence, useTransform, MotionValue, useSpring } from 'framer-motion';
 import { useStore } from '../lib/store';
 import { NodeId } from '../lib/types';
-import { Node, LOD_WIDTH, LOD_HEIGHT } from './Node';
+import { Node } from './Node';
 import { calculateLodState } from '../lib/lod';
-import { NODE_REGISTRY, GRAPH_EDGES, SEARCH_INDEX, SearchItem } from './NodeRegistry';
-import { Save, MousePointer2, ZoomIn, ZoomOut, Activity, LayoutGrid, Search, X, CornerDownRight } from 'lucide-react';
+import { NODE_REGISTRY, GRAPH_EDGES } from './NodeRegistry';
+import { Save, MousePointer2, ZoomIn, ZoomOut, Activity, LayoutGrid } from 'lucide-react';
+import { Minimap } from './Minimap';
+import { CanvasControls } from './CanvasControls';
 import { VoidIcon } from './VoidIcon';
 import { usePhysicsEngine } from '../hooks/usePhysicsEngine';
-import { CANVAS_BOUNDS } from '../lib/constants';
+import { CANVAS_BOUNDS, LOD_WIDTH, LOD_HEIGHT } from '../lib/constants';
 
 // Connection line component (Animated SVG)
 const Connection: React.FC<{
@@ -155,6 +157,7 @@ export const Canvas: React.FC = () => {
     const setTransform = useStore(state => state.setTransform);
     const activeNode = useStore(state => state.activeNode);
     const draggedNode = useStore(state => state.draggedNode);
+    const canvasMode = useStore(state => state.canvasMode);
     const lodImmuneNodes = useStore(state => state.lodImmuneNodes);
     const minimizedNodes = useStore(state => state.minimizedNodes);
     const setActiveNode = useStore(state => state.setActiveNode);
@@ -242,68 +245,6 @@ export const Canvas: React.FC = () => {
     const [isInteracting, setIsInteracting] = useState(false);
     const interactionTimeout = useRef<NodeJS.Timeout | null>(null);
 
-    // Search State
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
-    const searchInputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (isSearchOpen) {
-            setTimeout(() => searchInputRef.current?.focus(), 100);
-        } else {
-            setSearchQuery('');
-            setSearchResults([]);
-        }
-    }, [isSearchOpen]);
-
-    useEffect(() => {
-        if (!searchQuery.trim()) {
-            setSearchResults([]);
-            return;
-        }
-        const results = SEARCH_INDEX.filter(item =>
-            item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.id.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setSearchResults(results);
-    }, [searchQuery]);
-
-    const handleSearchResultClick = (item: SearchItem) => {
-        const node = nodes[item.nodeId];
-        const rect = containerRef.current?.getBoundingClientRect();
-
-        if (node && rect) {
-            // Calculate center of the target Node
-            const targetX = node.cx;
-            const targetY = node.cy;
-
-            // Center of the screen
-            const screenCX = rect.width / 2;
-            const screenCY = rect.height / 2;
-
-            // Target scale
-            const targetScale = 1; // Zoom in to default 1
-
-            // Calculate new translation to put Node in center
-            // screenCX = targetX * scale + tx
-            // tx = screenCX - targetX * scale
-            const newTx = screenCX - targetX * targetScale;
-            const newTy = screenCY - targetY * targetScale;
-
-            setTransform(newTx, newTy, targetScale);
-            setActiveNode(item.nodeId);
-            setHighlightedField(item.id);
-
-            // Close search but keep highlight for a moment
-            setIsSearchOpen(false);
-
-            // Auto-remove highlight after 3 seconds
-            setTimeout(() => {
-                setHighlightedField(null);
-            }, 3000);
-        }
-    };
 
     const triggerInteraction = () => {
         setIsInteracting(true);
@@ -473,7 +414,7 @@ export const Canvas: React.FC = () => {
                 icon={config.icon}
                 // PHYSICS PROPS
                 motionValues={getMotionValues(config.id)} // Now contains width/height too
-                onDragStart={(x, y) => dragStart(config.id, x, y)}
+                onDragStart={(x, y) => canvasMode === 'pointer' && dragStart(config.id, x, y)}
                 onDragMove={(x, y) => dragMove(config.id, x, y)}
                 onDragEnd={() => dragEnd(config.id)}
                 onResize={(
@@ -575,87 +516,27 @@ export const Canvas: React.FC = () => {
             <FPSCounter />
 
             {/* Controls */}
-            <div className="absolute bottom-6 left-6 flex flex-col gap-4 pointer-events-auto items-start">
+            {/* Moved to CanvasControls Component */}
 
-                {/* Search Popup */}
-                <AnimatePresence>
-                    {isSearchOpen && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="w-64 bg-node-bg-active backdrop-blur-xl border border-node-border rounded-sm shadow-2xl overflow-hidden mb-2"
-                        >
-                            <div className="p-2 border-b border-node-border flex items-center gap-2">
-                                <Search size={14} className="text-node-header" />
-                                <input
-                                    type="text"
-                                    placeholder="Search parameters..."
-                                    className="bg-transparent border-none outline-none text-sm text-node-text placeholder-node-header w-full font-mono"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                                <button onClick={() => setIsSearchOpen(false)} className="text-[#5B5680] hover:text-white">
-                                    <X size={14} />
-                                </button>
-                            </div>
-                            {searchResults.length > 0 ? (
-                                <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                                    {searchResults.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="px-3 py-2 hover:bg-node-border/50 cursor-pointer flex items-center justify-between group"
-                                            onClick={() => handleSearchResultClick(item)}
-                                        >
-                                            <span className="text-xs text-node-text font-mono">{item.label}</span>
-                                            <CornerDownRight size={12} className="text-node-header opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : searchQuery ? (
-                                <div className="p-3 text-center text-[10px] text-node-header font-mono uppercase">No matches found</div>
-                            ) : null}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                <div className="flex flex-col gap-2 items-stretch">
-                    <div className="flex items-center justify-between gap-2 bg-node-bg/80 backdrop-blur-md border border-node-border p-1 rounded-lg shadow-2xl">
-                        <button
-                            onClick={() => {
-                                resetLayout(NODE_REGISTRY);
-                                const defaultNodes = Object.values(NODE_REGISTRY).map(conf => ({
-                                    id: conf.id,
-                                    cx: conf.defaultPosition.x + conf.defaultDimensions.width / 2,
-                                    cy: conf.defaultPosition.y + conf.defaultDimensions.height / 2,
-                                    width: conf.defaultDimensions.width,
-                                    height: conf.defaultDimensions.height
-                                }));
-                                initPhysics(defaultNodes);
-                            }}
-                            className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition"
-                            title="Reset Layout"
-                        >
-                            <LayoutGrid size={18} />
-                        </button>
-                        <button onClick={() => manualZoom(1)} className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition">
-                            <ZoomIn size={18} />
-                        </button>
-                        <button onClick={() => manualZoom(-1)} className="p-2 hover:bg-node-border rounded text-node-dim hover:text-white transition">
-                            <ZoomOut size={18} />
-                        </button>
-                        <button
-                            onClick={() => setIsSearchOpen(!isSearchOpen)}
-                            className={`p-2 rounded transition ${isSearchOpen ? 'bg-node-border text-white' : 'hover:bg-node-border text-node-dim hover:text-white'}`}
-                            title="Search Nodes"
-                        >
-                            <Search size={18} />
-                        </button>
-                    </div>
-                    <div className="bg-node-bg/80 backdrop-blur-md text-node-dim text-[10px] uppercase tracking-wider px-3 py-2 rounded-lg border border-node-border flex items-center justify-center gap-2 shadow-xl">
-                        <MousePointer2 size={10} />
-                        <span>Nav: Drag & Scroll</span>
-                    </div>
+            {/* Bottom Right Container */}
+            <div className="absolute bottom-6 right-6 w-60 flex flex-col gap-4 pointer-events-none z-50">
+                <div className="pointer-events-auto">
+                    <Minimap />
+                </div>
+                <div className="pointer-events-auto">
+                    <CanvasControls
+                        onReset={() => {
+                            resetLayout(NODE_REGISTRY);
+                            const defaultNodes = Object.values(NODE_REGISTRY).map(conf => ({
+                                id: conf.id,
+                                cx: conf.defaultPosition.x + conf.defaultDimensions.width / 2,
+                                cy: conf.defaultPosition.y + conf.defaultDimensions.height / 2,
+                                width: conf.defaultDimensions.width,
+                                height: conf.defaultDimensions.height
+                            }));
+                            initPhysics(defaultNodes);
+                        }}
+                    />
                 </div>
             </div>
         </div>
